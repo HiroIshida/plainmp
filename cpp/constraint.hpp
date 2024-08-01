@@ -2,6 +2,7 @@
 #include <pybind11/pybind11.h>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include <algorithm>
 #include <memory>
 #include <tinyfk.hpp>
 #include <utility>
@@ -186,6 +187,59 @@ class ComInPolytopeCst : public IneqConstraintBase {
   std::vector<size_t> force_link_ids_;
   std::vector<double> applied_force_values_;
 };
+
+// want to make this subclass of ConstraintBase, but it's complicated in c++
+// so...
+/*
+template <typename T>
+class CompositeConstraintBase{
+    public:
+    using Ptr = std::shared_ptr<CompositeConstraintBase>;
+    CompositeConstraintBase(std::vector<T> constraints)
+        : constraints_(constraints) {}
+
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate() {
+      size_t dim = this->cst_dim();
+      Eigen::VectorXd vals(dim);
+      Eigen::MatrixXd jac(dim, q_dim());
+      size_t head = 0;
+      for (const auto& cst : constraints_) {
+        auto [vals_sub, jac_sub] = cst->evaluate();
+        vals.segment(head, dim) = vals_sub;
+        jac.block(head, 0, dim, q_dim()) = jac_sub;
+        head += dim;
+      }
+      return {vals, jac};
+    }
+
+    size_t q_dim() const {
+        return constraints_.front()->q_dim();
+    }
+
+    size_t cst_dim() const {
+        return std::accumulate(constraints_.begin(), constraints_.end(), 0,
+            [](size_t sum, const T& cst) { return sum + cst.cst_dim(); });
+    }
+    std::vector<T> constraints_;
+};
+
+class EqCompositeCst : public CompositeConstraintBase<EqConstraintBase>{
+    public:
+    using Ptr = std::shared_ptr<EqCompositeCst>;
+    using CompositeConstraintBase::CompositeConstraintBase;
+    size_t cst_dim() const;
+    bool is_equality() const { return true; }
+};
+
+class IneqCompositeCst : public CompositeConstraintBase<IneqConstraintBase>{
+    public:
+    using Ptr = std::shared_ptr<IneqCompositeCst>;
+    using CompositeConstraintBase::CompositeConstraintBase;
+    bool is_valid() const;
+    size_t cst_dim() const;
+    bool is_equality() const { return false; }
+};
+*/
 
 void bind_collision_constraints(py::module& m);
 
