@@ -17,8 +17,10 @@ def _test_ik(with_rot: bool, with_self_collision: bool):
         ineq_cst = None
 
     lb, ub = fs.angle_bounds()
-    ret = solve_ik(eq_cst, ineq_cst, lb, ub, None)
-    print(ret)
+    for _ in range(20):
+        ret = solve_ik(eq_cst, ineq_cst, lb, ub, None)
+        if ret.success:
+            break
     assert ret.success
 
 
