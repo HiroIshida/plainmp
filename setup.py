@@ -8,7 +8,7 @@ setup(
     version="0.0.2",
     description="experimental",
     author="Hirokazu Ishida",
-    license="MIT",
+    license="PolyForm NonCommercial 1.0.0",
     install_requires=["numpy", "scipy", "scikit-robot"],
     packages=["plainmp"],
     package_dir={"": "python"},
