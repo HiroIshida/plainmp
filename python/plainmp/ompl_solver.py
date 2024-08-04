@@ -116,5 +116,5 @@ class OMPLSolver:
             return OMPLSolverResult(None, None, -1, TerminateState.FAIL_PLANNING)
         else:
             return OMPLSolverResult(
-                Trajectory(result), time.time() - ts, n_count, TerminateState.SUCCESS
+                Trajectory(result), time.time() - ts, n_count[0], TerminateState.SUCCESS
             )
