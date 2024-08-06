@@ -22,13 +22,10 @@ ineq_cst.set_sdfs([sdf])
 
 lb, ub = fs.angle_bounds()
 ts = time.time()
+ret = solve_ik(eq_cst, ineq_cst, lb, ub, q_seed=None, max_trial=10)
 
-for i in range(10):
-    ret = solve_ik(eq_cst, ineq_cst, lb, ub, None)
-    if ret.success:
-        break
 # in msec
-print(f"after {i} trials, elapsed time: {(time.time() - ts) * 1000:.2f} msec")
+print(f"after {ret.n_trial} trials, elapsed time: {(time.time() - ts) * 1000:.2f} msec")
 assert ret.success
 
 # visualization

@@ -35,6 +35,7 @@ class IKResult:
     q: np.ndarray
     elapsed_time: float
     success: bool
+    n_trial: int
 
 
 def solve_ik(
@@ -42,8 +43,10 @@ def solve_ik(
     ineq_const: Optional[IneqConstraintBase],
     lb: np.ndarray,
     ub: np.ndarray,
-    q_seed: Optional[np.ndarray],
+    *,
+    q_seed: Optional[np.ndarray] = None,
     config: Optional[IKConfig] = None,
+    max_trial: int = 100,
 ) -> IKResult:
     ts = time.time()
     if config is None:
@@ -81,22 +84,22 @@ def solve_ik(
         "maxiter": config.n_max_eval - 1,  # somehome scipy iterate +1 more time
     }
 
-    res = minimize(
-        f,
-        q_seed,
-        method="SLSQP",
-        jac=jac,
-        bounds=bounds,
-        constraints=constraints,
-        options=slsqp_option,
-    )
+    for i in range(max_trial):
+        res = minimize(
+            f,
+            q_seed,
+            method="SLSQP",
+            jac=jac,
+            bounds=bounds,
+            constraints=constraints,
+            options=slsqp_option,
+        )
 
-    # check additional success condition
-    if eq_const is not None:
-        is_ik_actually_solved = res.fun < config.acceptable_error  # ensure not in local optima
-        if not is_ik_actually_solved:
-            res.success = False
-
-    elapsed_time = time.time() - ts
-
-    return IKResult(res.x, elapsed_time, res.success)
+        # check additional success condition
+        if eq_const is not None:
+            is_ik_actually_solved = res.fun < config.acceptable_error  # ensure not in local optima
+            if is_ik_actually_solved:
+                return IKResult(res.x, time.time() - ts, res.success, i + 1)
+        # if not solved, try again without any initial guess
+        q_seed = np.random.uniform(lb, ub)
+    return IKResult(np.empty([0]), time.time() - ts, False, max_trial)
