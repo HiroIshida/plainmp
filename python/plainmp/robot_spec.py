@@ -1,12 +1,18 @@
 import copy
 from abc import ABC, abstractmethod
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 import yaml
 from skrobot.coordinates import CascadedCoords, Coordinates
-from skrobot.coordinates.math import rotation_matrix, rpy_angle
+from skrobot.coordinates.math import (
+    matrix2quaternion,
+    rotation_matrix,
+    rpy_angle,
+    wxyz2xyzw,
+)
 from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
 from skrobot.models.urdf import RobotModelFromURDF
@@ -38,6 +44,12 @@ def load_urdf_model_using_cache(file_path: Path, deepcopy: bool = True):
         return copy.deepcopy(_loaded_urdf_models[key])
     else:
         return _loaded_urdf_models[key]
+
+
+class RotType(Enum):
+    IGNORE = 0
+    RPY = 1
+    XYZW = 2
 
 
 class RobotSpec(ABC):
@@ -108,22 +120,28 @@ class RobotSpec(ABC):
         )
         return cst
 
-    def create_pose_const(
-        self, link_names: List[str], link_poses: Sequence[Tuple[np.ndarray, Coordinates]]
+    def crate_pose_const_from_coords(
+        self, link_names: List[str], link_poses: List[Coordinates], rot_types: List[RotType]
     ) -> LinkPoseCst:
-        link_poses_np: List[np.ndarray] = []
-        for lp in link_poses:
-            if isinstance(lp, Coordinates):
-                pos = lp.worldpos()
-                mat = lp.worldrot()
-                ypr = rpy_angle(mat)[0]
+        pose_list = []
+        for co, rt in zip(link_poses, rot_types):
+            pos = co.worldpos()
+            if rt == RotType.RPY:
+                ypr = rpy_angle(co.rotation)[0]
                 rpy = [ypr[2], ypr[1], ypr[0]]
-                link_poses_np.append(np.hstack([pos, rpy]))
+                pose = np.hstack([pos, rpy])
+            elif rt == RotType.XYZW:
+                quat_wxyz = matrix2quaternion(co.rotation)
+                pose = np.hstack([pos, wxyz2xyzw(quat_wxyz)])
             else:
-                link_poses_np.append(lp)
+                pose = pos
+            pose_list.append(pose)
+        print(pose_list)
+        return self.create_pose_const(link_names, pose_list)
 
+    def create_pose_const(self, link_names: List[str], link_poses: List[np.ndarray]) -> LinkPoseCst:
         return LinkPoseCst(
-            self.get_kin(), self.control_joint_names, self.with_base, link_names, link_poses_np
+            self.get_kin(), self.control_joint_names, self.with_base, link_names, link_poses
         )
 
 
