@@ -26,7 +26,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty()
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
                              tinyfk::RotationType::IGNORE, with_base_);
       head += 3;
-    } else {
+    } else if (poses_[i].size() == 6) {
       vals.segment(head, 3) =
           Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z) -
           poses_[i];
@@ -37,6 +37,18 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty()
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
                              tinyfk::RotationType::RPY, with_base_);
       head += 6;
+    } else {
+      vals.segment(head, 3) =
+          Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z) -
+          poses_[i];
+      vals[head + 3] = pose.rotation.x;
+      vals[head + 4] = pose.rotation.y;
+      vals[head + 5] = pose.rotation.z;
+      vals[head + 6] = pose.rotation.w;
+      jac.block(head, 0, 7, q_dim()) =
+          kin_->get_jacobian(link_ids_[i], control_joint_ids_,
+                             tinyfk::RotationType::XYZW, with_base_);
+      head += 7;
     }
   }
   return {vals, jac};

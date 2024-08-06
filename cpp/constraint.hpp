@@ -101,8 +101,8 @@ class LinkPoseCst : public EqConstraintBase {
         link_ids_(kin_->get_link_ids(link_names)),
         poses_(poses) {
     for (auto& pose : poses_) {
-      if (pose.size() != 3 && pose.size() != 6) {
-        throw std::runtime_error("All poses must be 3 or 6 dimensional");
+      if (pose.size() != 3 && pose.size() != 6 && pose.size() != 7) {
+        throw std::runtime_error("All poses must be 3 or 6 or 7 dimensional");
       }
     }
   }

@@ -91,7 +91,8 @@ def test_eq_composite_constraint():
     fs = FetchSpec()
     cst1 = fs.create_gripper_pose_const([0.7, 0.0, 0.7])
     cst2 = fs.create_pose_const(
-        ["gripper_link", "wrist_roll_link"], [[0.7, 0.0, 0.7], [0.7, 0.0, 0.7, 0.0, 0.0, 0.0]]
+        ["gripper_link", "wrist_roll_link", "torso_lift_link"],
+        [[0.7, 0.0, 0.7], [0.7, 0.0, 0.7, 0.0, 0.0, 0.0], [0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]],
     )
     cst = EqCompositeCst([cst1, cst2])
     check_jacobian(cst, 8)
