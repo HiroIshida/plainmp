@@ -5,7 +5,7 @@ from typing import Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 import yaml
-from skrobot.coordinates import CascadedCoords
+from skrobot.coordinates import CascadedCoords, Coordinates
 from skrobot.coordinates.math import rotation_matrix, rpy_angle
 from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
@@ -108,9 +108,22 @@ class RobotSpec(ABC):
         )
         return cst
 
-    def create_pose_const(self, link_names: List[str], link_poses: List[np.ndarray]) -> LinkPoseCst:
+    def create_pose_const(
+        self, link_names: List[str], link_poses: Sequence[Tuple[np.ndarray, Coordinates]]
+    ) -> LinkPoseCst:
+        link_poses_np: List[np.ndarray] = []
+        for lp in link_poses:
+            if isinstance(lp, Coordinates):
+                pos = lp.worldpos()
+                mat = lp.worldrot()
+                ypr = rpy_angle(mat)[0]
+                rpy = [ypr[2], ypr[1], ypr[0]]
+                link_poses_np.append(np.hstack([pos, rpy]))
+            else:
+                link_poses_np.append(lp)
+
         return LinkPoseCst(
-            self.get_kin(), self.control_joint_names, self.with_base, link_names, link_poses
+            self.get_kin(), self.control_joint_names, self.with_base, link_names, link_poses_np
         )
 
 
