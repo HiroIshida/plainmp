@@ -34,6 +34,7 @@ void bind_tinyfk(py::module& m) {
   py::class_<_KinematicModel, std::shared_ptr<_KinematicModel>, KinematicModel>(m_tinyfk, "KinematicModel", py::module_local())
       .def(py::init<std::string &>())
       .def("add_new_link", &_KinematicModel::add_new_link_py)
+      .def("get_joint_position_limits", &_KinematicModel::get_joint_position_limits)
       .def("get_link_ids", &_KinematicModel::get_link_ids)
       .def("get_joint_ids", &_KinematicModel::get_joint_ids);
 }
