@@ -60,10 +60,10 @@ SphereCollisionCst::SphereCollisionCst(
     bool with_base,
     const std::vector<SphereAttachentSpec>& sphere_specs,
     const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
-    const std::vector<primitive_sdf::PrimitiveSDFBase::Ptr>& fixed_sdfs)
+    SDFBase::Ptr fixed_sdf)
     : IneqConstraintBase(kin, control_joint_names, with_base),
       sphere_specs_(sphere_specs),
-      fixed_sdfs_(fixed_sdfs) {
+      fixed_sdf_(fixed_sdf) {
   std::vector<std::string> parent_link_names;
   for (const auto& spec : sphere_specs) {
     auto parent_id = kin_->get_link_ids({spec.parent_link_name})[0];
@@ -307,7 +307,7 @@ void bind_collision_constraints(py::module& m) {
                     const std::vector<std::string>&, bool,
                     const std::vector<SphereAttachentSpec>&,
                     const std::vector<std::pair<std::string, std::string>>&,
-                    const std::vector<primitive_sdf::PrimitiveSDFBase::Ptr>&>())
+                    SDFBase::Ptr>())
       .def("set_sdfs", &SphereCollisionCst::set_sdfs)
       .def("update_kintree", &SphereCollisionCst::update_kintree)
       .def("is_valid", &SphereCollisionCst::is_valid)

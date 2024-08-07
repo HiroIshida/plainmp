@@ -16,6 +16,7 @@ from skrobot.coordinates.math import (
 from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
 from skrobot.models.urdf import RobotModelFromURDF
+from skrobot.sdf import UnionSDF
 from skrobot.utils.urdf import URDF, no_mesh_load_mode
 
 from plainmp.constraint import (
@@ -114,15 +115,21 @@ class RobotSpec(ABC):
             if "self_collision_pairs" not in self.conf_dict:
                 raise ValueError("self_collision_pairs is not defined in the yaml file")
             self_collision_pairs = self.conf_dict["self_collision_pairs"]
-            sdfs = [sksdf_to_cppsdf(sk.sdf) for sk in self.self_body_collision_primitives()]
+            sksdf = UnionSDF([p.sdf for p in self.self_body_collision_primitives()])
+            cppsdf = sksdf_to_cppsdf(sksdf, create_bvh=True)
         else:
             self_collision_pairs = []
-            sdfs = []
+            cppsdf = None
         with open(self.urdf_path, "r") as f:
             urdf_str = f.read()
         kin = KinematicModel(urdf_str)
         cst = SphereCollisionCst(
-            kin, self.control_joint_names, self.with_base, sphere_specs, self_collision_pairs, sdfs
+            kin,
+            self.control_joint_names,
+            self.with_base,
+            sphere_specs,
+            self_collision_pairs,
+            cppsdf,
         )
         return cst
 
