@@ -23,7 +23,7 @@ void bind_primitive_sdf(py::module& m) {
                             // This to tell pybind that this is a base class
   py::class_<UnionSDF, UnionSDF::Ptr, SDFBase>(m_psdf, "UnionSDF",
                                                py::module_local())
-      .def(py::init<std::vector<SDFBase::Ptr>>())
+      .def(py::init<std::vector<SDFBase::Ptr>, bool>())
       .def("evaluate_batch", &UnionSDF::evaluate_batch)
       .def("evaluate", &UnionSDF::evaluate);
   py::class_<BoxSDF, BoxSDF::Ptr, PrimitiveSDFBase>(m_psdf, "BoxSDF",

@@ -61,7 +61,7 @@ class OMPLSolver:
         else:
             for _ in range(self.config.n_max_satisfaction_trial):
                 ret = solve_ik(
-                    problem.goal_const, problem.global_ineq_const, problem.lb, problem.ub, None
+                    problem.goal_const, problem.global_ineq_const, problem.lb, problem.ub
                 )
                 if ret.success:
                     return ret

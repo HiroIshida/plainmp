@@ -12,7 +12,7 @@ from plainmp.utils import sksdf_to_cppsdf
 # create table sdf
 table = Box([1.0, 2.0, 0.05], with_sdf=True)
 table.translate([1.0, 0.0, 0.8])
-sdf = sksdf_to_cppsdf(table.sdf)
+sdf = sksdf_to_cppsdf(table.sdf, False)
 
 # create problem
 fs = FetchSpec()
