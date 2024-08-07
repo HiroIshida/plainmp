@@ -41,10 +41,10 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty()
       vals.segment(head, 3) =
           Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z) -
           poses_[i];
-      vals[head + 3] = pose.rotation.x;
-      vals[head + 4] = pose.rotation.y;
-      vals[head + 5] = pose.rotation.z;
-      vals[head + 6] = pose.rotation.w;
+      vals[head + 3] = pose.rotation.x - poses_[i][3];
+      vals[head + 4] = pose.rotation.y - poses_[i][4];
+      vals[head + 5] = pose.rotation.z - poses_[i][5];
+      vals[head + 6] = pose.rotation.w - poses_[i][6];
       jac.block(head, 0, 7, q_dim()) =
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
                              tinyfk::RotationType::XYZW, with_base_);
