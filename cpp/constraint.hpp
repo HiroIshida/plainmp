@@ -7,6 +7,7 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <tinyfk.hpp>
 #include <utility>
 #include "primitive_sdf.hpp"
@@ -136,7 +137,7 @@ class SphereCollisionCst : public IneqConstraintBase {
       bool with_base,
       const std::vector<SphereAttachentSpec>& sphere_specs,
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
-      SDFBase::Ptr fixed_sdf);
+      std::optional<SDFBase::Ptr> fixed_sdf);
 
   void set_sdf(const SDFBase::Ptr& sdf) { sdf_ = sdf; }
 
@@ -155,8 +156,12 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<SDFBase::Ptr> get_all_sdfs() const {
     // TODO: Consider using std::views::concat (but it's C++20)
     std::vector<SDFBase::Ptr> all_sdfs;
-    all_sdfs.push_back(fixed_sdf_);
-    all_sdfs.push_back(sdf_);
+    if (fixed_sdf_ != nullptr) {
+      all_sdfs.push_back(fixed_sdf_);
+    }
+    if (sdf_ != nullptr) {
+      all_sdfs.push_back(sdf_);
+    }
     if (all_sdfs.size() == 0) {
       throw std::runtime_error("(cpp) No SDFs are set");
     }

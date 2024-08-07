@@ -60,10 +60,10 @@ SphereCollisionCst::SphereCollisionCst(
     bool with_base,
     const std::vector<SphereAttachentSpec>& sphere_specs,
     const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
-    SDFBase::Ptr fixed_sdf)
+    std::optional<SDFBase::Ptr> fixed_sdf)
     : IneqConstraintBase(kin, control_joint_names, with_base),
       sphere_specs_(sphere_specs),
-      fixed_sdf_(fixed_sdf) {
+      fixed_sdf_(fixed_sdf == std::nullopt ? nullptr : *fixed_sdf) {
   std::vector<std::string> parent_link_names;
   for (const auto& spec : sphere_specs) {
     auto parent_id = kin_->get_link_ids({spec.parent_link_name})[0];
