@@ -149,7 +149,6 @@ class RobotSpec(ABC):
             else:
                 pose = pos
             pose_list.append(pose)
-        print(pose_list)
         return self.create_pose_const(link_names, pose_list)
 
     def create_pose_const(self, link_names: List[str], link_poses: List[np.ndarray]) -> LinkPoseCst:
