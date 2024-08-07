@@ -18,7 +18,7 @@ sdf = sksdf_to_cppsdf(table.sdf, False)
 fs = FetchSpec()
 eq_cst = fs.create_gripper_pose_const([0.7, +0.2, 0.95, 0, 0, 0])
 ineq_cst = fs.create_collision_const()
-ineq_cst.set_sdfs([sdf])
+ineq_cst.set_sdf(sdf)
 
 lb, ub = fs.angle_bounds()
 ts = time.time()

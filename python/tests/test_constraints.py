@@ -65,7 +65,7 @@ def test_collision_free_constraint(with_base):
     sdf = BoxSDF([1, 1, 1], Pose([0.5, 0.5, 0.5], np.eye(3)))
     for self_collision in [False, True]:
         cst = fs.create_collision_const(self_collision)
-        cst.set_sdfs([sdf])
+        cst.set_sdf(sdf)
         if with_base:
             check_jacobian(cst, 8 + 6, std=0.1)
         else:

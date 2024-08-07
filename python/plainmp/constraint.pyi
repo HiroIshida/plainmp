@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple
 
 import numpy as np
-from fused.psdf import PrimitiveSDFBase
+from fused.psdf import SDFBase
 
 class ConstraintBase:
     def update_kintree(self, q: np.ndarray) -> None: ...
@@ -15,7 +15,7 @@ class IneqConstraintBase(ConstraintBase):
 class LinkPoseCst(EqConstraintBase): ...
 
 class SphereCollisionCst(IneqConstraintBase):
-    def set_sdfs(self, sdfs: Sequence[PrimitiveSDFBase]) -> None: ...
+    def set_sdf(self, sdf: SDFBase) -> None: ...
 
 class ComInPolytopeCst(IneqConstraintBase): ...
 

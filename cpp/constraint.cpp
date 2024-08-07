@@ -308,7 +308,7 @@ void bind_collision_constraints(py::module& m) {
                     const std::vector<SphereAttachentSpec>&,
                     const std::vector<std::pair<std::string, std::string>>&,
                     SDFBase::Ptr>())
-      .def("set_sdfs", &SphereCollisionCst::set_sdfs)
+      .def("set_sdf", &SphereCollisionCst::set_sdf)
       .def("update_kintree", &SphereCollisionCst::update_kintree)
       .def("is_valid", &SphereCollisionCst::is_valid)
       .def("evaluate", &SphereCollisionCst::evaluate);
