@@ -50,10 +50,10 @@ v.add(ground)
 v.show()
 
 time.sleep(1.0)
-for q in ret:
+for q in ret.traj.resample(20):
     set_robot_state(fetch, conf.get_control_joint_names(), q)
     colvis.update(fetch)
     v.redraw()
-    time.sleep(0.3)
+    time.sleep(0.5)
 
 time.sleep(1000)
