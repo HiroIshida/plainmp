@@ -83,9 +83,15 @@ class RobotSpec(ABC):
     def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
         pass
 
-    @abstractmethod
     def angle_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
-        pass
+        kin = self.get_kin()
+        joint_ids = kin.get_joint_ids(self.control_joint_names)
+        limits = kin.get_joint_position_limits(joint_ids)
+        lb = np.array([l[0] for l in limits])
+        ub = np.array([l[1] for l in limits])
+        lb[lb == -np.inf] = -np.pi * 2
+        ub[ub == np.inf] = np.pi * 2
+        return lb, ub
 
     def get_sphere_specs(self) -> List[SphereAttachentSpec]:
         # the below reads the all the sphere specs from the yaml file
@@ -181,17 +187,6 @@ class FetchSpec(RobotSpec):
 
     def create_gripper_pose_const(self, link_pose: np.ndarray) -> LinkPoseCst:
         return self.create_pose_const(["gripper_link"], [link_pose])
-
-    @staticmethod
-    def angle_bounds() -> Tuple[np.ndarray, np.ndarray]:
-        # it takes time to parse the urdf file so we do it here...
-        min_angles = np.array(
-            [0.0, -1.6056, -1.221, -np.pi * 2, -2.251, -np.pi * 2, -2.16, -np.pi * 2]
-        )
-        max_angles = np.array(
-            [0.38615, 1.6056, 1.518, np.pi * 2, 2.251, np.pi * 2, 2.16, np.pi * 2]
-        )
-        return min_angles, max_angles
 
     @staticmethod
     def q_reset_pose() -> np.ndarray:
@@ -308,86 +303,7 @@ class JaxonSpec(RobotSpec):
         return np.array([d[joint] for joint in self.control_joint_names])
 
     def angle_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
-        lb = np.array(
-            [
-                -0.144751,
-                -1.4208,
-                -3.14159,
-                -3.14159,
-                -3.14159,
-                0.2762,
-                -3.14159,
-                -3.14159,
-                -2.19006,
-                -2.19006,
-                -3.14159,
-                -3.14159,
-                -1.5708,
-                -1.54494,
-                -1.41372,
-                -1.41372,
-                -1.02662,
-                -1.0972,
-                -0.725029,
-                -0.523599,
-                -2.11843,
-                -2.11843,
-                0.0,
-                0.0,
-                -1.38564,
-                -1.38564,
-                -1.0472,
-                -1.0472,
-                -0.198551,
-                -0.0349066,
-                -1.0566,
-                -1.0,
-                -1.0,
-                0.0,
-                -1.0,
-                -1.0,
-                -1.0,
-            ]
-        )
-        ub = np.array(
-            [
-                1.4208,
-                0.144751,
-                3.14159,
-                3.14159,
-                -0.2762,
-                3.14159,
-                3.14159,
-                3.14159,
-                1.0472,
-                1.0472,
-                3.14159,
-                3.14159,
-                1.54494,
-                1.5708,
-                1.0472,
-                1.0472,
-                1.0972,
-                1.02662,
-                0.523599,
-                0.725029,
-                0.785398,
-                0.785398,
-                2.77419,
-                2.77419,
-                1.47343,
-                1.47343,
-                1.0472,
-                1.0472,
-                0.198551,
-                0.610865,
-                1.0566,
-                2.0,
-                1.0,
-                3.0,
-                1.0,
-                1.0,
-                1.0,
-            ]
-        )
-        return lb, ub
+        joint_lb, joint_ub = super().angle_bounds()
+        base_lb = np.array([-1.0, -1.0, 0.0, -1.0, -1.0, -1.0])
+        base_ub = np.array([2.0, 1.0, 3.0, 1.0, 1.0, 1.0])
+        return np.hstack([joint_lb, base_lb]), np.hstack([joint_ub, base_ub])
