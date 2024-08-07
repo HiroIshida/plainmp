@@ -2,7 +2,7 @@ import copy
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import yaml
@@ -20,6 +20,7 @@ from skrobot.sdf import UnionSDF
 from skrobot.utils.urdf import URDF, no_mesh_load_mode
 
 from plainmp.constraint import (
+    AppliedForceSpec,
     ComInPolytopeCst,
     LinkPoseCst,
     SphereAttachentSpec,
@@ -287,10 +288,18 @@ class JaxonSpec(RobotSpec):
             [skcoords_to_xyzrpy(rleg), skcoords_to_xyzrpy(lleg)],
         )
 
-    def create_default_com_const(self) -> ComInPolytopeCst:
+    def create_default_com_const(
+        self, total_force_on_arm: Optional[float] = None
+    ) -> ComInPolytopeCst:
         com_box = BoxSDF([0.25, 0.5, 0.0], Pose(np.array([0, 0, 0]), np.eye(3)))
+
+        specs = []
+        if total_force_on_arm is not None:
+            specs.append(AppliedForceSpec("RARM_LINK7", 0.5 * total_force_on_arm))
+            specs.append(AppliedForceSpec("LARM_LINK7", 0.5 * total_force_on_arm))
+
         return ComInPolytopeCst(
-            self.get_kin(), self.control_joint_names, self.with_base, com_box, []
+            self.get_kin(), self.control_joint_names, self.with_base, com_box, specs
         )
 
     @property

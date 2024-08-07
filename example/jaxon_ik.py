@@ -8,11 +8,15 @@ from skrobot.model.primitives import Axis, Box
 from skrobot.viewers import PyrenderViewer
 
 import tinyfk
+from plainmp.constraint import IneqCompositeCst
 from plainmp.ik import solve_ik
 from plainmp.robot_spec import JaxonSpec, RotType
 
 jspec = JaxonSpec()
-com_const = jspec.create_default_com_const()
+com_const = jspec.create_default_com_const(total_force_on_arm=10)
+com_const_no = jspec.create_default_com_const()
+ineq_cst = IneqCompositeCst([com_const, com_const_no])
+
 efnames = ["rleg_end_coords", "lleg_end_coords", "rarm_end_coords", "larm_end_coords"]
 start_coords_list = [
     Coordinates([0.0, -0.2, 0]),
@@ -25,7 +29,7 @@ eq_cst = stand_pose_const = jspec.crate_pose_const_from_coords(
 )
 
 lb, ub = jspec.angle_bounds()
-ret = solve_ik(eq_cst, com_const, lb, ub, q_seed=None, max_trial=100)
+ret = solve_ik(eq_cst, ineq_cst, lb, ub, q_seed=None, max_trial=100)
 print(ret)
 assert ret.success
 

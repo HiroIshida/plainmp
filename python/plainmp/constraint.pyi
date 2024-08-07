@@ -21,7 +21,7 @@ class ComInPolytopeCst(IneqConstraintBase): ...
 
 class AppliedForceSpec:
     link_name: str
-    force: np.ndarray
+    force: float
 
     def __init__(self, link_name: str, force: np.ndarray) -> None: ...
 
