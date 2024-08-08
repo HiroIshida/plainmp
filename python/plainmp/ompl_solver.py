@@ -13,7 +13,7 @@ from plainmp.trajectory import Trajectory
 
 @dataclass
 class OMPLSolverConfig:
-    n_max_call: int = 2000
+    n_max_call: int = 100000
     n_max_satisfaction_trial: int = 100
     algorithm: Algorithm = Algorithm.RRTConnect
     algorithm_range: Optional[float] = None
