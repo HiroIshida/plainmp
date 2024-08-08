@@ -27,6 +27,7 @@ from plainmp.constraint import (
     AppliedForceSpec,
     ComInPolytopeCst,
     LinkPoseCst,
+    RelativePoseCst,
     SphereAttachmentSpec,
     SphereCollisionCst,
 )
@@ -175,6 +176,18 @@ class RobotSpec(ABC):
     def create_pose_const(self, link_names: List[str], link_poses: List[np.ndarray]) -> LinkPoseCst:
         return LinkPoseCst(
             self.get_kin(), self.control_joint_names, self.with_base, link_names, link_poses
+        )
+
+    def create_relative_pose_const(
+        self, link_name1: str, link_name2: str, relative_position: np.ndarray
+    ) -> RelativePoseCst:
+        return RelativePoseCst(
+            self.get_kin(),
+            self.control_joint_names,
+            self.with_base,
+            link_name1,
+            link_name2,
+            relative_position,
         )
 
     def create_attached_box_collision_const(

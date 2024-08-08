@@ -54,6 +54,28 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty()
   return {vals, jac};
 }
 
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty()
+    const {
+  Eigen::VectorXd vals(cst_dim());
+  Eigen::MatrixXd jac(cst_dim(), q_dim());
+  tinyfk::Transform pose_dummy, pose2;
+  kin_->get_link_pose(dummy_link_id_, pose_dummy);
+  kin_->get_link_pose(link_id2_, pose2);
+  vals[0] = pose_dummy.position.x - pose2.position.x;
+  vals[1] = pose_dummy.position.y - pose2.position.y;
+  vals[2] = pose_dummy.position.z - pose2.position.z;
+  vals[3] = pose_dummy.rotation.x - pose2.rotation.x;
+  vals[4] = pose_dummy.rotation.y - pose2.rotation.y;
+  vals[5] = pose_dummy.rotation.z - pose2.rotation.z;
+  vals[6] = pose_dummy.rotation.w - pose2.rotation.w;
+
+  jac = kin_->get_jacobian(dummy_link_id_, control_joint_ids_,
+                           tinyfk::RotationType::XYZW, with_base_) -
+        kin_->get_jacobian(link_id2_, control_joint_ids_,
+                           tinyfk::RotationType::XYZW, with_base_);
+  return {vals, jac};
+}
+
 SphereCollisionCst::SphereCollisionCst(
     std::shared_ptr<tinyfk::KinematicModel> kin,
     const std::vector<std::string>& control_joint_names,
@@ -124,6 +146,7 @@ bool SphereCollisionCst::is_valid_dirty() const {
   }
   return true;
 }
+
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
     const {
   auto all_sdfs = get_all_sdfs();
@@ -296,6 +319,13 @@ void bind_collision_constraints(py::module& m) {
       .def("update_kintree", &LinkPoseCst::update_kintree)
       .def("evaluate", &LinkPoseCst::evaluate)
       .def("cst_dim", &LinkPoseCst::cst_dim);
+  py::class_<RelativePoseCst, RelativePoseCst::Ptr, EqConstraintBase>(
+      cst_m, "RelativePoseCst")
+      .def(py::init<std::shared_ptr<tinyfk::KinematicModel>,
+                    const std::vector<std::string>&, bool, const std::string&,
+                    const std::string&, const Eigen::Vector3d&>())
+      .def("update_kintree", &RelativePoseCst::update_kintree)
+      .def("evaluate", &RelativePoseCst::evaluate);
   py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
       .def(py::init<const std::string&, const std::string&,
                     const Eigen::Vector3d&, double, bool>())

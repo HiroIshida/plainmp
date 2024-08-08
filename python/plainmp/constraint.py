@@ -7,6 +7,7 @@ from ._plainmp.constraint import (  # noqa
     IneqCompositeCst,
     IneqConstraintBase,
     LinkPoseCst,
+    RelativePoseCst,
     SphereAttachmentSpec,
     SphereCollisionCst,
 )

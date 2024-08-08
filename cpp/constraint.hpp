@@ -121,6 +121,38 @@ class LinkPoseCst : public EqConstraintBase {
   std::vector<Eigen::VectorXd> poses_;
 };
 
+class RelativePoseCst : public EqConstraintBase {
+ public:
+  using Ptr = std::shared_ptr<RelativePoseCst>;
+  RelativePoseCst(std::shared_ptr<tinyfk::KinematicModel> kin,
+                  const std::vector<std::string>& control_joint_names,
+                  bool with_base,
+                  const std::string& link_name1,
+                  const std::string& link_name2,
+                  const Eigen::Vector3d& relative_pose)
+      : EqConstraintBase(kin, control_joint_names, with_base),
+        link_id2_(kin_->get_link_ids({link_name2})[0]),
+        relative_pose_(relative_pose) {
+    // TODO: because name is hard-coded, we cannot create two RelativePoseCst...
+    auto dummy_link_name = link_name1 + "-relative-" + link_name2;
+    tinyfk::Transform pose;
+    pose.position.x = relative_pose[0];
+    pose.position.y = relative_pose[1];
+    pose.position.z = relative_pose[2];
+    size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
+    auto new_link = kin_->add_new_link(dummy_link_name, link_id1_, pose);
+    dummy_link_id_ = new_link->id;
+  }
+
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
+  size_t cst_dim() const { return 7; }
+
+ private:
+  size_t link_id2_;
+  size_t dummy_link_id_;
+  Eigen::Vector3d relative_pose_;
+};
+
 struct SphereAttachmentSpec {
   std::string name;
   std::string parent_link_name;

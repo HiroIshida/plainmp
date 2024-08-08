@@ -60,6 +60,16 @@ def test_link_pose_constraint_multi_link(with_base):
 
 
 @pytest.mark.parametrize("with_base", [False, True])
+def test_relative_pose_constraint(with_base):
+    fs = FetchSpec(with_base=with_base)
+    cst = fs.create_relative_pose_const("head_pan_link", "gripper_link", np.ones(3))
+    if with_base:
+        check_jacobian(cst, 8 + 6, std=0.1)
+    else:
+        check_jacobian(cst, 8)
+
+
+@pytest.mark.parametrize("with_base", [False, True])
 def test_collision_free_constraint(with_base):
     sdf = BoxSDF([1, 1, 1], Pose([0.5, 0.5, 0.5], np.eye(3)))
     for self_collision in [False, True]:
