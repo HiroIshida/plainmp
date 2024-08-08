@@ -61,9 +61,9 @@ def test_link_pose_constraint_multi_link(with_base):
 
 @pytest.mark.parametrize("with_base", [False, True])
 def test_collision_free_constraint(with_base):
-    fs = FetchSpec(with_base=with_base)
     sdf = BoxSDF([1, 1, 1], Pose([0.5, 0.5, 0.5], np.eye(3)))
     for self_collision in [False, True]:
+        fs = FetchSpec(with_base=with_base)
         cst = fs.create_collision_const(self_collision)
         cst.set_sdf(sdf)
         if with_base:

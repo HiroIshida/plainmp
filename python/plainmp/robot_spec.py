@@ -1,5 +1,7 @@
 import copy
+import uuid
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union
@@ -31,7 +33,8 @@ from plainmp.tinyfk import KinematicModel
 from plainmp.utils import sksdf_to_cppsdf
 
 _loaded_urdf_models: Dict[str, URDF] = {}
-_loaded_kin: Dict[str, KinematicModel] = {}
+N_MAX_CACHE = 200
+_loaded_kin: "OrderedDict[str, KinematicModel]" = OrderedDict()
 
 
 def load_urdf_model_using_cache(file_path: Path, deepcopy: bool = True):
@@ -59,14 +62,21 @@ class RobotSpec(ABC):
         with open(conf_file, "r") as f:
             self.conf_dict = yaml.safe_load(f)
         self.with_base = with_base
+        self.uuid = str(uuid.uuid4())
 
     def get_kin(self) -> KinematicModel:
-        if str(self.urdf_path) not in _loaded_kin:
+        # The kinematic chain is shared among the same robot spec.
+        # This sharing mechanism is important to instantiate an composite
+        # constraint, albeit its usage complexity.
+        self_id = self.uuid
+        if self_id not in _loaded_kin:
             with open(self.urdf_path, "r") as f:
                 urdf_str = f.read()
             kin = KinematicModel(urdf_str)
-            _loaded_kin[str(self.urdf_path)] = kin
-        return _loaded_kin[str(self.urdf_path)]
+            if len(_loaded_kin) > (N_MAX_CACHE - 1):
+                _loaded_kin.popitem(last=False)
+            _loaded_kin[self_id] = kin
+        return _loaded_kin[self_id]
 
     @abstractmethod
     def get_robot_model(self) -> RobotModel:
