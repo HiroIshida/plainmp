@@ -112,9 +112,13 @@ class RobotSpec(ABC):
 
     def create_collision_const(self, self_collision: bool = True) -> SphereCollisionCst:
         sphere_specs = self.get_sphere_specs()
+
+        if ("self_collision_pairs" not in self.conf_dict) and len(
+            self.self_body_collision_primitives()
+        ) == 0:
+            self_collision = False
+
         if self_collision:
-            if "self_collision_pairs" not in self.conf_dict:
-                raise ValueError("self_collision_pairs is not defined in the yaml file")
             self_collision_pairs = self.conf_dict["self_collision_pairs"]
             sksdf = UnionSDF([p.sdf for p in self.self_body_collision_primitives()])
             cppsdf = sksdf_to_cppsdf(sksdf, create_bvh=True)
@@ -122,8 +126,8 @@ class RobotSpec(ABC):
             self_collision_pairs = []
             cppsdf = None
         with open(self.urdf_path, "r") as f:
-            urdf_str = f.read()
-        kin = KinematicModel(urdf_str)
+            f.read()
+        kin = self.get_kin()
         cst = SphereCollisionCst(
             kin,
             self.control_joint_names,
@@ -207,9 +211,12 @@ class FetchSpec(RobotSpec):
 
 
 class JaxonSpec(RobotSpec):
-    def __init__(self):
+    gripper_collision: bool
+
+    def __init__(self, gripper_collision: bool = True):
         p = Path(__file__).parent / "conf" / "jaxon.yaml"
         super().__init__(p, with_base=True)  # jaxon is free-floating, so with_base=True
+        self.gripper_collision = gripper_collision
 
     def get_kin(self):
         kin = super().get_kin()
@@ -260,8 +267,22 @@ class JaxonSpec(RobotSpec):
         # because legs are on the ground, we don't need to consider the spheres on the legs
         specs = super().get_sphere_specs()
         filtered = []
+
+        ignore_list = ["RLEG_LINK5", "LLEG_LINK5"]
+        if not self.gripper_collision:
+            ignore_list.extend(
+                [
+                    "RARM_FINGER0",
+                    "RARM_FINGER1",
+                    "RARM_LINK7",
+                    "LARM_FINGER0",
+                    "LARM_FINGER1",
+                    "LARM_LINK7",
+                ]
+            )
+
         for spec in specs:
-            if spec.parent_link_name in ("RLEG_LINK5", "LLEG_LINK5"):
+            if spec.parent_link_name in ignore_list:
                 continue
             filtered.append(spec)
         return filtered
