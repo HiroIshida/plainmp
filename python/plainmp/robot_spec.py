@@ -1,8 +1,10 @@
 import copy
+import pickle
 import uuid
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from enum import Enum
+from hashlib import sha256
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
@@ -25,7 +27,7 @@ from plainmp.constraint import (
     AppliedForceSpec,
     ComInPolytopeCst,
     LinkPoseCst,
-    SphereAttachentSpec,
+    SphereAttachmentSpec,
     SphereCollisionCst,
 )
 from plainmp.psdf import BoxSDF, Pose
@@ -105,19 +107,23 @@ class RobotSpec(ABC):
         ub[ub == np.inf] = np.pi * 2
         return lb, ub
 
-    def get_sphere_specs(self) -> List[SphereAttachentSpec]:
+    def get_sphere_specs(self) -> List[SphereAttachmentSpec]:
         # the below reads the all the sphere specs from the yaml file
         # but if you want to use the sphere specs for the specific links
         # you can override this method
         d = self.conf_dict["collision_spheres"]
         sphere_specs = []
-        for link_name, vals in d.items():
+        for parent_link_name, vals in d.items():
             ignore_collision = vals["ignore_collision"]
             spheres_d = vals["spheres"]
             for spec in spheres_d:
                 vals = np.array(spec)
                 center, r = vals[:3], vals[3]
-                sphere_specs.append(SphereAttachentSpec(link_name, center, r, ignore_collision))
+                pickled = pickle.dumps([parent_link_name, center, r, ignore_collision])
+                name = parent_link_name + "-" + sha256(pickled).hexdigest()
+                sphere_specs.append(
+                    SphereAttachmentSpec(name, parent_link_name, center, r, ignore_collision)
+                )
         return sphere_specs
 
     def create_collision_const(self, self_collision: bool = True) -> SphereCollisionCst:
@@ -273,7 +279,7 @@ class JaxonSpec(RobotSpec):
     def control_joint_names(self) -> List[str]:
         return self.conf_dict["control_joint_names"]
 
-    def get_sphere_specs(self) -> List[SphereAttachentSpec]:
+    def get_sphere_specs(self) -> List[SphereAttachmentSpec]:
         # because legs are on the ground, we don't need to consider the spheres on the legs
         specs = super().get_sphere_specs()
         filtered = []

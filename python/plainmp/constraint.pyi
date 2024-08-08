@@ -14,6 +14,13 @@ class IneqConstraintBase(ConstraintBase):
 
 class LinkPoseCst(EqConstraintBase): ...
 
+class SphereAttachmentSpec:
+    name: str
+    parent_link_name: str
+    relative_position: np.ndarray
+    radius: float
+    ignore_collision: bool
+
 class SphereCollisionCst(IneqConstraintBase):
     def set_sdf(self, sdf: SDFBase) -> None: ...
 

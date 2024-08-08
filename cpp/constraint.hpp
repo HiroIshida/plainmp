@@ -121,7 +121,8 @@ class LinkPoseCst : public EqConstraintBase {
   std::vector<Eigen::VectorXd> poses_;
 };
 
-struct SphereAttachentSpec {
+struct SphereAttachmentSpec {
+  std::string name;
   std::string parent_link_name;
   Eigen::Vector3d relative_position;
   double radius;
@@ -135,7 +136,7 @@ class SphereCollisionCst : public IneqConstraintBase {
       std::shared_ptr<tinyfk::KinematicModel> kin,
       const std::vector<std::string>& control_joint_names,
       bool with_base,
-      const std::vector<SphereAttachentSpec>& sphere_specs,
+      const std::vector<SphereAttachmentSpec>& sphere_specs,
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
       std::optional<SDFBase::Ptr> fixed_sdf);
 
@@ -169,7 +170,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   }
 
   std::vector<size_t> sphere_ids_;
-  std::vector<SphereAttachentSpec> sphere_specs_;
+  std::vector<SphereAttachmentSpec> sphere_specs_;
   std::vector<std::pair<size_t, size_t>> selcol_pairs_ids_;
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user

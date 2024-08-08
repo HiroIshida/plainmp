@@ -58,7 +58,7 @@ SphereCollisionCst::SphereCollisionCst(
     std::shared_ptr<tinyfk::KinematicModel> kin,
     const std::vector<std::string>& control_joint_names,
     bool with_base,
-    const std::vector<SphereAttachentSpec>& sphere_specs,
+    const std::vector<SphereAttachmentSpec>& sphere_specs,
     const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
     std::optional<SDFBase::Ptr> fixed_sdf)
     : IneqConstraintBase(kin, control_joint_names, with_base),
@@ -67,12 +67,11 @@ SphereCollisionCst::SphereCollisionCst(
   std::vector<std::string> parent_link_names;
   for (const auto& spec : sphere_specs) {
     auto parent_id = kin_->get_link_ids({spec.parent_link_name})[0];
-    auto name = "sphere" + std::to_string(sphere_ids_.size());
-    kin_->add_new_link(name, parent_id,
+    kin_->add_new_link(spec.name, parent_id,
                        {spec.relative_position.x(), spec.relative_position.y(),
                         spec.relative_position.z()},
                        {0.0, 0.0, 0.0});
-    sphere_ids_.push_back(kin_->get_link_ids({name})[0]);
+    sphere_ids_.push_back(kin_->get_link_ids({spec.name})[0]);
     parent_link_names.push_back(spec.parent_link_name);
   }
   std::vector<std::pair<size_t, size_t>> selcol_pairs_ids;
@@ -297,15 +296,17 @@ void bind_collision_constraints(py::module& m) {
       .def("update_kintree", &LinkPoseCst::update_kintree)
       .def("evaluate", &LinkPoseCst::evaluate)
       .def("cst_dim", &LinkPoseCst::cst_dim);
-  py::class_<SphereAttachentSpec>(cst_m, "SphereAttachentSpec")
-      .def(py::init<const std::string&, const Eigen::Vector3d&, double, bool>())
-      .def_readonly("parent_link_name", &SphereAttachentSpec::parent_link_name);
+  py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
+      .def(py::init<const std::string&, const std::string&,
+                    const Eigen::Vector3d&, double, bool>())
+      .def_readonly("parent_link_name",
+                    &SphereAttachmentSpec::parent_link_name);
 
   py::class_<SphereCollisionCst, SphereCollisionCst::Ptr, IneqConstraintBase>(
       cst_m, "SphereCollisionCst")
       .def(py::init<std::shared_ptr<tinyfk::KinematicModel>,
                     const std::vector<std::string>&, bool,
-                    const std::vector<SphereAttachentSpec>&,
+                    const std::vector<SphereAttachmentSpec>&,
                     const std::vector<std::pair<std::string, std::string>>&,
                     std::optional<SDFBase::Ptr>>())
       .def("set_sdf", &SphereCollisionCst::set_sdf)
