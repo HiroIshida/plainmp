@@ -11,6 +11,7 @@ import tinyfk
 from plainmp.constraint import EqCompositeCst, IneqCompositeCst
 from plainmp.ik import solve_ik
 from plainmp.manifold_rrt.manifold_rrt_solver import ManiRRTConfig, ManiRRTConnectSolver
+from plainmp.parallel import ParallelSolver
 from plainmp.problem import Problem
 from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import JaxonSpec, RotType
@@ -88,8 +89,10 @@ ineq_cst = IneqCompositeCst([com_const, coll_cst, box_coll_cst])
 
 problem = Problem(ret1.q, lb, ub, ret2.q, ineq_cst, eq_global_cst, np.array([0.1] * 37))
 solver = ManiRRTConnectSolver(ManiRRTConfig(10000))
+psolver = ParallelSolver(solver, 8)
+
 ts = time.time()
-result = solver.solve(problem)
+result = psolver.solve(problem)
 print("Time: ", time.time() - ts)
 print(result)
 
