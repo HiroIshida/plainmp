@@ -177,6 +177,38 @@ class RobotSpec(ABC):
             self.get_kin(), self.control_joint_names, self.with_base, link_names, link_poses
         )
 
+    def create_attached_box_collision_const(
+        self, box: Box, parent_link_name: str, relative_position: np.ndarray, n_grid: int = 6
+    ) -> SphereCollisionCst:
+        extent = box._extents
+        grid = np.meshgrid(
+            np.linspace(-0.5 * extent[0], 0.5 * extent[0], n_grid),
+            np.linspace(-0.5 * extent[1], 0.5 * extent[1], n_grid),
+            np.linspace(-0.5 * extent[2], 0.5 * extent[2], n_grid),
+        )
+        grid_points = np.stack([g.flatten() for g in grid], axis=1)
+        grid_points = box.transform_vector(grid_points)
+        grid_points = grid_points[box.sdf(grid_points) > -1e-2]
+
+        points_from_center = grid_points - box.worldpos()
+        points_from_link = points_from_center + relative_position
+        specs = []
+        for point in points_from_link:
+            pickled = pickle.dumps([parent_link_name, point, 0.0, False])
+            name = parent_link_name + "-" + sha256(pickled).hexdigest()[:10]
+            spec = SphereAttachmentSpec(name, parent_link_name, point, 0.0, False)
+            specs.append(spec)
+
+        cst = SphereCollisionCst(
+            self.get_kin(),
+            self.control_joint_names,
+            self.with_base,
+            specs,
+            [],
+            None,
+        )
+        return cst
+
 
 class FetchSpec(RobotSpec):
     def __init__(self, with_base: bool = False):
