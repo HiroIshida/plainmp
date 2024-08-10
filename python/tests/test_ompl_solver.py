@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from skrobot.model.primitives import Box
 
-from plainmp.ompl_solver import OMPLSolver
+from plainmp.ompl_solver import OMPLSolver, OMPLSolverConfig
 from plainmp.problem import Problem
 from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import FetchSpec
@@ -27,9 +27,20 @@ def test_ompl_solver(goal_is_pose: bool):
         goal_cst = np.array([0.386, 0.20565, 1.41370, 0.30791, -1.82230, 0.24521, 0.41718, 6.01064])
     msbox = np.array([0.05, 0.05, 0.05, 0.1, 0.1, 0.1, 0.2, 0.2])
     problem = Problem(start, lb, ub, goal_cst, cst, None, msbox)
-    solver = OMPLSolver()
-    ret = solver.solve(problem)
-    assert ret.traj is not None
 
-    for q in ret.traj.numpy():
-        assert cst.is_valid(q)
+    for _ in range(20):
+        solver = OMPLSolver()
+        ret = solver.solve(problem)
+        assert ret.traj is not None
+
+        for q in ret.traj.numpy():
+            assert cst.is_valid(q)
+
+        # using the previous planning result, re-plan
+        conf = OMPLSolverConfig(n_max_ik_trial=1)
+        solver = OMPLSolver(conf)
+        ret_replan = solver.solve(problem, guess=ret.traj)
+        for q in ret_replan.traj.numpy():
+            assert cst.is_valid(q)
+        assert ret_replan.n_call < ret.n_call  # re-planning should be faster
+        print(f"n_call: {ret.n_call} -> {ret_replan.n_call}")
