@@ -14,7 +14,7 @@ from plainmp.trajectory import Trajectory
 @dataclass
 class OMPLSolverConfig:
     n_max_call: int = 100000
-    n_max_satisfaction_trial: int = 100
+    n_max_ik_trial: int = 100
     algorithm: Algorithm = Algorithm.RRTConnect
     algorithm_range: Optional[float] = None
     simplify: bool = False
@@ -51,15 +51,21 @@ class OMPLSolver:
 
     def solve_ik(self, problem: Problem, guess: Optional[Trajectory] = None) -> IKResult:
         if guess is not None:
-            assert self.config.n_max_satisfaction_trial == 1, "not supported"
+            assert (
+                self.config.n_max_ik_trial == 1
+            ), "not supported. please configure n_max_ik_trial=1"
             # If guess is provided, use the last element of the trajectory as the initial guess
             q_guess = guess.numpy()[-1]
             ret = solve_ik(
-                problem.goal_const, problem.global_ineq_const, problem.lb, problem.ub, q_guess
+                problem.goal_const,
+                problem.global_ineq_const,
+                problem.lb,
+                problem.ub,
+                q_seed=q_guess,
             )
             return ret
         else:
-            for _ in range(self.config.n_max_satisfaction_trial):
+            for _ in range(self.config.n_max_ik_trial):
                 ret = solve_ik(
                     problem.goal_const, problem.global_ineq_const, problem.lb, problem.ub
                 )
