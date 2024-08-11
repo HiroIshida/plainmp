@@ -2,8 +2,14 @@ import copy
 
 import numpy as np
 import pytest
+from scipy.sparse import csc_matrix
 
-from plainmp.constraint import AppliedForceSpec, ComInPolytopeCst, EqCompositeCst
+from plainmp.constraint import (
+    AppliedForceSpec,
+    ComInPolytopeCst,
+    EqCompositeCst,
+    SequentialCst,
+)
 from plainmp.psdf import BoxSDF, Pose
 from plainmp.robot_spec import FetchSpec
 
@@ -27,6 +33,8 @@ def check_jacobian(const, dim: int, eps: float = 1e-7, decimal: int = 4, std: fl
     for _ in range(10):
         q_test = np.random.randn(dim) * std
         _, jac_anal = const.evaluate(q_test)
+        if isinstance(jac_anal, csc_matrix):
+            jac_anal = jac_anal.todense()
         jac_numel = jac_numerical(const, q_test, eps)
         np.testing.assert_almost_equal(jac_anal, jac_numel, decimal=decimal)
 
@@ -108,5 +116,21 @@ def test_eq_composite_constraint():
     check_jacobian(cst, 8)
 
 
+def test_sequntial_constraint():
+    fs = FetchSpec()
+    cst1 = fs.create_gripper_pose_const([0.7, 0.0, 0.7])
+    cst2 = fs.create_pose_const(
+        ["gripper_link", "wrist_roll_link", "torso_lift_link"],
+        [[0.7, 0.0, 0.7], [0.7, 0.0, 0.7, 0.0, 0.0, 0.0], [0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]],
+    )
+    T = 4
+    cst = SequentialCst(T)
+    cst.add_globally(cst1)
+    cst.add_at(cst2, 0)
+    cst.add_at(cst2, 2)
+    cst.determine_sparsity_pattern()
+    check_jacobian(cst, 8 * T)
+
+
 if __name__ == "__main__":
-    test_eq_composite_constraint()
+    test_sequntial_constraint()

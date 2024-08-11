@@ -2,6 +2,7 @@ from typing import Sequence, Tuple
 
 import numpy as np
 from fused.psdf import SDFBase
+from scipy.sparse import csc_matrix
 
 class ConstraintBase:
     def update_kintree(self, q: np.ndarray) -> None: ...
@@ -40,3 +41,20 @@ class EqCompositeCst(EqConstraintBase):
 # NOTE: actually IneqCompositeCst is not a subclass of IneqConstraintBase but has same interface
 class IneqCompositeCst(IneqConstraintBase):
     def __init___(self, csts: Sequence[IneqConstraintBase]) -> None: ...
+
+class SequentialCst:
+    """A class to handle sequential constraints
+    This class is intended to be used for optimization (or NLP) based motion planning
+    where jacobian wrt trajectory value is needed
+    """
+
+    def __init__(self, T: int) -> None: ...
+    def add_globally(self, cst: ConstraintBase) -> None:
+        """Add a constraint to be evaluated globally t \in {0 .. T-1}"""
+    def add_at(self, cst: ConstraintBase, t: int) -> None:
+        """Add a constraint to be evaluated at time t"""
+    def evaluate(self, x: np.ndarray) -> Tuple[np.ndarray, csc_matrix]: ...
+    def x_dim(self) -> int: ...
+    def c_dim(self) -> int: ...
+    def determine_sparsity_pattern(self) -> None:
+        """must be called before evaluate"""

@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include "composite_constraint.hpp"
 #include "primitive_sdf.hpp"
+#include "sequential_constraint.hpp"
 #include "tinyfk.hpp"
 
 namespace cst {
@@ -367,6 +368,17 @@ void bind_collision_constraints(py::module& m) {
       .def("update_kintree", &IneqCompositeCst::update_kintree)
       .def("evaluate", &IneqCompositeCst::evaluate)
       .def("is_valid", &IneqCompositeCst::is_valid);
+
+  py::class_<SequentialCst, SequentialCst::Ptr>(cst_m, "SequentialCst")
+      .def(py::init<size_t>())
+      .def("add_globally", &SequentialCst::add_globally)
+      .def("add_at", &SequentialCst::add_at)
+      .def("determine_sparsity_pattern",
+           &SequentialCst::determine_sparsity_pattern)
+      .def("evaluate", &SequentialCst::evaluate)
+      .def("x_dim", &SequentialCst::x_dim)
+      .def("q_dim", &SequentialCst::q_dim)
+      .def("cst_dim", &SequentialCst::cst_dim);
 }
 
 }  // namespace cst
