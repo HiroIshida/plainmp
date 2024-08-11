@@ -128,9 +128,34 @@ def test_sequntial_constraint():
     cst.add_globally(cst1)
     cst.add_at(cst2, 0)
     cst.add_at(cst2, 2)
+
+    # msbox is ineq constraint so it is quite strange to mix with eq constraint
+    # but only for testing purpose
+    msbox = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    cst.add_motion_step_box_constraint(msbox)
     cst.determine_sparsity_pattern()
     check_jacobian(cst, 8 * T)
 
+    # check motion step box constraint
+    # ok case
+    q1 = np.zeros(8)
+    q2 = q1 + msbox * 0.5
+    q3 = q2 + msbox * 0.5
+    q4 = q3 + msbox * 0.5
+    x = np.concatenate([q1, q2, q3, q4])
+    values = cst.evaluate(x)[0]
+    values_here = values[-8 * 2 * (T - 1) :]
+    assert np.all(values_here >= 0)
 
-if __name__ == "__main__":
-    test_sequntial_constraint()
+    # ng case
+    q1 = np.zeros(8)
+    q2 = q1 + msbox * 1.1
+    q3 = q2 + msbox * 1.1
+    q4 = q3 + msbox * 1.1
+    x = np.concatenate([q1, q2, q3, q4])
+    values = cst.evaluate(x)[0]
+    values_here = values[-8 * 2 * (T - 1) :]
+    # half of the values should be negative
+    assert np.sum(values_here < 0) == 8 * (T - 1)
+    # half of the values should be positive
+    assert np.sum(values_here > 0) == 8 * (T - 1)

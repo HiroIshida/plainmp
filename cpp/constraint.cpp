@@ -373,6 +373,8 @@ void bind_collision_constraints(py::module& m) {
       .def(py::init<size_t>())
       .def("add_globally", &SequentialCst::add_globally)
       .def("add_at", &SequentialCst::add_at)
+      .def("add_motion_step_box_constraint",
+           &SequentialCst::add_motion_step_box_constraint)
       .def("determine_sparsity_pattern",
            &SequentialCst::determine_sparsity_pattern)
       .def("evaluate", &SequentialCst::evaluate)

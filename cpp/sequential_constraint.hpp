@@ -1,4 +1,5 @@
 #include <Eigen/Sparse>
+#include <optional>
 #include "constraint.hpp"
 
 namespace cst {
@@ -13,12 +14,13 @@ class SequentialCst {
         cst_dim_(0),
         constraints_seq_(T),
         sparsity_pattern_determined_(false),
-        jac_() {}
-
+        jac_(),
+        msbox_width_(std::nullopt) {}
   void add_globally(const ConstraintBase::Ptr& constraint);
   void add_at(const ConstraintBase::Ptr& constraint, size_t t);
+  void add_motion_step_box_constraint(const Eigen::VectorXd& box_width);
   void determine_sparsity_pattern();
-  std::pair<Eigen::VectorXd, SMatrix> evaluate(const std::vector<double>& x);
+  std::pair<Eigen::VectorXd, SMatrix> evaluate(const Eigen::VectorXd& x);
   inline size_t x_dim() const { return q_dim() * T_; }
   inline size_t q_dim() const { return constraints_seq_[0][0]->q_dim(); }
   inline size_t cst_dim() const { return cst_dim_; }
@@ -29,6 +31,7 @@ class SequentialCst {
   std::vector<std::vector<ConstraintBase::Ptr>> constraints_seq_;
   bool sparsity_pattern_determined_;
   SMatrix jac_;
+  std::optional<Eigen::VectorXd> msbox_width_;
 };
 
 }  // namespace cst
