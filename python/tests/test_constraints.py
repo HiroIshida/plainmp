@@ -147,7 +147,7 @@ def test_sequntial_constraint():
     # but only for testing purpose
     msbox = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
     cst.add_motion_step_box_constraint(msbox)
-    cst.determine_sparsity_pattern()
+    cst.finalize()
     check_jacobian(cst, 8 * T)
 
     # check motion step box constraint
