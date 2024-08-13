@@ -1,8 +1,6 @@
 #ifndef CONSTRAINT_HPP
 #define CONSTRAINT_HPP
 
-#include <pybind11/eigen.h>
-#include <pybind11/pybind11.h>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <algorithm>
@@ -14,7 +12,6 @@
 
 namespace cst {
 
-namespace py = pybind11;
 using namespace primitive_sdf;
 
 class ConstraintBase {
@@ -242,8 +239,6 @@ class ComInPolytopeCst : public IneqConstraintBase {
   std::vector<size_t> force_link_ids_;
   std::vector<double> applied_force_values_;
 };
-
-void bind_collision_constraints(py::module& m);
 
 };  // namespace cst
 #endif
