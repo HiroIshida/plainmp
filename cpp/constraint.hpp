@@ -192,6 +192,22 @@ class RelativePoseCst : public EqConstraintBase {
   Eigen::Vector3d relative_pose_;
 };
 
+class FixedZAxisCst : public EqConstraintBase {
+ public:
+  using Ptr = std::shared_ptr<FixedZAxisCst>;
+  FixedZAxisCst(std::shared_ptr<tinyfk::KinematicModel> kin,
+                const std::vector<std::string>& control_joint_names,
+                bool with_base,
+                const std::string& link_name);
+
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
+  size_t cst_dim() const override { return 2; }
+
+ private:
+  size_t link_id_;
+  std::vector<size_t> aux_link_ids_;
+};
+
 struct SphereAttachmentSpec {
   std::string name;
   std::string parent_link_name;

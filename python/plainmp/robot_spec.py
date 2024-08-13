@@ -27,6 +27,7 @@ from plainmp.constraint import (
     AppliedForceSpec,
     ComInPolytopeCst,
     ConfigPointCst,
+    FixedZAxisCst,
     LinkPoseCst,
     RelativePoseCst,
     SphereAttachmentSpec,
@@ -130,6 +131,9 @@ class RobotSpec(ABC):
                     SphereAttachmentSpec(name, parent_link_name, center, r, ignore_collision)
                 )
         return sphere_specs
+
+    def create_fixed_zaxis_const(self, link_name: str) -> FixedZAxisCst:
+        return FixedZAxisCst(self.get_kin(), self.control_joint_names, self.with_base, link_name)
 
     def create_collision_const(self, self_collision: bool = True) -> SphereCollisionCst:
         sphere_specs = self.get_sphere_specs()

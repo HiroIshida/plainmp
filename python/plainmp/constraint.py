@@ -5,6 +5,7 @@ from ._plainmp.constraint import (  # noqa
     ConstraintBase,
     EqCompositeCst,
     EqConstraintBase,
+    FixedZAxisCst,
     IneqCompositeCst,
     IneqConstraintBase,
     LinkPoseCst,

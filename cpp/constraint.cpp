@@ -73,6 +73,56 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty()
   return {vals, jac};
 }
 
+FixedZAxisCst::FixedZAxisCst(
+    std::shared_ptr<tinyfk::KinematicModel> kin,
+    const std::vector<std::string>& control_joint_names,
+    bool with_base,
+    const std::string& link_name)
+    : EqConstraintBase(kin, control_joint_names, with_base),
+      link_id_(kin_->get_link_ids({link_name})[0]) {
+  auto new_link_name1 = link_name + "-x-plus1";
+  {
+    tinyfk::Transform pose;
+    pose.position.x = 1;
+    kin_->add_new_link(new_link_name1, link_id_, pose);
+  }
+
+  auto new_link_name2 = link_name + "-y-plus1";
+  {
+    tinyfk::Transform pose;
+    pose.position.y = 1;
+    kin_->add_new_link(new_link_name2, link_id_, pose);
+  }
+  aux_link_ids_ = kin_->get_link_ids({new_link_name1, new_link_name2});
+}
+
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty()
+    const {
+  tinyfk::Transform pose_here, pose_plus1_x, pose_plus1_y;
+  kin_->get_link_pose(link_id_, pose_here);
+  kin_->get_link_pose(aux_link_ids_[0], pose_plus1_x);
+  kin_->get_link_pose(aux_link_ids_[1], pose_plus1_y);
+  Eigen::VectorXd vals(2);
+  double diff_plus1_x_z = pose_plus1_x.position.z - pose_here.position.z;
+  double diff_plus1_y_z = pose_plus1_y.position.z - pose_here.position.z;
+  vals << diff_plus1_x_z, diff_plus1_y_z;
+
+  // jacobian
+  Eigen::MatrixXd jac_here(3, q_dim());
+  Eigen::MatrixXd jac_plus1_x(3, q_dim());
+  Eigen::MatrixXd jac_plus1_y(3, q_dim());
+  jac_here = kin_->get_jacobian(link_id_, control_joint_ids_,
+                                tinyfk::RotationType::IGNORE, with_base_);
+  jac_plus1_x = kin_->get_jacobian(aux_link_ids_[0], control_joint_ids_,
+                                   tinyfk::RotationType::IGNORE, with_base_);
+  jac_plus1_y = kin_->get_jacobian(aux_link_ids_[1], control_joint_ids_,
+                                   tinyfk::RotationType::IGNORE, with_base_);
+  Eigen::MatrixXd jac(2, q_dim());
+  jac.row(0) = jac_plus1_x.row(2) - jac_here.row(2);
+  jac.row(1) = jac_plus1_y.row(2) - jac_here.row(2);
+  return {vals, jac};
+};
+
 SphereCollisionCst::SphereCollisionCst(
     std::shared_ptr<tinyfk::KinematicModel> kin,
     const std::vector<std::string>& control_joint_names,
