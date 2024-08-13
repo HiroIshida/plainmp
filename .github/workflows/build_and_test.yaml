@@ -37,7 +37,6 @@ jobs:
             - name: Test
               run: |
                 pip install pytest
-                python3 -c "from skrobot.models.fetch import Fetch; Fetch()"  # create cache
                 pytest python
 
             - name: Run examples
