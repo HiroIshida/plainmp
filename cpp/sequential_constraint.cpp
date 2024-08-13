@@ -18,6 +18,9 @@ void SequentialCst::add_at(const ConstraintBase::Ptr& constraint, size_t t) {
 }
 
 void SequentialCst::add_fixed_point_at(const Eigen::VectorXd& q, size_t t) {
+  if (t >= T_) {
+    throw std::runtime_error("t is out of range");
+  }
   fixed_points_[t] = q;
   cst_dim_ += q.size();
 }
