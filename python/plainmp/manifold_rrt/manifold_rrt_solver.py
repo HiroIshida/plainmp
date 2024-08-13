@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -51,6 +52,7 @@ class ManiRRTConnectSolver:
 
     def solve(self, problem: Problem, guess: Optional[Trajectory] = None) -> MyRRTResult:
         """solve problem with maybe a solution guess"""
+        ts = time.time()
         assert guess is None, "don't support replanning"
 
         assert self.config.sample_goal_first, "goal must be sampled before in rrt-connect"
@@ -111,6 +113,10 @@ class ManiRRTConnectSolver:
 
         if is_success:
             traj = Trajectory(list(rrtconnect.get_solution()))
-            return MyRRTResult(traj, None, rrtconnect.n_extension_trial, TerminateState.SUCCESS)
+            return MyRRTResult(
+                traj, time.time() - ts, rrtconnect.n_extension_trial, TerminateState.SUCCESS
+            )
         else:
-            return MyRRTResult(None, None, self.config.n_max_call, TerminateState.FAIL_PLANNING)
+            return MyRRTResult(
+                None, time.time() - ts, self.config.n_max_call, TerminateState.FAIL_PLANNING
+            )
