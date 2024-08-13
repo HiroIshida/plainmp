@@ -239,6 +239,10 @@ class FetchSpec(RobotSpec):
         # set with_base = True only in testing
         p = Path(__file__).parent / "conf" / "fetch.yaml"
         super().__init__(p, with_base)
+        if not self.urdf_path.exists():
+            from skrobot.models.fetch import Fetch  # noqa
+
+            Fetch()
 
     def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
         return load_urdf_model_using_cache(self.urdf_path)
