@@ -31,6 +31,19 @@ void SequentialCst::add_motion_step_box_constraint(
 }
 
 void SequentialCst::finalize() {
+  // remove constraints at time t if fixed_points are set
+  for (size_t t = 0; t < T_; ++t) {
+    if (fixed_points_[t].has_value()) {
+      size_t cst_dim_at_t = 0;
+      for (auto& constraint : constraints_seq_[t]) {
+        cst_dim_at_t += constraint->cst_dim();
+      }
+      cst_dim_ -= cst_dim_at_t;
+      constraints_seq_[t].clear();
+    }
+  }
+
+  // determine sparsity pattern of the jacobian
   jac_ = SMatrix(cst_dim(), x_dim());
   Eigen::VectorXd x = Eigen::VectorXd::Zero(q_dim() * T_);
   evaluate(x);
