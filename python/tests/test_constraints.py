@@ -141,13 +141,22 @@ def test_sequntial_constraint():
     cst.add_at(cst2, 0)
     cst.add_at(cst2, 2)
     cst.add_fixed_point_at(np.zeros(8), 0)
-    cst.add_fixed_point_at(np.zeros(8), T - 1)
 
     # msbox is ineq constraint so it is quite strange to mix with eq constraint
     # but only for testing purpose
     msbox = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
     cst.add_motion_step_box_constraint(msbox)
     cst.finalize()
+
+    # check cst dim
+    cst1_dim = 3
+    cst2_dim = 3 + 6 + 7
+    fixed_cst_dim = 8
+    msbox_cst_dim = 8 * 2 * (T - 1)
+    assert cst.cst_dim() == cst1_dim * (T - 1) + cst2_dim * (2 - 1) + fixed_cst_dim + msbox_cst_dim
+    # here (T - 1) and (2 - 1) because, we set fixed point, so these cst are removed in finalize()
+
+    # check jacobian
     check_jacobian(cst, 8 * T)
 
     # check motion step box constraint
