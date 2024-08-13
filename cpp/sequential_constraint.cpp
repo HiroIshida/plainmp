@@ -96,23 +96,25 @@ std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
 
   // evaluate msbox constraint. Note that msbox constraint is pairwise, and not
   // having kinematic tree, so we can evaluate it directly.
-  for (size_t t = 0; t < T_ - 1; ++t) {
-    Eigen::VectorXd q1 = x.segment(t * q_dim_, q_dim_);
-    Eigen::VectorXd q2 = x.segment((t + 1) * q_dim_, q_dim_);
-    // ||q1 - q2|| <= msbox_width_ (element-wise)
-    // equivalent to:
-    // q1 - q2 <= msbox_width_ and q2 - q1 <= msbox_width_
-    c.segment(c_head, q_dim_) = q1 - q2 + msbox_width_.value();
-    c.segment(c_head + q_dim_, q_dim_) = q2 - q1 + msbox_width_.value();
+  if (msbox_width_.has_value()) {
+    for (size_t t = 0; t < T_ - 1; ++t) {
+      Eigen::VectorXd q1 = x.segment(t * q_dim_, q_dim_);
+      Eigen::VectorXd q2 = x.segment((t + 1) * q_dim_, q_dim_);
+      // ||q1 - q2|| <= msbox_width_ (element-wise)
+      // equivalent to:
+      // q1 - q2 <= msbox_width_ and q2 - q1 <= msbox_width_
+      c.segment(c_head, q_dim_) = q1 - q2 + msbox_width_.value();
+      c.segment(c_head + q_dim_, q_dim_) = q2 - q1 + msbox_width_.value();
 
-    // fill in the sparse matrix
-    for (size_t i = 0; i < q_dim_; ++i) {
-      jac_.coeffRef(c_head + i, t * q_dim_ + i) = 1.0;
-      jac_.coeffRef(c_head + i, (t + 1) * q_dim_ + i) = -1.0;
-      jac_.coeffRef(c_head + q_dim_ + i, t * q_dim_ + i) = -1.0;
-      jac_.coeffRef(c_head + q_dim_ + i, (t + 1) * q_dim_ + i) = 1.0;
+      // fill in the sparse matrix
+      for (size_t i = 0; i < q_dim_; ++i) {
+        jac_.coeffRef(c_head + i, t * q_dim_ + i) = 1.0;
+        jac_.coeffRef(c_head + i, (t + 1) * q_dim_ + i) = -1.0;
+        jac_.coeffRef(c_head + q_dim_ + i, t * q_dim_ + i) = -1.0;
+        jac_.coeffRef(c_head + q_dim_ + i, (t + 1) * q_dim_ + i) = 1.0;
+      }
+      c_head += q_dim_ * 2;
     }
-    c_head += q_dim_ * 2;
   }
   return {c, jac_};
 }
