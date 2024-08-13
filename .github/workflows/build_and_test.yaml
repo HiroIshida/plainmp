@@ -44,3 +44,4 @@ jobs:
               run: |
                 python3 example/fetch_ik.py
                 python3 example/fetch_plan.py
+                python3 example/humanoid_planning.py

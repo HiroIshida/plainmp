@@ -9,7 +9,7 @@ setup(
     description="experimental",
     author="Hirokazu Ishida",
     license="PolyForm NonCommercial 1.0.0",
-    install_requires=["numpy", "scipy", "scikit-robot", "pyyaml", "ompl-thin", "robot_descriptions"],
+    install_requires=["numpy", "scipy", "scikit-robot", "pyyaml", "ompl-thin", "robot_descriptions", "osqp"],
     packages=["plainmp"],
     package_dir={"": "python"},
     package_data={"plainmp": ["*.pyi", "conf/*.yaml"]},
