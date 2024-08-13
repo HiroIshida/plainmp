@@ -13,11 +13,13 @@ class SequentialCst {
       : T_(T),
         cst_dim_(0),
         constraints_seq_(T),
+        fixed_points_(T, std::nullopt),
         sparsity_pattern_determined_(false),
         jac_(),
         msbox_width_(std::nullopt) {}
   void add_globally(const ConstraintBase::Ptr& constraint);
   void add_at(const ConstraintBase::Ptr& constraint, size_t t);
+  void add_fixed_point_at(const Eigen::VectorXd& q, size_t t);
   void add_motion_step_box_constraint(const Eigen::VectorXd& box_width);
   void determine_sparsity_pattern();
   std::pair<Eigen::VectorXd, SMatrix> evaluate(const Eigen::VectorXd& x);
@@ -29,6 +31,7 @@ class SequentialCst {
   size_t T_;
   size_t cst_dim_;
   std::vector<std::vector<ConstraintBase::Ptr>> constraints_seq_;
+  std::vector<std::optional<Eigen::VectorXd>> fixed_points_;
   bool sparsity_pattern_determined_;
   SMatrix jac_;
   std::optional<Eigen::VectorXd> msbox_width_;

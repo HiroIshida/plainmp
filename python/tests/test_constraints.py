@@ -140,6 +140,8 @@ def test_sequntial_constraint():
     cst.add_globally(cst1)
     cst.add_at(cst2, 0)
     cst.add_at(cst2, 2)
+    cst.add_fixed_point_at(np.zeros(8), 0)
+    cst.add_fixed_point_at(np.zeros(8), T - 1)
 
     # msbox is ineq constraint so it is quite strange to mix with eq constraint
     # but only for testing purpose
@@ -174,13 +176,4 @@ def test_sequntial_constraint():
 
 
 if __name__ == "__main__":
-    with_base = False
-
-    fs = FetchSpec(with_base=with_base)
-    dof = (8 + 6) if with_base else 8
-    q = np.random.randn(dof)
-    cst = fs.create_config_point_const(q)
-    if with_base:
-        check_jacobian(cst, dof, std=0.1)
-    else:
-        check_jacobian(cst, dof)
+    test_sequntial_constraint()
