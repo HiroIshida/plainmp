@@ -76,13 +76,14 @@ void bind_collision_constraints(py::module& m) {
   py::class_<EqCompositeCst, EqCompositeCst::Ptr>(cst_m, "EqCompositeCst")
       .def(py::init<std::vector<EqConstraintBase::Ptr>>())
       .def("update_kintree", &EqCompositeCst::update_kintree)
-      .def("evaluate", &EqCompositeCst::evaluate);
+      .def("evaluate", &EqCompositeCst::evaluate)
+      .def_readonly("constraints", &EqCompositeCst::constraints_);
   py::class_<IneqCompositeCst, IneqCompositeCst::Ptr>(cst_m, "IneqCompositeCst")
       .def(py::init<std::vector<IneqConstraintBase::Ptr>>())
       .def("update_kintree", &IneqCompositeCst::update_kintree)
       .def("evaluate", &IneqCompositeCst::evaluate)
-      .def("is_valid", &IneqCompositeCst::is_valid);
-
+      .def("is_valid", &IneqCompositeCst::is_valid)
+      .def_readonly("constraints", &IneqCompositeCst::constraints_);
   py::class_<SequentialCst, SequentialCst::Ptr>(cst_m, "SequentialCst")
       .def(py::init<size_t, size_t>())
       .def("add_globally", &SequentialCst::add_globally)

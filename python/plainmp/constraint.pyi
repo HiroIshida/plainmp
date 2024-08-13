@@ -40,10 +40,14 @@ class AppliedForceSpec:
 # NOTE: actually EqCompositeCst is not a subclass of EqConstraintBase but has same interface
 class EqCompositeCst(EqConstraintBase):
     def __init___(self, csts: Sequence[EqConstraintBase]) -> None: ...
+    @property
+    def constraints(self) -> Sequence[EqConstraintBase]: ...
 
 # NOTE: actually IneqCompositeCst is not a subclass of IneqConstraintBase but has same interface
 class IneqCompositeCst(IneqConstraintBase):
     def __init___(self, csts: Sequence[IneqConstraintBase]) -> None: ...
+    @property
+    def constraints(self) -> Sequence[EqConstraintBase]: ...
 
 class SequentialCst:
     """A class to handle sequential constraints
