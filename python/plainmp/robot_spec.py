@@ -283,6 +283,9 @@ class JaxonSpec(RobotSpec):
         super().__init__(p, with_base=True)  # jaxon is free-floating, so with_base=True
         self.gripper_collision = gripper_collision
 
+        if not self.urdf_path.exists():
+            from robot_descriptions.jaxon_description import URDF_PATH  # noqa
+
     def get_kin(self):
         kin = super().get_kin()
         # the below is a workaround.
