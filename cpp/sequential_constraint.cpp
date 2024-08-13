@@ -12,7 +12,7 @@ void SequentialCst::add_at(const ConstraintBase::Ptr& constraint, size_t t) {
   if (t >= T_) {
     throw std::runtime_error("t is out of range");
   }
-  sparsity_pattern_determined_ = false;
+  finalized_ = false;
   constraints_seq_[t].push_back(constraint);
   cst_dim_ += constraint->cst_dim();
 }
@@ -30,11 +30,11 @@ void SequentialCst::add_motion_step_box_constraint(
   msbox_width_ = box_width;
 }
 
-void SequentialCst::determine_sparsity_pattern() {
+void SequentialCst::finalize() {
   jac_ = SMatrix(cst_dim(), x_dim());
   Eigen::VectorXd x = Eigen::VectorXd::Zero(q_dim() * T_);
   evaluate(x);
-  sparsity_pattern_determined_ = true;
+  finalized_ = true;
 }
 
 std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(

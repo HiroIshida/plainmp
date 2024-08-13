@@ -90,8 +90,7 @@ void bind_collision_constraints(py::module& m) {
       .def("add_motion_step_box_constraint",
            &SequentialCst::add_motion_step_box_constraint)
       .def("add_fixed_point_at", &SequentialCst::add_fixed_point_at)
-      .def("determine_sparsity_pattern",
-           &SequentialCst::determine_sparsity_pattern)
+      .def("finalize", &SequentialCst::finalize)
       .def("evaluate", &SequentialCst::evaluate)
       .def("x_dim", &SequentialCst::x_dim)
       .def("q_dim", &SequentialCst::q_dim)
