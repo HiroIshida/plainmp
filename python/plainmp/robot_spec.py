@@ -404,7 +404,9 @@ class JaxonSpec(RobotSpec):
         for key, values in angle_table.items():
             for i, angle in enumerate(values):
                 d["{}_JOINT{}".format(key, i)] = angle
-        return np.array([d[joint] for joint in self.control_joint_names])
+        q_reset = np.array([d[joint] for joint in self.control_joint_names])
+        base_pose = np.array([0, 0, 1.0, 0, 0, 0])
+        return np.hstack([q_reset, base_pose])
 
     def angle_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
         joint_lb, joint_ub = super().angle_bounds()
