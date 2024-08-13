@@ -41,13 +41,16 @@ N_MAX_CACHE = 200
 _loaded_kin: "OrderedDict[str, KinematicModel]" = OrderedDict()
 
 
-def load_urdf_model_using_cache(file_path: Path, deepcopy: bool = True):
+def load_urdf_model_using_cache(file_path: Path, deepcopy: bool = True, with_mesh: bool = False):
     file_path = file_path.expanduser()
     assert file_path.exists()
     key = str(file_path)
     if key not in _loaded_urdf_models:
-        with no_mesh_load_mode():
+        if with_mesh:
             model = RobotModelFromURDF(urdf_file=str(file_path))
+        else:
+            with no_mesh_load_mode():
+                model = RobotModelFromURDF(urdf_file=str(file_path))
         _loaded_urdf_models[key] = model
     if deepcopy:
         return copy.deepcopy(_loaded_urdf_models[key])
@@ -233,7 +236,7 @@ class FetchSpec(RobotSpec):
         p = Path(__file__).parent / "conf" / "fetch.yaml"
         super().__init__(p, with_base)
 
-    def get_robot_model(self) -> RobotModel:
+    def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
         return load_urdf_model_using_cache(self.urdf_path)
 
     @property
@@ -304,9 +307,9 @@ class JaxonSpec(RobotSpec):
             kin.add_new_link("lleg_end_coords", "LLEG_LINK5", np.array([0, 0, -0.1]), np.zeros(3))
         return kin
 
-    def get_robot_model(self) -> RobotModel:
+    def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
         matrix = rotation_matrix(np.pi * 0.5, [0, 0, 1.0])
-        model = load_urdf_model_using_cache(self.urdf_path)
+        model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
 
         model.rarm_end_coords = CascadedCoords(model.RARM_LINK7, name="rarm_end_coords")
         model.rarm_end_coords.translate([0, 0, -0.220])
