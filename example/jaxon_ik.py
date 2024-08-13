@@ -76,7 +76,8 @@ stance_cst = jspec.crate_pose_const_from_coords(
 relative_pose_cst = jspec.create_relative_pose_const(
     "rarm_end_coords", "larm_end_coords", np.array([0.5, 0.0, 0.0])
 )
-eq_global_cst = EqCompositeCst([stance_cst, relative_pose_cst])
+fixed_zaxis_cst = jspec.create_fixed_zaxis_const("rarm_end_coords")
+eq_global_cst = EqCompositeCst([stance_cst, relative_pose_cst, fixed_zaxis_cst])
 
 box_coll_cst = jspec.create_attached_box_collision_const(
     box, "rarm_end_coords", np.array([0.25, 0.0, -0.04])
