@@ -40,6 +40,18 @@ def check_jacobian(const, dim: int, eps: float = 1e-7, decimal: int = 4, std: fl
 
 
 @pytest.mark.parametrize("with_base", [False, True])
+def test_config_pose_constraint(with_base: bool):
+    fs = FetchSpec(with_base=with_base)
+    dof = (8 + 6) if with_base else 8
+    q = np.random.randn(dof)
+    cst = fs.create_config_point_const(q)
+    if with_base:
+        check_jacobian(cst, dof, std=0.1)
+    else:
+        check_jacobian(cst, dof)
+
+
+@pytest.mark.parametrize("with_base", [False, True])
 @pytest.mark.parametrize("with_rpy", [False, True])
 def test_link_pose_constraint(with_base: bool, with_rpy: bool):
     if with_rpy:
@@ -159,3 +171,16 @@ def test_sequntial_constraint():
     assert np.sum(values_here < 0) == 8 * (T - 1)
     # half of the values should be positive
     assert np.sum(values_here > 0) == 8 * (T - 1)
+
+
+if __name__ == "__main__":
+    with_base = False
+
+    fs = FetchSpec(with_base=with_base)
+    dof = (8 + 6) if with_base else 8
+    q = np.random.randn(dof)
+    cst = fs.create_config_point_const(q)
+    if with_base:
+        check_jacobian(cst, dof, std=0.1)
+    else:
+        check_jacobian(cst, dof)

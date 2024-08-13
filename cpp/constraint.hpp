@@ -87,6 +87,48 @@ class IneqConstraintBase : public ConstraintBase {
   virtual bool is_valid_dirty() const = 0;
 };
 
+class ConfigPointCst : public EqConstraintBase {
+ public:
+  using Ptr = std::shared_ptr<ConfigPointCst>;
+  ConfigPointCst(std::shared_ptr<tinyfk::KinematicModel> kin,
+                 const std::vector<std::string>& control_joint_names,
+                 bool with_base,
+                 const Eigen::VectorXd& q)
+      : EqConstraintBase(kin, control_joint_names, with_base), q_(q) {
+    size_t dof = control_joint_names.size() + (with_base ? 6 : 0);
+    if (q.size() != dof) {
+      throw std::runtime_error(
+          "q must have the same size as the number of control joints");
+    }
+  }
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override {
+    size_t dof = q_dim();
+    std::vector<double> q_now_joint_std =
+        kin_->get_joint_angles(control_joint_ids_);
+
+    Eigen::VectorXd q_now(dof);
+    for (size_t i = 0; i < control_joint_ids_.size(); i++) {
+      q_now[i] = q_now_joint_std[i];
+    }
+    if (with_base_) {
+      size_t head = control_joint_ids_.size();
+      auto& base_pose = kin_->base_pose_;
+      q_now(head) = base_pose.position.x;
+      q_now(head + 1) = base_pose.position.y;
+      q_now(head + 2) = base_pose.position.z;
+      auto base_rpy = base_pose.rotation.getRPY();
+      q_now(head + 3) = base_rpy.x;
+      q_now(head + 4) = base_rpy.y;
+      q_now(head + 5) = base_rpy.z;
+    }
+    return {q_now - q_, Eigen::MatrixXd::Identity(dof, dof)};
+  }
+  size_t cst_dim() const { return q_.size(); }
+
+ private:
+  Eigen::VectorXd q_;
+};
+
 class LinkPoseCst : public EqConstraintBase {
  public:
   using Ptr = std::shared_ptr<LinkPoseCst>;

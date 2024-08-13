@@ -17,6 +17,14 @@ void bind_collision_constraints(py::module& m) {
       cst_m, "EqConstraintBase");
   py::class_<IneqConstraintBase, IneqConstraintBase::Ptr, ConstraintBase>(
       cst_m, "IneqConstraintBase");
+  py::class_<ConfigPointCst, ConfigPointCst::Ptr, EqConstraintBase>(
+      cst_m, "ConfigPointCst")
+      .def(py::init<std::shared_ptr<tinyfk::KinematicModel>,
+                    const std::vector<std::string>&, bool,
+                    const Eigen::VectorXd&>())
+      .def("update_kintree", &ConfigPointCst::update_kintree)
+      .def("evaluate", &ConfigPointCst::evaluate)
+      .def("cst_dim", &ConfigPointCst::cst_dim);
   py::class_<LinkPoseCst, LinkPoseCst::Ptr, EqConstraintBase>(cst_m,
                                                               "LinkPoseCst")
       .def(py::init<std::shared_ptr<tinyfk::KinematicModel>,

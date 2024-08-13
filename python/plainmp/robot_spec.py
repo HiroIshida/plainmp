@@ -26,6 +26,7 @@ from skrobot.utils.urdf import URDF, no_mesh_load_mode
 from plainmp.constraint import (
     AppliedForceSpec,
     ComInPolytopeCst,
+    ConfigPointCst,
     LinkPoseCst,
     RelativePoseCst,
     SphereAttachmentSpec,
@@ -154,6 +155,9 @@ class RobotSpec(ABC):
             cppsdf,
         )
         return cst
+
+    def create_config_point_const(self, q: np.ndarray) -> ConfigPointCst:
+        return ConfigPointCst(self.get_kin(), self.control_joint_names, self.with_base, q)
 
     def crate_pose_const_from_coords(
         self, link_names: List[str], link_poses: List[Coordinates], rot_types: List[RotType]
