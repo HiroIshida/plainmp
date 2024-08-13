@@ -84,7 +84,7 @@ void bind_collision_constraints(py::module& m) {
       .def("is_valid", &IneqCompositeCst::is_valid);
 
   py::class_<SequentialCst, SequentialCst::Ptr>(cst_m, "SequentialCst")
-      .def(py::init<size_t>())
+      .def(py::init<size_t, size_t>())
       .def("add_globally", &SequentialCst::add_globally)
       .def("add_at", &SequentialCst::add_at)
       .def("add_motion_step_box_constraint",
@@ -93,7 +93,6 @@ void bind_collision_constraints(py::module& m) {
       .def("finalize", &SequentialCst::finalize)
       .def("evaluate", &SequentialCst::evaluate)
       .def("x_dim", &SequentialCst::x_dim)
-      .def("q_dim", &SequentialCst::q_dim)
       .def("cst_dim", &SequentialCst::cst_dim);
 }
 
