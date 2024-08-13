@@ -17,6 +17,11 @@ void SequentialCst::add_at(const ConstraintBase::Ptr& constraint, size_t t) {
   cst_dim_ += constraint->cst_dim();
 }
 
+void SequentialCst::add_fixed_point_at(const Eigen::VectorXd& q, size_t t) {
+  fixed_points_[t] = q;
+  cst_dim_ += q.size();
+}
+
 void SequentialCst::add_motion_step_box_constraint(
     const Eigen::VectorXd& box_width) {
   for (size_t t = 0; t < T_ - 1; ++t) {
@@ -56,6 +61,18 @@ std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
       c_head += constraint->cst_dim();
     }
     x_head += q_dim;
+  }
+
+  // evaluate fixed points
+  for (size_t t = 0; t < T_; ++t) {
+    if (fixed_points_[t].has_value()) {
+      c.segment(c_head, q_dim) =
+          x.segment(t * q_dim, q_dim) - fixed_points_[t].value();
+      for (size_t i = 0; i < q_dim; ++i) {
+        jac_.coeffRef(c_head + i, t * q_dim + i) = 1.0;
+      }
+      c_head += q_dim;
+    }
   }
 
   // evaluate msbox constraint. Note that msbox constraint is pairwise, and not
