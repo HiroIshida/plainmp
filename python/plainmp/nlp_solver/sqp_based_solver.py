@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Literal, Optional, Tuple, Union
 
 import numpy as np
+from scipy.sparse import csc_matrix
 
 from plainmp.constraint import (
     ConstraintBase,
@@ -12,7 +13,12 @@ from plainmp.constraint import (
     SequentialCst,
 )
 from plainmp.ik import IKResult, solve_ik
-from plainmp.nlp_solver.osqp_sqp import OsqpSqpConfig, OsqpSqpResult, OsqpSqpSolver
+from plainmp.nlp_solver.osqp_sqp import (
+    OsqpSqpConfig,
+    OsqpSqpResult,
+    OsqpSqpSolver,
+    sparsify,
+)
 from plainmp.problem import Problem
 from plainmp.trajectory import Trajectory
 
@@ -104,6 +110,7 @@ class SQPBasedSolverConfig:
     """
 
     n_wp: int
+    n_dof: int
     n_max_call: int = 30
     motion_step_satisfaction: Literal["implicit", "explicit", "post", "debug_ignore"] = "implicit"
     force_deterministic: bool = False
@@ -155,8 +162,11 @@ class SQPBasedSolverResult:
 
 class SQPBasedSolver:
     config: SQPBasedSolverConfig
+    smooth_mat: csc_matrix
 
     def __init__(self, config: SQPBasedSolverConfig) -> None:
+        smooth_mat = smoothcost_fullmat(config.n_dof, config.n_wp)
+        self.smooth_mat = sparsify(smooth_mat)
         self.config = config
 
     def solve(self, problem: Problem, guess: Optional[Trajectory] = None) -> SQPBasedSolverResult:
@@ -164,7 +174,6 @@ class SQPBasedSolver:
         config = self.config
         seq_eq_const, seq_ineq_const = translate(problem, config.n_wp)
         n_dof = len(problem.start)
-        smooth_mat = smoothcost_fullmat(n_dof, config.n_wp)
 
         lb_stacked = np.tile(problem.lb, config.n_wp)
         ub_stacked = np.tile(problem.ub, config.n_wp)
@@ -181,7 +190,7 @@ class SQPBasedSolver:
             return f - ctol_ineq * config.ineq_tighten_coef, jac
 
         solver = OsqpSqpSolver(
-            smooth_mat,
+            self.smooth_mat,
             lambda x: seq_eq_const.evaluate(x),
             ineq_tighten,
             lb_stacked,

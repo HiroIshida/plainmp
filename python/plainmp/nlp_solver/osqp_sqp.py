@@ -58,7 +58,7 @@ class OsqpSqpResult:
 
 @dataclass
 class OsqpSqpSolver:
-    P: Union[np.ndarray, csc_matrix]
+    P: csc_matrix
     cons_eq: Differentiable
     cons_ineq: Differentiable
     lb: np.ndarray
@@ -74,9 +74,6 @@ class OsqpSqpSolver:
         Jx_ineq: np.ndarray
         val_obj: Optional[float] = None
         grad_obj: Optional[np.ndarray] = None
-
-    def __post_init__(self):
-        self.P = sparsify(self.P)
 
     def solve_convex_subproblem(
         self,
