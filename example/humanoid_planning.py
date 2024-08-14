@@ -47,12 +47,13 @@ if __name__ == "__main__":
         ],
         [RotType.XYZW] * 2,
     )
+    print("setup eq")
     init_eq_eq_cst = EqCompositeCst([stance_cst, init_arm_pose_cst])
     ik_ret = solve_ik(init_eq_eq_cst, ineq_cst, lb, ub, q_seed=jspec.reset_manip_pose_q)
     assert ik_ret.success
     print(f"elapsed time to solve initial ik problem: {ik_ret.elapsed_time} [s]")
 
-    # solve planning problem
+    # solve constrained-RRT
     reach_cst = jspec.create_pose_const(["rarm_end_coords"], [np.array([0.85, -0.6, 0.4])])
     goal_eq_cst = EqCompositeCst([stance_cst, reach_cst])
     ik_ret2 = solve_ik(goal_eq_cst, ineq_cst, lb, ub, q_seed=jspec.reset_manip_pose_q)
@@ -66,12 +67,14 @@ if __name__ == "__main__":
     assert ret.traj is not None
     print(f"elapsed time to solve constrained motion planning: {ret.time_elapsed} [s]")
 
+    # solve trajectory optimization using RRT result as initial guess
     smoother = SQPBasedSolver(
-        SQPBasedSolverConfig(60, 37, ctol_eq=1e-3, ctol_ineq=1e-3, ineq_tighten_coef=0.0)
+        SQPBasedSolverConfig(50, 37, ctol_eq=1e-3, ctol_ineq=1e-3, ineq_tighten_coef=0.0)
     )
     ret = smoother.solve(problem, ret.traj)
     assert ret.traj is not None
     print(f"elapsed time to smoothing by sqp: {ret.time_elapsed} [s]")
+    print(f"number of iterations: {ret.n_call}")
 
     if args.visualize:
         v = PyrenderViewer()
