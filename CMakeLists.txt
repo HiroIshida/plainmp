@@ -10,10 +10,23 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 option(BUILD_PYTHON_INTERFACE OFF)
 add_subdirectory("tinyfk")
+
 include_directories("tinyfk/include")
 include_directories("primitive_sdf")
-# add_executable(main main.cpp)
-# target_link_libraries(main tinyfk)
+
+option(USE_VALGRIND "Use valgrind to profile the code" OFF)
+if(USE_VALGRIND)
+    find_path(VALGRIND_INCLUDE_DIR
+        NAMES valgrind/callgrind.h
+        PATHS /usr/include /usr/local/include
+    )
+    if(VALGRIND_INCLUDE_DIR)
+        include_directories(${VALGRIND_INCLUDE_DIR})
+    else()
+        message(FATAL_ERROR "Could not find valgrind/callgrind.h. Please install the valgrind development package.")
+    endif()
+    add_definitions(-DUSE_VALGRIND)
+endif()
 
 file(GLOB_RECURSE SRC_FILES cpp/*.cpp)
 add_subdirectory(pybind11)
