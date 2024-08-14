@@ -1,4 +1,7 @@
 import copy
+import pickle
+from hashlib import md5
+from typing import Union
 
 import numpy as np
 import pytest
@@ -8,6 +11,7 @@ from plainmp.constraint import (
     AppliedForceSpec,
     ComInPolytopeCst,
     EqCompositeCst,
+    IneqCompositeCst,
     SequentialCst,
 )
 from plainmp.psdf import BoxSDF, Pose
@@ -37,6 +41,19 @@ def check_jacobian(const, dim: int, eps: float = 1e-7, decimal: int = 4, std: fl
             jac_anal = jac_anal.todense()
         jac_numel = jac_numerical(const, q_test, eps)
         np.testing.assert_almost_equal(jac_anal, jac_numel, decimal=decimal)
+
+
+def check_sparse_structure(
+    const: Union[EqCompositeCst, IneqCompositeCst], dim: int, std: float = 1.0
+):
+    hash_values = []
+    for _ in range(10):
+        q_test = np.random.randn(dim) * std
+        _, jac = const.evaluate(q_test)
+        assert 2 * jac.nnz < jac.shape[0] * jac.shape[1]
+        hash_values.append(md5(pickle.dumps(jac.nonzero())).hexdigest())
+    # all hash values should be the same
+    assert len(set(hash_values)) == 1
 
 
 @pytest.mark.parametrize("with_base", [False, True])
@@ -180,6 +197,9 @@ def test_sequntial_constraint(with_msbox: bool, with_fixed_point: bool):
 
     # check jacobian
     check_jacobian(cst, 8 * T)
+
+    # check spase-structure consistency
+    check_sparse_structure(cst, 8 * T)
 
     if with_msbox:
         # check motion step box constraint
