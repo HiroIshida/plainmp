@@ -4,6 +4,7 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <memory>
+#include <sstream>
 #include <tinyfk.hpp>
 #include <utility>
 #include "constraint.hpp"
@@ -55,6 +56,17 @@ class CompositeConstraintBase {
         constraints_.begin(), constraints_.end(), 0,
         [](size_t sum, const T& cst) { return sum + cst->cst_dim(); });
   }
+
+  std::string to_string() const {
+    std::stringstream ss;
+    ss << "Composite constraint:" << std::endl;
+    ss << "total dim: " << cst_dim() << std::endl;
+    for (const auto& cst : constraints_) {
+      ss << "  - " << cst->get_name() << ": " << cst->cst_dim() << std::endl;
+    }
+    return ss.str();
+  }
+
   std::vector<T> constraints_;
 };
 

@@ -117,4 +117,25 @@ std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
   return {c, jac_};
 }
 
+std::string SequentialCst::to_string() const {
+  std::stringstream ss;
+  ss << "Sequential constraint:" << std::endl;
+  ss << "total dim: " << cst_dim() << std::endl;
+  for (size_t t = 0; t < T_; ++t) {
+    ss << "  - time " << t << std::endl;
+    for (const auto& cst : constraints_seq_[t]) {
+      ss << "    - " << cst->get_name() << ": " << cst->cst_dim() << std::endl;
+    }
+    if (fixed_points_[t].has_value()) {
+      ss << "    - fixed point"
+         << ": " << q_dim_ << std::endl;
+    }
+  }
+  if (msbox_width_.has_value()) {
+    ss << "  - motion step box constraint"
+       << "  : " << q_dim_ * 2 * (T_ - 1) << std::endl;
+  }
+  return ss.str();
+}
+
 }  // namespace cst

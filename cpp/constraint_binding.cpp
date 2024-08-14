@@ -90,6 +90,7 @@ void bind_collision_constraints(py::module& m) {
       .def("update_kintree", &IneqCompositeCst::update_kintree)
       .def("evaluate", &IneqCompositeCst::evaluate)
       .def("is_valid", &IneqCompositeCst::is_valid)
+      .def("__str__", &IneqCompositeCst::to_string)
       .def_readonly("constraints", &IneqCompositeCst::constraints_);
   py::class_<SequentialCst, SequentialCst::Ptr>(cst_m, "SequentialCst")
       .def(py::init<size_t, size_t>())
@@ -100,6 +101,7 @@ void bind_collision_constraints(py::module& m) {
       .def("add_fixed_point_at", &SequentialCst::add_fixed_point_at)
       .def("finalize", &SequentialCst::finalize)
       .def("evaluate", &SequentialCst::evaluate)
+      .def("__str__", &SequentialCst::to_string)
       .def("x_dim", &SequentialCst::x_dim)
       .def("cst_dim", &SequentialCst::cst_dim);
 }

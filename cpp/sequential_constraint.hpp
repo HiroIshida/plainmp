@@ -26,6 +26,7 @@ class SequentialCst {
   std::pair<Eigen::VectorXd, SMatrix> evaluate(const Eigen::VectorXd& x);
   inline size_t x_dim() const { return q_dim_ * T_; }
   inline size_t cst_dim() const { return cst_dim_; }
+  std::string to_string() const;
 
  private:
   size_t T_;
