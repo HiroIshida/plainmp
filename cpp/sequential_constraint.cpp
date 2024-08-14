@@ -46,10 +46,7 @@ void SequentialCst::finalize() {
     }
   }
 
-  // determine sparsity pattern of the jacobian
   jac_ = SMatrix(cst_dim(), x_dim());
-  Eigen::VectorXd x = Eigen::VectorXd::Zero(q_dim_ * T_);
-  evaluate(x);
   finalized_ = true;
 }
 
