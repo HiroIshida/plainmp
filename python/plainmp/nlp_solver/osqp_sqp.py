@@ -1,4 +1,5 @@
 import copy
+import pickle
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Protocol, Tuple, Union
@@ -63,6 +64,7 @@ class OsqpSqpSolver:
     cons_ineq: Differentiable
     lb: np.ndarray
     ub: np.ndarray
+    prob: Optional[osqp.OSQP] = None
 
     @dataclass
     class EvaluateCache:
@@ -100,11 +102,11 @@ class OsqpSqpSolver:
         dim_x = eval_cache.J_eq.shape[1]
         E = sparse.eye(dim_x)
         A = sparse.vstack((eval_cache.J_eq, eval_cache.J_ineq, E))
+
         # inequality gradual relaxing
         # in some problem, convexified problem is infeasible and cannot be solved by osqp.
         counter = 0
         copy.deepcopy(eval_cache.val_ineq)
-        prob: Optional[osqp.OSQP] = None
 
         while True:
             relax_step_now = relax_step * counter
@@ -125,9 +127,11 @@ class OsqpSqpSolver:
             l -= 1e-7
             u += 1e-7
 
-            if prob is None:
-                prob = osqp.OSQP()
-                prob.setup(
+            if self.prob is None:
+                with open("/tmp/osqp1.pkl", "wb") as f:
+                    pickle.dump({"P": self.P, "l": l, "u": u, "A": A}, f)
+                self.prob = osqp.OSQP()
+                self.prob.setup(
                     P=self.P,
                     q=None,
                     l=l,
@@ -138,9 +142,15 @@ class OsqpSqpSolver:
                     **osqp_kwargs,
                 )
             else:
-                prob.update(l=l - relax_step_now, u=u + relax_step_now)
-            prob.warm_start(x=x_guess)
-            raw_result = prob.solve()
+                if counter == 0:
+                    # https://groups.google.com/g/osqp/c/ZFvblAQdUxQ
+                    with open("/tmp/osqp2.pkl", "wb") as f:
+                        pickle.dump({"P": self.P, "l": l, "u": u, "A": A}, f)
+                    self.prob.update(l=l, u=u, Ax=A.data)
+                else:
+                    self.prob.update(l=l - relax_step_now, u=u + relax_step_now)
+            self.prob.warm_start(x=x_guess)
+            raw_result = self.prob.solve()
             if raw_result.info.status_val == success_status:
                 break
 
