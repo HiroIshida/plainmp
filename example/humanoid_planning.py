@@ -67,7 +67,7 @@ if __name__ == "__main__":
     print(f"elapsed time to solve constrained motion planning: {ret.time_elapsed} [s]")
 
     smoother = SQPBasedSolver(
-        SQPBasedSolverConfig(80, ctol_eq=1e-3, ctol_ineq=1e-3, ineq_tighten_coef=0.0)
+        SQPBasedSolverConfig(60, 37, ctol_eq=1e-3, ctol_ineq=1e-3, ineq_tighten_coef=0.0)
     )
     ret = smoother.solve(problem, ret.traj)
     assert ret.traj is not None
