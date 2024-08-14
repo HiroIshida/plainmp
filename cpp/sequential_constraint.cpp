@@ -71,7 +71,8 @@ std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
       // sparse matrix's block is read-only so..
       for (size_t i = 0; i < J_t.rows(); ++i) {
         for (size_t j = 0; j < J_t.cols(); ++j) {
-          jac_.coeffRef(c_head + i, x_head + j) = J_t(i, j);
+          // 1e-17 to notifiy the sparsity pattern
+          jac_.coeffRef(c_head + i, x_head + j) = J_t(i, j) + 1e-12;
         }
       }
       c_head += constraint->cst_dim();
