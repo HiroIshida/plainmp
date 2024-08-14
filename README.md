@@ -13,3 +13,19 @@ sudo apt install libeigen3-dev
 pip install scikit-build
 pip install plainmp
 ```
+
+## for development
+Do this before 
+```bash
+sudo apt-get install valgrind
+pip install -e . -v
+mkdir build
+```
+Then, do this every time you change the cpp files
+```bash
+cd build
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DUSE_VALGRIND=ON ..
+make --
+ln -sf $PWD/compile_commands.json ..
+ln -sf $PWD/_plainmp.cpython-38-x86_64-linux-gnu.so ../python/plainmp
+```
