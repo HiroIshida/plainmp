@@ -6,7 +6,7 @@ except ImportError:
 
 setup(
     name="plainmp",
-    version="0.0.2",
+    version="0.0.3",
     description="experimental",
     author="Hirokazu Ishida",
     license="PolyForm NonCommercial 1.0.0",
