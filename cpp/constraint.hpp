@@ -55,6 +55,7 @@ class ConstraintBase {
   virtual std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty()
       const = 0;
   virtual size_t cst_dim() const = 0;
+  virtual std::string get_name() const = 0;
   virtual bool is_equality() const = 0;
   virtual ~ConstraintBase() = default;
 
@@ -124,6 +125,7 @@ class ConfigPointCst : public EqConstraintBase {
     return {q_now - q_, Eigen::MatrixXd::Identity(dof, dof)};
   }
   size_t cst_dim() const { return q_.size(); }
+  std::string get_name() const override { return "ConfigPointCst"; }
 
  private:
   Eigen::VectorXd q_;
@@ -154,6 +156,7 @@ class LinkPoseCst : public EqConstraintBase {
     }
     return dim;
   }
+  std::string get_name() const override { return "LinkPoseCst"; }
 
  private:
   std::vector<size_t> link_ids_;
@@ -185,6 +188,7 @@ class RelativePoseCst : public EqConstraintBase {
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
   size_t cst_dim() const { return 7; }
+  std::string get_name() const override { return "RelativePoseCst"; }
 
  private:
   size_t link_id2_;
@@ -202,6 +206,7 @@ class FixedZAxisCst : public EqConstraintBase {
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
   size_t cst_dim() const override { return 2; }
+  std::string get_name() const override { return "FixedZAxisCst"; }
 
  private:
   size_t link_id_;
@@ -239,6 +244,7 @@ class SphereCollisionCst : public IneqConstraintBase {
       return 2;
     }
   }
+  std::string get_name() const override { return "SphereCollisionCst"; }
 
  private:
   std::vector<SDFBase::Ptr> get_all_sdfs() const {
@@ -291,6 +297,7 @@ class ComInPolytopeCst : public IneqConstraintBase {
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
 
   size_t cst_dim() const { return 1; }
+  std::string get_name() const override { return "ComInPolytopeCst"; }
 
  private:
   BoxSDF::Ptr polytope_sdf_;
