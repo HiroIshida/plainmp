@@ -167,6 +167,10 @@ SphereCollisionCst::SphereCollisionCst(
 }
 
 bool SphereCollisionCst::is_valid_dirty() {
+  if (all_sdfs_cache_.size() == 0) {
+    throw std::runtime_error("(cpp) No SDFs are set");
+  }
+
   // update sphere poses
   bool check_self_collision = selcol_pairs_ids_.size() > 0;
   tinyfk::Transform pose;
@@ -205,6 +209,10 @@ bool SphereCollisionCst::is_valid_dirty() {
 
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
     const {
+  if (all_sdfs_cache_.size() == 0) {
+    throw std::runtime_error("(cpp) No SDFs are set");
+  }
+
   // collision vs outers
   tinyfk::Transform pose;
   Eigen::VectorXd grad_in_cspace_other(q_dim());
