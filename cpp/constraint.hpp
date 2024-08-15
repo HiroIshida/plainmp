@@ -266,7 +266,7 @@ class SphereCollisionCst : public IneqConstraintBase {
 
   std::vector<size_t> sphere_ids_;
   std::vector<SphereAttachmentSpec> sphere_specs_;
-  std::vector<tinyfk::Transform> sphere_poses_cache_;
+  Eigen::Matrix3Xd sphere_points_cache_;
   std::vector<std::pair<size_t, size_t>> selcol_pairs_ids_;
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user

@@ -132,7 +132,6 @@ SphereCollisionCst::SphereCollisionCst(
     std::optional<SDFBase::Ptr> fixed_sdf)
     : IneqConstraintBase(kin, control_joint_names, with_base),
       sphere_specs_(sphere_specs),
-      sphere_poses_cache_(sphere_specs.size()),
       fixed_sdf_(fixed_sdf == std::nullopt ? nullptr : *fixed_sdf) {
   std::vector<std::string> parent_link_names;
   for (const auto& spec : sphere_specs) {
@@ -163,39 +162,40 @@ SphereCollisionCst::SphereCollisionCst(
     }
   }
   selcol_pairs_ids_ = selcol_pairs_ids;
+  sphere_points_cache_ = Eigen::Matrix3Xd(3, sphere_ids_.size());
   set_all_sdfs();
 }
 
 bool SphereCollisionCst::is_valid_dirty() {
-  bool check_self_collision = selcol_pairs_ids_.size() > 0;
   // update sphere poses
+  bool check_self_collision = selcol_pairs_ids_.size() > 0;
+  tinyfk::Transform pose;
   for (size_t i = 0; i < sphere_ids_.size(); i++) {
     if (!check_self_collision && sphere_specs_[i].ignore_collision) {
       continue;
     }
-    kin_->get_link_pose(sphere_ids_[i], sphere_poses_cache_[i]);
+    kin_->get_link_pose(sphere_ids_[i], pose);
+    sphere_points_cache_(0, i) = pose.position.x;
+    sphere_points_cache_(1, i) = pose.position.y;
+    sphere_points_cache_(2, i) = pose.position.z;
   }
 
   for (size_t i = 0; i < sphere_ids_.size(); i++) {
     if (sphere_specs_[i].ignore_collision) {
       continue;
     }
-    auto& pose = sphere_poses_cache_[i];
-    Eigen::Vector3d center(pose.position.x, pose.position.y, pose.position.z);
     for (auto& sdf : all_sdfs_cache_) {
-      if (!sdf->is_outside(center, sphere_specs_[i].radius)) {
+      if (!sdf->is_outside(sphere_points_cache_.col(i),
+                           sphere_specs_[i].radius)) {
         return false;
       }
     }
   }
   for (const auto& pair : selcol_pairs_ids_) {
-    auto& pose1 = sphere_poses_cache_[pair.first];
-    auto& pose2 = sphere_poses_cache_[pair.second];
-    Eigen::Vector3d center1(pose1.position.x, pose1.position.y,
-                            pose1.position.z);
-    Eigen::Vector3d center2(pose2.position.x, pose2.position.y,
-                            pose2.position.z);
-    if ((center1 - center2).norm() <
+    double center_dist = (sphere_points_cache_.col(pair.first) -
+                          sphere_points_cache_.col(pair.second))
+                             .norm();
+    if (center_dist <
         sphere_specs_[pair.first].radius + sphere_specs_[pair.second].radius) {
       return false;
     }
