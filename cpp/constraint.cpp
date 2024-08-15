@@ -163,6 +163,13 @@ SphereCollisionCst::SphereCollisionCst(
   }
   selcol_pairs_ids_ = selcol_pairs_ids;
   sphere_points_cache_ = Eigen::Matrix3Xd(3, sphere_ids_.size());
+  if (selcol_pairs_ids_.size() > 0) {
+    sphere_points_selcol_ordered_cache1_ =
+        Eigen::Matrix3Xd(3, selcol_pairs_ids_.size());
+    sphere_points_selcol_ordered_cache2_ =
+        Eigen::Matrix3Xd(3, selcol_pairs_ids_.size());
+    radius_pair_sum_cache_ = Eigen::VectorXd(selcol_pairs_ids_.size());
+  }
   set_all_sdfs();
 }
 
@@ -195,14 +202,35 @@ bool SphereCollisionCst::is_valid_dirty() {
       }
     }
   }
-  for (const auto& pair : selcol_pairs_ids_) {
-    double center_dist = (sphere_points_cache_.col(pair.first) -
-                          sphere_points_cache_.col(pair.second))
-                             .norm();
-    if (center_dist <
-        sphere_specs_[pair.first].radius + sphere_specs_[pair.second].radius) {
+  if (selcol_pairs_ids_.size() > 0) {
+    // copy sphere_points_cache_ to sphere_points_selcol_ordered_cache1_ and
+    // sphere_points_selcol_ordered_cache2_ for batch evaluation
+    for (size_t i = 0; i < selcol_pairs_ids_.size(); i++) {
+      sphere_points_selcol_ordered_cache1_.col(i) =
+          sphere_points_cache_.col(selcol_pairs_ids_[i].first);
+      sphere_points_selcol_ordered_cache2_.col(i) =
+          sphere_points_cache_.col(selcol_pairs_ids_[i].second);
+      radius_pair_sum_cache_[i] =
+          sphere_specs_[selcol_pairs_ids_[i].first].radius +
+          sphere_specs_[selcol_pairs_ids_[i].second].radius;
+    }
+    auto norms = (sphere_points_selcol_ordered_cache1_ -
+                  sphere_points_selcol_ordered_cache2_)
+                     .colwise()
+                     .norm();
+    if ((norms.array() < radius_pair_sum_cache_.array()).any()) {
       return false;
     }
+    // for (const auto& pair : selcol_pairs_ids_) {
+    //   double center_dist = (sphere_points_cache_.col(pair.first) -
+    //                         sphere_points_cache_.col(pair.second))
+    //                            .norm();
+    //   if (center_dist <
+    //       sphere_specs_[pair.first].radius +
+    //       sphere_specs_[pair.second].radius) {
+    //     return false;
+    //   }
+    // }
   }
   return true;
 }
