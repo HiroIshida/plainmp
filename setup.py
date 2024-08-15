@@ -1,3 +1,4 @@
+import sys
 try:
     from skbuild import setup
     from setuptools import find_packages
@@ -12,7 +13,7 @@ else:
 
 setup(
     name="plainmp",
-    version="0.0.3",
+    version="0.0.4",
     description="experimental",
     author="Hirokazu Ishida",
     license="PolyForm NonCommercial 1.0.0",
