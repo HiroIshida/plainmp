@@ -258,9 +258,6 @@ class SphereCollisionCst : public IneqConstraintBase {
     if (sdf_ != nullptr) {
       all_sdfs.push_back(sdf_);
     }
-    if (all_sdfs.size() == 0) {
-      throw std::runtime_error("(cpp) No SDFs are set");
-    }
     all_sdfs_cache_ = all_sdfs;
   }
 
