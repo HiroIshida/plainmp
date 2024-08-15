@@ -24,8 +24,19 @@ mkdir build
 Then, do this every time you change the cpp files
 ```bash
 cd build
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DUSE_VALGRIND=ON ..
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DUSE_VALGRIND=ON ..
 make --
 ln -sf $PWD/compile_commands.json ..
 ln -sf $PWD/_plainmp.cpython-38-x86_64-linux-gnu.so ../python/plainmp
+```
+For performance tuning, e.g.
+```bash
+valgrind --tool=callgrind --instr-atstart=no python3 example/fetch_plan.py
+```
+with sandwitching the target code section with
+```python
+from plainmp import start_profiling, stop_profiling
+start_profiling()
+# target code section
+stop_profiling()
 ```
