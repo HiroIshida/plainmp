@@ -52,8 +52,7 @@ class ConstraintBase {
     return evaluate_dirty();
   }
 
-  virtual std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty()
-      const = 0;
+  virtual std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() = 0;
   virtual size_t cst_dim() const = 0;
   virtual std::string get_name() const = 0;
   virtual bool is_equality() const = 0;
@@ -102,7 +101,7 @@ class ConfigPointCst : public EqConstraintBase {
           "q must have the same size as the number of control joints");
     }
   }
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override {
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override {
     size_t dof = q_dim();
     std::vector<double> q_now_joint_std =
         kin_->get_joint_angles(control_joint_ids_);
@@ -148,7 +147,7 @@ class LinkPoseCst : public EqConstraintBase {
       }
     }
   }
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   size_t cst_dim() const {
     size_t dim = 0;
     for (auto& pose : poses_) {
@@ -186,7 +185,7 @@ class RelativePoseCst : public EqConstraintBase {
     dummy_link_id_ = new_link->id;
   }
 
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   size_t cst_dim() const { return 7; }
   std::string get_name() const override { return "RelativePoseCst"; }
 
@@ -204,7 +203,7 @@ class FixedZAxisCst : public EqConstraintBase {
                 bool with_base,
                 const std::string& link_name);
 
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   size_t cst_dim() const override { return 2; }
   std::string get_name() const override { return "FixedZAxisCst"; }
 
@@ -238,7 +237,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   }
 
   bool is_valid_dirty() override;
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
 
   size_t cst_dim() const {
     if (selcol_pairs_ids_.size() == 0) {
@@ -287,7 +286,7 @@ class ComInPolytopeCst : public IneqConstraintBase {
   }
 
   bool is_valid_dirty() override;
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
 
   size_t cst_dim() const { return 1; }
   std::string get_name() const override { return "ComInPolytopeCst"; }

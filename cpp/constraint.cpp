@@ -7,8 +7,7 @@
 
 namespace cst {
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty()
-    const {
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty() {
   Eigen::VectorXd vals(cst_dim());
   Eigen::MatrixXd jac(cst_dim(), q_dim());
   tinyfk::Transform pose;
@@ -51,8 +50,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty()
   return {vals, jac};
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty()
-    const {
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
   Eigen::VectorXd vals(cst_dim());
   Eigen::MatrixXd jac(cst_dim(), q_dim());
   tinyfk::Transform pose_dummy, pose2;
@@ -96,8 +94,7 @@ FixedZAxisCst::FixedZAxisCst(
   aux_link_ids_ = kin_->get_link_ids({new_link_name1, new_link_name2});
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty()
-    const {
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
   tinyfk::Transform pose_here, pose_plus1_x, pose_plus1_y;
   kin_->get_link_pose(link_id_, pose_here);
   kin_->get_link_pose(aux_link_ids_[0], pose_plus1_x);
@@ -195,14 +192,14 @@ bool SphereCollisionCst::is_valid_dirty() {
   return true;
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
-    const {
+std::pair<Eigen::VectorXd, Eigen::MatrixXd>
+SphereCollisionCst::evaluate_dirty() {
   if (all_sdfs_cache_.size() == 0) {
     throw std::runtime_error("(cpp) No SDFs are set");
   }
+  update_sphere_points_cache();
 
   // collision vs outers
-  tinyfk::Transform pose;
   Eigen::VectorXd grad_in_cspace_other(q_dim());
   double min_val_other = std::numeric_limits<double>::max();
   std::optional<size_t> min_sphere_idx = std::nullopt;
@@ -212,11 +209,9 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
       if (sphere_specs_[i].ignore_collision) {
         continue;
       }
-      kin_->get_link_pose(sphere_ids_[i], pose);
-      Eigen::Vector3d center(pose.position.x, pose.position.y, pose.position.z);
       for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
-        double val =
-            all_sdfs_cache_[j]->evaluate(center) - sphere_specs_[i].radius;
+        double val = all_sdfs_cache_[j]->evaluate(sphere_points_cache_.col(i)) -
+                     sphere_specs_[i].radius;
         if (val < min_val_other) {
           min_val_other = val;
           min_sphere_idx = i;
@@ -226,8 +221,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
     }
 
     Eigen::Vector3d grad;
-    kin_->get_link_pose(sphere_ids_[*min_sphere_idx], pose);
-    Eigen::Vector3d center(pose.position.x, pose.position.y, pose.position.z);
+    Eigen::Vector3d center = sphere_points_cache_.col(*min_sphere_idx);
     for (size_t i = 0; i < 3; i++) {
       Eigen::Vector3d perturbed_center = center;
       perturbed_center[i] += 1e-6;
@@ -252,13 +246,9 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
     {
       std::optional<std::pair<size_t, size_t>> min_pair = std::nullopt;
       for (const auto& pair : selcol_pairs_ids_) {
-        kin_->get_link_pose(sphere_ids_[pair.first], pose);
-        Eigen::Vector3d center1(pose.position.x, pose.position.y,
-                                pose.position.z);
-        kin_->get_link_pose(sphere_ids_[pair.second], pose);
-        Eigen::Vector3d center2(pose.position.x, pose.position.y,
-                                pose.position.z);
-        double val = (center1 - center2).norm() -
+        double val = (sphere_points_cache_.col(pair.first) -
+                      sphere_points_cache_.col(pair.second))
+                         .norm() -
                      sphere_specs_[pair.first].radius -
                      sphere_specs_[pair.second].radius;
         if (val < min_val_self) {
@@ -266,20 +256,18 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
           min_pair = pair;
         }
       }
-      Eigen::Vector3d center1, center2;
-      kin_->get_link_pose(sphere_ids_[min_pair->first], pose);
-      center1 << pose.position.x, pose.position.y, pose.position.z;
-      kin_->get_link_pose(sphere_ids_[min_pair->second], pose);
-      center2 << pose.position.x, pose.position.y, pose.position.z;
+      Eigen::Vector3d min_center_diff =
+          sphere_points_cache_.col(min_pair->first) -
+          sphere_points_cache_.col(min_pair->second);
       Eigen::MatrixXd&& jac1 =
           kin_->get_jacobian(sphere_ids_[min_pair->first], control_joint_ids_,
                              tinyfk::RotationType::IGNORE, with_base_);
       Eigen::MatrixXd&& jac2 =
           kin_->get_jacobian(sphere_ids_[min_pair->second], control_joint_ids_,
                              tinyfk::RotationType::IGNORE, with_base_);
-      double norminv = 1.0 / (center1 - center2).norm();
+      double norminv = 1.0 / min_center_diff.norm();
       grad_in_cspace_self =
-          norminv * (center1 - center2).transpose() * (jac1 - jac2);
+          norminv * min_center_diff.transpose() * (jac1 - jac2);
     }
 
     Eigen::Vector2d vals(min_val_other, min_val_self);
@@ -335,8 +323,7 @@ bool ComInPolytopeCst::is_valid_dirty() {
   return polytope_sdf_->evaluate(com) < 0;
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty()
-    const {
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
   Eigen::VectorXd vals(cst_dim());
   Eigen::MatrixXd jac(cst_dim(), q_dim());
 
