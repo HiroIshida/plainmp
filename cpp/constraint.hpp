@@ -232,7 +232,10 @@ class SphereCollisionCst : public IneqConstraintBase {
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
       std::optional<SDFBase::Ptr> fixed_sdf);
 
-  void set_sdf(const SDFBase::Ptr& sdf) { sdf_ = sdf; }
+  void set_sdf(const SDFBase::Ptr& sdf) {
+    sdf_ = sdf;
+    set_all_sdfs();
+  }
 
   bool is_valid_dirty() override;
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
@@ -247,8 +250,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::string get_name() const override { return "SphereCollisionCst"; }
 
  private:
-  std::vector<SDFBase::Ptr> get_all_sdfs() const {
-    // TODO: Consider using std::views::concat (but it's C++20)
+  void set_all_sdfs() {
     std::vector<SDFBase::Ptr> all_sdfs;
     if (fixed_sdf_ != nullptr) {
       all_sdfs.push_back(fixed_sdf_);
@@ -259,7 +261,7 @@ class SphereCollisionCst : public IneqConstraintBase {
     if (all_sdfs.size() == 0) {
       throw std::runtime_error("(cpp) No SDFs are set");
     }
-    return all_sdfs;
+    all_sdfs_cache_ = all_sdfs;
   }
 
   std::vector<size_t> sphere_ids_;
@@ -268,6 +270,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<std::pair<size_t, size_t>> selcol_pairs_ids_;
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user
+  std::vector<SDFBase::Ptr> all_sdfs_cache_;
 };
 
 struct AppliedForceSpec {

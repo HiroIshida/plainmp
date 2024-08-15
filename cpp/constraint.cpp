@@ -163,6 +163,7 @@ SphereCollisionCst::SphereCollisionCst(
     }
   }
   selcol_pairs_ids_ = selcol_pairs_ids;
+  set_all_sdfs();
 }
 
 bool SphereCollisionCst::is_valid_dirty() {
@@ -181,7 +182,7 @@ bool SphereCollisionCst::is_valid_dirty() {
     }
     auto& pose = sphere_poses_cache_[i];
     Eigen::Vector3d center(pose.position.x, pose.position.y, pose.position.z);
-    for (auto& sdf : get_all_sdfs()) {
+    for (auto& sdf : all_sdfs_cache_) {
       if (!sdf->is_outside(center, sphere_specs_[i].radius)) {
         return false;
       }
@@ -204,8 +205,6 @@ bool SphereCollisionCst::is_valid_dirty() {
 
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
     const {
-  auto all_sdfs = get_all_sdfs();
-
   // collision vs outers
   tinyfk::Transform pose;
   Eigen::VectorXd grad_in_cspace_other(q_dim());
@@ -219,8 +218,9 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
       }
       kin_->get_link_pose(sphere_ids_[i], pose);
       Eigen::Vector3d center(pose.position.x, pose.position.y, pose.position.z);
-      for (size_t j = 0; j < all_sdfs.size(); j++) {
-        double val = all_sdfs[j]->evaluate(center) - sphere_specs_[i].radius;
+      for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
+        double val =
+            all_sdfs_cache_[j]->evaluate(center) - sphere_specs_[i].radius;
         if (val < min_val_other) {
           min_val_other = val;
           min_sphere_idx = i;
@@ -235,7 +235,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
     for (size_t i = 0; i < 3; i++) {
       Eigen::Vector3d perturbed_center = center;
       perturbed_center[i] += 1e-6;
-      double val = all_sdfs[*min_sdf_idx]->evaluate(perturbed_center) -
+      double val = all_sdfs_cache_[*min_sdf_idx]->evaluate(perturbed_center) -
                    sphere_specs_[*min_sphere_idx].radius;
       grad[i] = (val - min_val_other) / 1e-6;
     }
