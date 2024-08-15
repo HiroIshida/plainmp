@@ -85,7 +85,7 @@ class IneqConstraintBase : public ConstraintBase {
     return is_valid_dirty();
   }
   bool is_equality() const override { return false; }
-  virtual bool is_valid_dirty() const = 0;
+  virtual bool is_valid_dirty() = 0;
 };
 
 class ConfigPointCst : public EqConstraintBase {
@@ -234,7 +234,7 @@ class SphereCollisionCst : public IneqConstraintBase {
 
   void set_sdf(const SDFBase::Ptr& sdf) { sdf_ = sdf; }
 
-  bool is_valid_dirty() const override;
+  bool is_valid_dirty() override;
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
 
   size_t cst_dim() const {
@@ -264,6 +264,7 @@ class SphereCollisionCst : public IneqConstraintBase {
 
   std::vector<size_t> sphere_ids_;
   std::vector<SphereAttachmentSpec> sphere_specs_;
+  std::vector<tinyfk::Transform> sphere_poses_cache_;
   std::vector<std::pair<size_t, size_t>> selcol_pairs_ids_;
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user
@@ -293,7 +294,7 @@ class ComInPolytopeCst : public IneqConstraintBase {
     force_link_ids_ = kin_->get_link_ids(force_link_names);
   }
 
-  bool is_valid_dirty() const override;
+  bool is_valid_dirty() override;
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() const override;
 
   size_t cst_dim() const { return 1; }

@@ -132,6 +132,7 @@ SphereCollisionCst::SphereCollisionCst(
     std::optional<SDFBase::Ptr> fixed_sdf)
     : IneqConstraintBase(kin, control_joint_names, with_base),
       sphere_specs_(sphere_specs),
+      sphere_poses_cache_(sphere_specs.size()),
       fixed_sdf_(fixed_sdf == std::nullopt ? nullptr : *fixed_sdf) {
   std::vector<std::string> parent_link_names;
   for (const auto& spec : sphere_specs) {
@@ -164,13 +165,21 @@ SphereCollisionCst::SphereCollisionCst(
   selcol_pairs_ids_ = selcol_pairs_ids;
 }
 
-bool SphereCollisionCst::is_valid_dirty() const {
-  tinyfk::Transform pose;
+bool SphereCollisionCst::is_valid_dirty() {
+  bool check_self_collision = selcol_pairs_ids_.size() > 0;
+  // update sphere poses
+  for (size_t i = 0; i < sphere_ids_.size(); i++) {
+    if (!check_self_collision && sphere_specs_[i].ignore_collision) {
+      continue;
+    }
+    kin_->get_link_pose(sphere_ids_[i], sphere_poses_cache_[i]);
+  }
+
   for (size_t i = 0; i < sphere_ids_.size(); i++) {
     if (sphere_specs_[i].ignore_collision) {
       continue;
     }
-    kin_->get_link_pose(sphere_ids_[i], pose);
+    auto& pose = sphere_poses_cache_[i];
     Eigen::Vector3d center(pose.position.x, pose.position.y, pose.position.z);
     for (auto& sdf : get_all_sdfs()) {
       if (!sdf->is_outside(center, sphere_specs_[i].radius)) {
@@ -178,10 +187,9 @@ bool SphereCollisionCst::is_valid_dirty() const {
       }
     }
   }
-  tinyfk::Transform pose1, pose2;
   for (const auto& pair : selcol_pairs_ids_) {
-    kin_->get_link_pose(sphere_ids_[pair.first], pose1);
-    kin_->get_link_pose(sphere_ids_[pair.second], pose2);
+    auto& pose1 = sphere_poses_cache_[pair.first];
+    auto& pose2 = sphere_poses_cache_[pair.second];
     Eigen::Vector3d center1(pose1.position.x, pose1.position.y,
                             pose1.position.z);
     Eigen::Vector3d center2(pose2.position.x, pose2.position.y,
@@ -286,7 +294,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
   }
 }
 
-bool ComInPolytopeCst::is_valid_dirty() const {
+bool ComInPolytopeCst::is_valid_dirty() {
   // COPIED from evaluate() >> START
   auto com_tmp = kin_->get_com();
   Eigen::Vector3d com(com_tmp.x, com_tmp.y, com_tmp.z);
