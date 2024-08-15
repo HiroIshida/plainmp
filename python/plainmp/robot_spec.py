@@ -38,6 +38,7 @@ from plainmp.tinyfk import KinematicModel
 from plainmp.utils import sksdf_to_cppsdf
 
 _loaded_urdf_models: Dict[str, URDF] = {}
+_loaded_yamls: Dict[str, Dict] = {}  # loading yaml is quite slow
 N_MAX_CACHE = 200
 _loaded_kin: "OrderedDict[str, KinematicModel]" = OrderedDict()
 
@@ -67,8 +68,12 @@ class RotType(Enum):
 
 class RobotSpec(ABC):
     def __init__(self, conf_file: Path, with_base: bool):
-        with open(conf_file, "r") as f:
-            self.conf_dict = yaml.safe_load(f)
+        if str(conf_file) not in _loaded_yamls:
+            with open(conf_file, "r") as f:
+                self.conf_dict = yaml.safe_load(f)
+            _loaded_yamls[str(conf_file)] = self.conf_dict
+        else:
+            self.conf_dict = _loaded_yamls[str(conf_file)]
         self.with_base = with_base
         self.uuid = str(uuid.uuid4())
 
