@@ -250,16 +250,8 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::string get_name() const override { return "SphereCollisionCst"; }
 
  private:
-  void set_all_sdfs() {
-    std::vector<SDFBase::Ptr> all_sdfs;
-    if (fixed_sdf_ != nullptr) {
-      all_sdfs.push_back(fixed_sdf_);
-    }
-    if (sdf_ != nullptr) {
-      all_sdfs.push_back(sdf_);
-    }
-    all_sdfs_cache_ = all_sdfs;
-  }
+  void update_sphere_points_cache();
+  void set_all_sdfs();
 
   std::vector<size_t> sphere_ids_;
   std::vector<SphereAttachmentSpec> sphere_specs_;

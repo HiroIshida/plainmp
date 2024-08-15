@@ -170,19 +170,7 @@ bool SphereCollisionCst::is_valid_dirty() {
   if (all_sdfs_cache_.size() == 0) {
     throw std::runtime_error("(cpp) No SDFs are set");
   }
-
-  // update sphere poses
-  bool check_self_collision = selcol_pairs_ids_.size() > 0;
-  tinyfk::Transform pose;
-  for (size_t i = 0; i < sphere_ids_.size(); i++) {
-    if (!check_self_collision && sphere_specs_[i].ignore_collision) {
-      continue;
-    }
-    kin_->get_link_pose(sphere_ids_[i], pose);
-    sphere_points_cache_(0, i) = pose.position.x;
-    sphere_points_cache_(1, i) = pose.position.y;
-    sphere_points_cache_(2, i) = pose.position.z;
-  }
+  update_sphere_points_cache();
 
   for (size_t i = 0; i < sphere_ids_.size(); i++) {
     if (sphere_specs_[i].ignore_collision) {
@@ -299,6 +287,30 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> SphereCollisionCst::evaluate_dirty()
     jac.row(0) = grad_in_cspace_other;
     jac.row(1) = grad_in_cspace_self;
     return {vals, jac};
+  }
+}
+
+void SphereCollisionCst::update_sphere_points_cache() {
+  bool check_self_collision = selcol_pairs_ids_.size() > 0;
+  tinyfk::Transform pose;
+  for (size_t i = 0; i < sphere_ids_.size(); i++) {
+    if (!check_self_collision && sphere_specs_[i].ignore_collision) {
+      continue;
+    }
+    kin_->get_link_pose(sphere_ids_[i], pose);
+    sphere_points_cache_(0, i) = pose.position.x;
+    sphere_points_cache_(1, i) = pose.position.y;
+    sphere_points_cache_(2, i) = pose.position.z;
+  }
+}
+
+void SphereCollisionCst::set_all_sdfs() {
+  all_sdfs_cache_.clear();
+  if (fixed_sdf_ != nullptr) {
+    all_sdfs_cache_.push_back(fixed_sdf_);
+  }
+  if (sdf_ != nullptr) {
+    all_sdfs_cache_.push_back(sdf_);
   }
 }
 
