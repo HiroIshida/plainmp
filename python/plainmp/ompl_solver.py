@@ -16,7 +16,7 @@ class OMPLSolverConfig:
     n_max_call: int = 100000
     n_max_ik_trial: int = 100
     algorithm: Algorithm = Algorithm.RRTConnect
-    algorithm_range: Optional[float] = None
+    algorithm_range: Optional[float] = 2.0
     simplify: bool = False
     expbased_planner_backend: Literal["ertconnect", "lightning"] = "lightning"
     ertconnect_eps: float = 5.0  # used only when ertconnect is selected
