@@ -8,7 +8,7 @@
 #include <optional>
 #include <tinyfk.hpp>
 #include <utility>
-#include "primitive_sdf.hpp"
+#include "collision/primitive_sdf.hpp"
 
 namespace cst {
 

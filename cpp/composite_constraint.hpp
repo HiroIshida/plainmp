@@ -7,8 +7,8 @@
 #include <sstream>
 #include <tinyfk.hpp>
 #include <utility>
+#include "collision/primitive_sdf.hpp"
 #include "constraint.hpp"
-#include "primitive_sdf.hpp"
 
 namespace cst {
 template <typename T>

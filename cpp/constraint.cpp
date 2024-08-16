@@ -2,7 +2,6 @@
 #include <pybind11/stl.h>
 #include <optional>
 #include <stdexcept>
-#include "primitive_sdf.hpp"
 #include "tinyfk.hpp"
 
 namespace cst {
