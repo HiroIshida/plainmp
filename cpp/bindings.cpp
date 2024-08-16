@@ -1,6 +1,6 @@
 #include <pybind11/pybind11.h>
 #include "constraint_binding.hpp"
-#include "third/primitive_sdf_binding.hpp"
+#include "primitive_sdf_binding.hpp"
 #include "third/tinyfk_binding.hpp"
 
 #ifdef USE_VALGRIND
