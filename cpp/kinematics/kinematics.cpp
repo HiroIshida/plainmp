@@ -96,6 +96,32 @@ void KinematicModel::get_link_pose_inner(
   out_tf_rlink_to_elink = std::move(tf_rlink_to_plink);
 }
 
+void KinematicModel::update_tree() {
+  transform_stack2_.reset();
+  transform_stack2_.push(std::make_pair(links_[root_link_id_], base_pose_));
+  while(!transform_stack2_.empty()) {
+    auto [hlink, tf_b2h] = transform_stack2_.top();
+    transform_stack2_.pop();
+    transform_cache_.set_cache(hlink->id, tf_b2h);
+    for (size_t i = 0; i < hlink->child_joints.size(); i++) {
+      auto cjoint = hlink->child_joints[i];
+      auto clink = hlink->child_links[i];
+      if(cjoint->type == urdf::Joint::FIXED) {
+        auto& tf_h2c = cjoint->parent_to_joint_origin_transform;
+        auto&& tf_b2c = pose_transform(tf_b2h, tf_h2c);
+        transform_stack2_.push({clink, tf_b2c});
+      } else {
+        auto angle = joint_angles_[cjoint->id];
+        auto& tf_h2cj = cjoint->parent_to_joint_origin_transform;
+        auto&& tf_cj2c = cjoint->transform(angle);
+        auto&& tf_h2c = pose_transform(tf_h2cj, tf_cj2c);
+        auto&& tf_b2c = pose_transform(tf_b2h, tf_h2c);
+        transform_stack2_.push({clink, tf_b2c});
+      }
+    }
+  }
+}
+
 Eigen::MatrixXd
 KinematicModel::get_jacobian(size_t elink_id,
                              const std::vector<size_t> &joint_ids,

@@ -66,6 +66,7 @@ public: // members
   double total_mass_;
 
   mutable SizedStack<LinkIdAndTransform> transform_stack_;
+  mutable SizedStack<std::pair<urdf::LinkSharedPtr, Transform>> transform_stack2_;
   mutable SizedCache<Transform> transform_cache_;
 
 public: // functions
@@ -124,6 +125,8 @@ public: // functions
   }
 
   void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
+
+  void update_tree();
 
   Eigen::MatrixXd get_jacobian(size_t elink_id,
                                const std::vector<size_t> &joint_ids,
