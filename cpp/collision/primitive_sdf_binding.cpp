@@ -12,7 +12,9 @@ void bind_primitive_sdf(py::module& m) {
   auto m_psdf = m.def_submodule("primitive_sdf");
   py::class_<Pose>(m_psdf, "Pose", py::module_local())
       .def(py::init<const Eigen::Vector3d&, const Eigen::Matrix3d&>());
-
+  py::class_<AABB>(m_psdf, "AABB")
+      .def_readonly("lb", &AABB::lb)
+      .def_readonly("ub", &AABB::ub);
   py::class_<SDFBase, SDFBase::Ptr>(
       m_psdf, "SDFBase",
       py::module_local());  // user is not supposed to instantiate this class.
@@ -25,21 +27,29 @@ void bind_primitive_sdf(py::module& m) {
                                                py::module_local())
       .def(py::init<std::vector<SDFBase::Ptr>, bool>())
       .def("evaluate_batch", &UnionSDF::evaluate_batch)
-      .def("evaluate", &UnionSDF::evaluate);
+      .def("evaluate", &UnionSDF::evaluate)
+      .def("is_outside", &UnionSDF::is_outside)
+      .def("get_aabb", &UnionSDF::get_aabb);
   py::class_<BoxSDF, BoxSDF::Ptr, PrimitiveSDFBase>(m_psdf, "BoxSDF",
                                                     py::module_local())
       .def(py::init<const Eigen::Vector3d&, const Pose&>())
       .def("evaluate_batch", &BoxSDF::evaluate_batch)
-      .def("evaluate", &BoxSDF::evaluate);
+      .def("evaluate", &BoxSDF::evaluate)
+      .def("is_outside", &BoxSDF::is_outside)
+      .def("get_aabb", &BoxSDF::get_aabb);
   py::class_<CylinderSDF, CylinderSDF::Ptr, PrimitiveSDFBase>(
       m_psdf, "CylinderSDF", py::module_local())
       .def(py::init<double, double, const Pose&>())
       .def("evaluate_batch", &CylinderSDF::evaluate_batch)
-      .def("evaluate", &CylinderSDF::evaluate);
+      .def("evaluate", &CylinderSDF::evaluate)
+      .def("is_outside", &CylinderSDF::is_outside)
+      .def("get_aabb", &CylinderSDF::get_aabb);
   py::class_<SphereSDF, SphereSDF::Ptr, PrimitiveSDFBase>(m_psdf, "SphereSDF",
                                                           py::module_local())
       .def(py::init<double, const Pose&>())
       .def("evaluate_batch", &SphereSDF::evaluate_batch)
-      .def("evaluate", &SphereSDF::evaluate);
+      .def("evaluate", &SphereSDF::evaluate)
+      .def("is_outside", &SphereSDF::is_outside)
+      .def("get_aabb", &SphereSDF::get_aabb);
 }
 }  // namespace primitive_sdf
