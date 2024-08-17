@@ -244,6 +244,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
   link_ids_[link_name] = link_id;
   links_.push_back(new_link);
   links_[parent_id]->child_links.push_back(new_link);
+  links_[parent_id]->child_joints.push_back(fixed_joint);
   transform_cache_.extend();
 
   this->update_rptable(); // set _rptable
