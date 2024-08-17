@@ -5,10 +5,10 @@
 #include <algorithm>
 #include <memory>
 #include <sstream>
-#include <tinyfk.hpp>
 #include <utility>
 #include "collision/primitive_sdf.hpp"
 #include "constraint.hpp"
+#include "kinematics/tinyfk.hpp"
 
 namespace cst {
 template <typename T>

@@ -6,9 +6,9 @@
 #include <algorithm>
 #include <memory>
 #include <optional>
-#include <tinyfk.hpp>
 #include <utility>
 #include "collision/primitive_sdf.hpp"
+#include "kinematics/tinyfk.hpp"
 
 namespace cst {
 
