@@ -230,6 +230,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
     std::string message = "link name " + link_name + " already exists";
     throw std::invalid_argument("link name : " + link_name + " already exists");
   }
+  std::cout << "add: " << link_name << std::endl;
 
   auto fixed_joint = std::make_shared<urdf::Joint>();
 

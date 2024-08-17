@@ -31,7 +31,7 @@ public:
   }
   void clear() { cache_predicate_vector_ = std::vector<bool>(cache_size_); }
 
-private:
+// private:
   int cache_size_;
   std::vector<DataT> data_;
   std::vector<bool> cache_predicate_vector_;

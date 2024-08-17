@@ -40,6 +40,7 @@ class ConstraintBase {
     } else {
       kin_->set_joint_angles(control_joint_ids_, q);
     }
+    kin_->update_tree();
   }
 
   inline size_t q_dim() const {

@@ -30,11 +30,14 @@ Rotation q_derivative(const Rotation &q, const Vector3 &omega) {
 
 void KinematicModel::get_link_pose(size_t link_id,
                                    Transform &out_tf_rlink_to_elink) const {
+  out_tf_rlink_to_elink = transform_cache_.data_[link_id];
   Transform const *pose_ptr = transform_cache_.get_cache(link_id);
   if (pose_ptr) {
     out_tf_rlink_to_elink = *pose_ptr;
     return;
   }
+  std::cout << links_[link_id]->name << std::endl;
+  throw std::runtime_error("cache is not implemented");
   this->get_link_pose_inner(link_id, out_tf_rlink_to_elink);
 }
 

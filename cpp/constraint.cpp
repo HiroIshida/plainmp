@@ -278,12 +278,13 @@ SphereCollisionCst::evaluate_dirty() {
 
 void SphereCollisionCst::update_sphere_points_cache() {
   bool check_self_collision = selcol_pairs_ids_.size() > 0;
-  tinyfk::Transform pose;
+  // tinyfk::Transform pose;
   for (size_t i = 0; i < sphere_ids_.size(); i++) {
     if (!check_self_collision && sphere_specs_[i].ignore_collision) {
       continue;
     }
-    kin_->get_link_pose(sphere_ids_[i], pose);
+    // kin_->get_link_pose(sphere_ids_[i], pose);
+    auto& pose = kin_->transform_cache_.data_[sphere_ids_[i]];
     sphere_points_cache_(0, i) = pose.position.x;
     sphere_points_cache_(1, i) = pose.position.y;
     sphere_points_cache_(2, i) = pose.position.z;
