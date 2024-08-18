@@ -139,7 +139,9 @@ SphereCollisionCst::SphereCollisionCst(
     parent_link_names.push_back(spec.parent_link_name);
   }
   std::vector<std::pair<size_t, size_t>> selcol_pairs_ids;
-  for (const auto& pair : selcol_pairs) {
+  // for (const auto& pair : selcol_pairs) {
+  for (size_t i = 0; i < selcol_pairs.size(); i++) {
+    const auto& pair = selcol_pairs[i];
     std::vector<size_t> first_ids;
     std::vector<size_t> second_ids;
     for (size_t i = 0; i < parent_link_names.size(); i++) {
@@ -153,6 +155,9 @@ SphereCollisionCst::SphereCollisionCst(
     for (auto& first_id : first_ids) {
       for (auto& second_id : second_ids) {
         selcol_pairs_ids.push_back({first_id, second_id});
+        double radius_sum =
+            sphere_specs_[first_id].radius + sphere_specs_[second_id].radius;
+        sphere_radius_pairsum_sq_.push_back(radius_sum * radius_sum);
       }
     }
   }
@@ -188,13 +193,13 @@ bool SphereCollisionCst::check_ext_collision() {
 }
 
 bool SphereCollisionCst::check_self_collision() {
-  for (const auto& pair : selcol_pairs_ids_) {
-    double center_sqdist = (sphere_points_cache_.col(pair.first) -
-                            sphere_points_cache_.col(pair.second))
-                               .squaredNorm();
-    double r_sum =
-        sphere_specs_[pair.first].radius + sphere_specs_[pair.second].radius;
-    if (center_sqdist < r_sum * r_sum) {
+  // for (const auto& pair : selcol_pairs_ids_) {
+  for (size_t i = 0; i < selcol_pairs_ids_.size(); i++) {
+    const auto& pair = selcol_pairs_ids_[i];
+    double&& center_sqdist = (sphere_points_cache_.col(pair.first) -
+                              sphere_points_cache_.col(pair.second))
+                                 .squaredNorm();
+    if (center_sqdist < sphere_radius_pairsum_sq_[i]) {
       return false;
     }
   }

@@ -261,6 +261,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user
   std::vector<SDFBase::Ptr> all_sdfs_cache_;
+  std::vector<double> sphere_radius_pairsum_sq_;
 };
 
 struct AppliedForceSpec {
