@@ -9,14 +9,25 @@ namespace tinyfk {
 
 ExpTransform to_exp_transform(const Transform &tf) {
   ExpTransform transform;
-  transform.translation() = Eigen::Vector3d(tf.position.x, tf.position.y, tf.position.z);
+  transform.t = Eigen::Vector3d(tf.position.x, tf.position.y, tf.position.z);
   Eigen::Quaterniond q;
   q.x() = tf.rotation.x;
   q.y() = tf.rotation.y;
   q.z() = tf.rotation.z;
   q.w() = tf.rotation.w;
-  transform.linear() = q.toRotationMatrix();
+  // transform.R = q.toRotationMatrix();
+  transform.q = q;
   return transform;
+}
+
+ExpTransform chaine_transform(const ExpTransform &tf1, const ExpTransform &tf2)
+{
+  ExpTransform result;
+  // result.R = tf1.R * tf2.R;
+  // result.t = tf1.R * tf2.t + tf1.t;
+  result.q = tf1.q * tf2.q;
+  result.t = tf1.q * tf2.t + tf1.t;
+  return result;
 }
 
 KinematicModel::KinematicModel(const std::string &xml_string) {

@@ -134,14 +134,17 @@ void KinematicModel::exp_update_tree() {
       auto clink = hlink->child_links[i];
       if(cjoint->type == urdf::Joint::FIXED) {
         auto&& exp_tf_h2c = to_exp_transform(cjoint->parent_to_joint_origin_transform);
-        auto&& exp_tf_b2c = exp_tf_h2c * exp_tf_b2h;
+        // auto&& exp_tf_b2c = exp_tf_h2c * exp_tf_b2h;
+        auto&& exp_tf_b2c = chaine_transform(exp_tf_b2h, exp_tf_h2c);
         exp_transform_stack_.push({clink, exp_tf_b2c});
       } else {
         auto angle = joint_angles_[cjoint->id];
         auto& exp_tf_h2cj = exp_parent_to_joint_origin_transform_cache_[cjoint->id];
         auto&& exp_tf_cj2c = to_exp_transform(cjoint->transform(angle));
-        auto&& exp_tf_h2c = exp_tf_h2cj * exp_tf_cj2c; 
-        auto&& exp_tf_b2c = exp_tf_h2c * exp_tf_b2h;
+        // auto&& exp_tf_h2c = exp_tf_h2cj * exp_tf_cj2c; 
+        // auto&& exp_tf_b2c = exp_tf_h2c * exp_tf_b2h;
+        auto&& exp_tf_h2c = chaine_transform(exp_tf_h2cj, exp_tf_cj2c);
+        auto&& exp_tf_b2c = chaine_transform(exp_tf_b2h, exp_tf_h2c);
         exp_transform_stack_.push({clink, exp_tf_b2c});
       }
     }

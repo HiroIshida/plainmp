@@ -47,8 +47,22 @@ struct LinkIdAndTransform {
 
 enum class RotationType { IGNORE, RPY, XYZW };
 
-using ExpTransform = Eigen::Affine3d;
+template<typename Scalar>
+struct MatAndTrans {
+    Eigen::Matrix<Scalar, 3, 3> R;
+    Eigen::Matrix<Scalar, 3, 1> t;
+};
+
+template<typename Scalar>
+struct QuatAndTrans {
+    Eigen::Quaternion<Scalar> q;
+    Eigen::Matrix<Scalar, 3, 1> t;
+};
+
+using ExpTransform = QuatAndTrans<double>;
+
 ExpTransform to_exp_transform(const Transform &tf);
+ExpTransform chaine_transform(const ExpTransform &tf1, const ExpTransform &tf2);
 
 class KinematicModel {
 public: // members
