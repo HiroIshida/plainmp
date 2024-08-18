@@ -189,11 +189,12 @@ bool SphereCollisionCst::check_ext_collision() {
 
 bool SphereCollisionCst::check_self_collision() {
   for (const auto& pair : selcol_pairs_ids_) {
-    double center_dist = (sphere_points_cache_.col(pair.first) -
-                          sphere_points_cache_.col(pair.second))
-                             .norm();
-    if (center_dist <
-        sphere_specs_[pair.first].radius + sphere_specs_[pair.second].radius) {
+    double center_sqdist = (sphere_points_cache_.col(pair.first) -
+                            sphere_points_cache_.col(pair.second))
+                               .squaredNorm();
+    double r_sum =
+        sphere_specs_[pair.first].radius + sphere_specs_[pair.second].radius;
+    if (center_sqdist < r_sum * r_sum) {
       return false;
     }
   }
