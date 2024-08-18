@@ -166,7 +166,13 @@ bool SphereCollisionCst::is_valid_dirty() {
     throw std::runtime_error("(cpp) No SDFs are set");
   }
   update_sphere_points_cache();
+  if (!check_ext_collision()) {
+    return false;
+  }
+  return check_self_collision();
+}
 
+bool SphereCollisionCst::check_ext_collision() {
   for (size_t i = 0; i < sphere_ids_.size(); i++) {
     if (sphere_specs_[i].ignore_collision) {
       continue;
@@ -178,6 +184,10 @@ bool SphereCollisionCst::is_valid_dirty() {
       }
     }
   }
+  return true;
+}
+
+bool SphereCollisionCst::check_self_collision() {
   for (const auto& pair : selcol_pairs_ids_) {
     double center_dist = (sphere_points_cache_.col(pair.first) -
                           sphere_points_cache_.col(pair.second))

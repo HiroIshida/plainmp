@@ -237,6 +237,8 @@ class SphereCollisionCst : public IneqConstraintBase {
   }
 
   bool is_valid_dirty() override;
+  bool check_ext_collision();
+  bool check_self_collision();
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
 
   size_t cst_dim() const {
