@@ -50,7 +50,7 @@ void bind_collision_constraints(py::module& m) {
       .def("evaluate", &FixedZAxisCst::evaluate);
   py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
       .def(py::init<const std::string&, const std::string&,
-                    const Eigen::Vector3d&, double, bool>())
+                    const Eigen::Matrix3Xd&, Eigen::VectorXd, bool>())
       .def_readonly("parent_link_name",
                     &SphereAttachmentSpec::parent_link_name);
 
