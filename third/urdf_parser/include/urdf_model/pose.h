@@ -198,6 +198,7 @@ public:
     this->z = quat_z;
     this->w = quat_w;
     this->normalize();
+    this->rot_matrix_dirty = true;
   };
   void setFromRPY(double roll, double pitch, double yaw)
   {
@@ -213,9 +214,14 @@ public:
     this->w = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
 
     this->normalize();
+    this->rot_matrix_dirty = true;
   };
 
   double x,y,z,w;
+
+  // these are used to cache the rotation matrix
+  mutable bool rot_matrix_dirty;
+  mutable double rot_matrix[3][3];
 
   void init(const std::string &rotation_str)
   {
@@ -225,7 +231,7 @@ public:
     setFromRPY(rpy.x, rpy.y, rpy.z);
   }
 
-  void clear() { this->x=this->y=this->z=0.0;this->w=1.0; }
+  void clear() { this->x=this->y=this->z=0.0;this->w=1.0; rot_matrix_dirty = true;}
 
   void normalize()
   {
@@ -264,21 +270,33 @@ public:
   /// Rotate a vector using the quaternion
   Vector3 operator*(Vector3 vec) const
   {
-    Rotation tmp;
-    Vector3 result;
+    double q_xx = this->x * this->x;
+    double q_yy = this->y * this->y;
+    double q_zz = this->z * this->z;
+    double q_xy = this->x * this->y;
+    double q_xz = this->x * this->z;
+    double q_xw = this->x * this->w;
+    double q_yz = this->y * this->z;
+    double q_yw = this->y * this->w;
+    double q_zw = this->z * this->w;
 
-    tmp.w = 0.0;
-    tmp.x = vec.x;
-    tmp.y = vec.y;
-    tmp.z = vec.z;
-
-    tmp = (*this) * (tmp * this->GetInverse());
-
-    result.x = tmp.x;
-    result.y = tmp.y;
-    result.z = tmp.z;
-
-    return result;
+    // fill rotation matrix
+    if (this->rot_matrix_dirty)
+    {
+      this->rot_matrix[0][0] = 1 - 2*q_yy - 2*q_zz;
+      this->rot_matrix[0][1] = 2*q_xy - 2*q_zw;
+      this->rot_matrix[0][2] = 2*q_xz + 2*q_yw;
+      this->rot_matrix[1][0] = 2*q_xy + 2*q_zw;
+      this->rot_matrix[1][1] = 1 - 2*q_xx - 2*q_zz;
+      this->rot_matrix[1][2] = 2*q_yz - 2*q_xw;
+      this->rot_matrix[2][0] = 2*q_xz - 2*q_yw;
+      this->rot_matrix[2][1] = 2*q_yz + 2*q_xw;
+      this->rot_matrix[2][2] = 1 - 2*q_xx - 2*q_yy;
+      this->rot_matrix_dirty = false;
+    }
+    return {this->rot_matrix[0][0]*vec.x + this->rot_matrix[0][1]*vec.y + this->rot_matrix[0][2]*vec.z,
+            this->rot_matrix[1][0]*vec.x + this->rot_matrix[1][1]*vec.y + this->rot_matrix[1][2]*vec.z,
+            this->rot_matrix[2][0]*vec.x + this->rot_matrix[2][1]*vec.y + this->rot_matrix[2][2]*vec.z};
   };
   // Get the inverse of this quaternion
   Rotation GetInverse() const
