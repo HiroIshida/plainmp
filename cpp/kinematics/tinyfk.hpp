@@ -5,6 +5,7 @@
 #include "urdf_model/pose.h"
 #include "urdf_parser/urdf_parser.h"
 #include <Eigen/Core> // slow compile...
+#include <Eigen/Geometry>
 #include <array>
 #include <assert.h>
 #include <fstream>
@@ -46,6 +47,9 @@ struct LinkIdAndTransform {
 
 enum class RotationType { IGNORE, RPY, XYZW };
 
+using ExpTransform = Eigen::Affine3d;
+ExpTransform to_exp_transform(const Transform &tf);
+
 class KinematicModel {
 public: // members
   // change them all to private later
@@ -68,6 +72,11 @@ public: // members
   mutable SizedStack<LinkIdAndTransform> transform_stack_;
   mutable SizedStack<std::pair<urdf::LinkSharedPtr, Transform>> transform_stack2_;
   mutable SizedCache<Transform> transform_cache_;
+
+  // experimental data strucutre
+  mutable SizedStack<std::pair<urdf::LinkSharedPtr, ExpTransform>> exp_transform_stack_;
+  mutable std::vector<ExpTransform> exp_transform_cache_;
+  mutable std::vector<ExpTransform> exp_parent_to_joint_origin_transform_cache_;
 
 public: // functions
   KinematicModel(const std::string &xml_string);
@@ -127,6 +136,7 @@ public: // functions
   void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
 
   void update_tree();
+  void exp_update_tree();
 
   Eigen::MatrixXd get_jacobian(size_t elink_id,
                                const std::vector<size_t> &joint_ids,

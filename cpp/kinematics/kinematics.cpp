@@ -122,6 +122,32 @@ void KinematicModel::update_tree() {
   }
 }
 
+void KinematicModel::exp_update_tree() {
+  exp_transform_stack_.reset();
+  exp_transform_stack_.push(std::make_pair(links_[root_link_id_], ExpTransform()));
+  while(!exp_transform_stack_.empty()) {
+    auto [hlink, exp_tf_b2h] = exp_transform_stack_.top();
+    exp_transform_stack_.pop();
+    exp_transform_cache_[hlink->id] = exp_tf_b2h;
+    for (size_t i = 0; i < hlink->child_joints.size(); i++) {
+      auto cjoint = hlink->child_joints[i];
+      auto clink = hlink->child_links[i];
+      if(cjoint->type == urdf::Joint::FIXED) {
+        auto&& exp_tf_h2c = to_exp_transform(cjoint->parent_to_joint_origin_transform);
+        auto&& exp_tf_b2c = exp_tf_h2c * exp_tf_b2h;
+        exp_transform_stack_.push({clink, exp_tf_b2c});
+      } else {
+        auto angle = joint_angles_[cjoint->id];
+        auto& exp_tf_h2cj = exp_parent_to_joint_origin_transform_cache_[cjoint->id];
+        auto&& exp_tf_cj2c = to_exp_transform(cjoint->transform(angle));
+        auto&& exp_tf_h2c = exp_tf_h2cj * exp_tf_cj2c; 
+        auto&& exp_tf_b2c = exp_tf_h2c * exp_tf_b2h;
+        exp_transform_stack_.push({clink, exp_tf_b2c});
+      }
+    }
+  }
+}
+
 Eigen::MatrixXd
 KinematicModel::get_jacobian(size_t elink_id,
                              const std::vector<size_t> &joint_ids,

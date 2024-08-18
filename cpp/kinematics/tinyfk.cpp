@@ -7,6 +7,18 @@
 
 namespace tinyfk {
 
+ExpTransform to_exp_transform(const Transform &tf) {
+  ExpTransform transform;
+  transform.translation() = Eigen::Vector3d(tf.position.x, tf.position.y, tf.position.z);
+  Eigen::Quaterniond q;
+  q.x() = tf.rotation.x;
+  q.y() = tf.rotation.y;
+  q.z() = tf.rotation.z;
+  q.w() = tf.rotation.w;
+  transform.linear() = q.toRotationMatrix();
+  return transform;
+}
+
 KinematicModel::KinematicModel(const std::string &xml_string) {
   if (xml_string.empty()) {
     throw std::runtime_error("xml string is empty");
@@ -72,6 +84,20 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, Transform>>(
       N_link); // for batch update
   transform_cache_ = SizedCache<Transform>(N_link);
+
+  // experimental data structure
+  exp_transform_stack_ = SizedStack<std::pair<urdf::LinkSharedPtr, ExpTransform>>(
+      N_link);
+  std::cout << "nlink here: " << N_link << std::endl;
+  exp_transform_cache_ = std::vector<ExpTransform>(N_link * 5);
+  size_t N_joint = joint_ids.size();
+  exp_parent_to_joint_origin_transform_cache_ =
+      std::vector<ExpTransform>(N_joint);
+  for(size_t i = 0; i < N_joint; i++) {
+    auto pose = joints[i]->parent_to_joint_origin_transform;
+    exp_parent_to_joint_origin_transform_cache_[i] = to_exp_transform(pose);
+  }
+
   root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
   links_ = links;
   link_ids_ = link_ids;
