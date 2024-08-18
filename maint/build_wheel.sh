@@ -1,4 +1,15 @@
 set -e
+GPP_VERSION=$(g++ -dumpversion | cut -d. -f1)
+
+# NOTE: this GPP version reqiurement is actually not mandatory for just building the wheel.
+# However, recent g++ versions makes sizable performance improvements.
+if [ "$GPP_VERSION" -lt 13 ]; then
+  echo "Error: g++ version must be 13 or greater. Current version is $GPP_VERSION."
+  exit 1
+else
+  echo "g++ version is $GPP_VERSION. Proceeding..."
+fi
+
 PYTHON_VERSIONS=("system" "3.9.19" "3.10.10" "3.11.9" "3.12.5")
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 DIST_DIR=${CURRENT_DIR}/dist
