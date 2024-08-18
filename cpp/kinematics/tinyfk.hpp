@@ -147,10 +147,12 @@ public: // functions
   urdf::LinkSharedPtr add_new_link(const std::string &link_name,
                                    size_t parent_id,
                                    const std::array<double, 3> &position,
-                                   const std::array<double, 3> &rpy);
+                                   const std::array<double, 3> &rpy,
+                                   bool consider_rotation);
 
   urdf::LinkSharedPtr add_new_link(const std::string &link_name,
-                                   size_t parent_id, const Transform &pose);
+                                   size_t parent_id, const Transform &pose,
+                                   bool consider_rotation);
 
 private:
   void get_link_pose_inner(size_t link_id, Transform &out_tf_root_to_ef) const;

@@ -97,7 +97,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
       new_link_pose.position.y = link->inertial->origin.position.y;
       new_link_pose.position.z = link->inertial->origin.position.z;
       const auto new_link =
-          this->add_new_link(com_dummy_link_name, link->id, new_link_pose);
+          this->add_new_link(com_dummy_link_name, link->id, new_link_pose, false);
       // set new link's inertial as the same as the parent
       // except its origin is zero
       new_link->inertial = link->inertial;
@@ -214,18 +214,20 @@ KinematicModel::get_link_ids(std::vector<std::string> link_names) const {
 urdf::LinkSharedPtr
 KinematicModel::add_new_link(const std::string &link_name, size_t parent_id,
                              const std::array<double, 3> &position,
-                             const std::array<double, 3> &rpy) {
+                             const std::array<double, 3> &rpy,
+                             bool consider_rotation) {
   Transform pose;
   pose.position.x = position[0];
   pose.position.y = position[1];
   pose.position.z = position[2];
   pose.rotation.setFromRPY(rpy[0], rpy[1], rpy[2]);
-  return this->add_new_link(link_name, parent_id, pose);
+  return this->add_new_link(link_name, parent_id, pose, consider_rotation);
 }
 
 urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
                                                  size_t parent_id,
-                                                 const Transform &pose) {
+                                                 const Transform &pose,
+                                                 bool consider_rotation) {
   bool link_name_exists = (link_ids_.find(link_name) != link_ids_.end());
   if (link_name_exists) {
     std::string message = "link name " + link_name + " already exists";
@@ -243,6 +245,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
   new_link->setParent(links_[parent_id]);
   new_link->name = link_name;
   new_link->id = link_id;
+  new_link->consider_rotation = consider_rotation;
 
   link_ids_[link_name] = link_id;
   links_.push_back(new_link);

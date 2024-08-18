@@ -80,14 +80,14 @@ FixedZAxisCst::FixedZAxisCst(
   {
     tinyfk::Transform pose;
     pose.position.x = 1;
-    kin_->add_new_link(new_link_name1, link_id_, pose);
+    kin_->add_new_link(new_link_name1, link_id_, pose, false);
   }
 
   auto new_link_name2 = link_name + "-y-plus1";
   {
     tinyfk::Transform pose;
     pose.position.y = 1;
-    kin_->add_new_link(new_link_name2, link_id_, pose);
+    kin_->add_new_link(new_link_name2, link_id_, pose, false);
   }
   aux_link_ids_ = kin_->get_link_ids({new_link_name1, new_link_name2});
 }
@@ -134,7 +134,7 @@ SphereCollisionCst::SphereCollisionCst(
     kin_->add_new_link(spec.name, parent_id,
                        {spec.relative_position.x(), spec.relative_position.y(),
                         spec.relative_position.z()},
-                       {0.0, 0.0, 0.0});
+                       {0.0, 0.0, 0.0}, false);
     sphere_ids_.push_back(kin_->get_link_ids({spec.name})[0]);
     parent_link_names.push_back(spec.parent_link_name);
   }

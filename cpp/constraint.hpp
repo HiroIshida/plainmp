@@ -181,7 +181,7 @@ class RelativePoseCst : public EqConstraintBase {
     pose.position.y = relative_pose[1];
     pose.position.z = relative_pose[2];
     size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
-    auto new_link = kin_->add_new_link(dummy_link_name, link_id1_, pose);
+    auto new_link = kin_->add_new_link(dummy_link_name, link_id1_, pose, true);
     dummy_link_id_ = new_link->id;
   }
 

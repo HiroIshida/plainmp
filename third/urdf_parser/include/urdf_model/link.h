@@ -191,6 +191,7 @@ public:
   Link() { this->clear(); };
 
   std::string name;
+  bool consider_rotation;
 
   unsigned int id;
 
@@ -227,6 +228,7 @@ public:
   {
     this->id = -1; // meaning that the id is not initialized
     this->name.clear();
+    this->consider_rotation = true;
     this->inertial.reset();
     this->visual.reset();
     this->collision.reset();

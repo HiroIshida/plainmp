@@ -7,6 +7,11 @@ class KinematicModel:
     # NOTE: urdf_string is not a file path, but the actual content of the URDF file
 
     def add_new_link(
-        self, link_name: str, parent_link_name: str, position: np.ndarray, rpy: np.ndarray
+        self,
+        link_name: str,
+        parent_link_name: str,
+        position: np.ndarray,
+        rpy: np.ndarray,
+        consider_rotation: bool,
     ) -> None: ...
     def get_joint_position_limits(self, joint_ids: List[int]) -> List[Tuple[float, float]]: ...

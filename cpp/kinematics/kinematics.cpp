@@ -30,12 +30,27 @@ Rotation q_derivative(const Rotation &q, const Vector3 &omega) {
 
 void KinematicModel::get_link_pose(size_t link_id,
                                    Transform &out_tf_rlink_to_elink) const {
-  Transform const *pose_ptr = transform_cache_.get_cache(link_id);
-  if (pose_ptr) {
-    out_tf_rlink_to_elink = *pose_ptr;
+  if(transform_cache_.is_cached(link_id)) {
+    out_tf_rlink_to_elink = transform_cache_.data_[link_id];
     return;
   }
-  this->get_link_pose_inner(link_id, out_tf_rlink_to_elink);
+
+  if(links_[link_id]->consider_rotation) {
+    this->get_link_pose_inner(link_id, out_tf_rlink_to_elink);
+  } else {
+    auto hlink = links_[link_id];
+    auto plink = hlink->getParent();
+    auto pjoint = hlink->parent_joint;
+    Transform tf_rlink_to_plink;
+    get_link_pose(plink->id, tf_rlink_to_plink); // recursive call
+    auto&& new_pos = tf_rlink_to_plink.position + tf_rlink_to_plink.rotation * pjoint->parent_to_joint_origin_transform.position;
+    out_tf_rlink_to_elink.position = new_pos;
+
+    // HACK: we want to update the only position part
+    // thus, we commented out the private: and directly access the data
+    transform_cache_.cache_predicate_vector_[link_id] = true;
+    transform_cache_.data_[link_id].position = std::move(new_pos);
+  }
 }
 
 void KinematicModel::get_link_pose_inner(
@@ -52,10 +67,8 @@ void KinematicModel::get_link_pose_inner(
       break;
     } // hit the root link
 
-    Transform const *tf_rlink_to_blink_ptr =
-        transform_cache_.get_cache(hlink->id);
-    if (tf_rlink_to_blink_ptr) {
-      tf_rlink_to_blink = *tf_rlink_to_blink_ptr;
+    if(transform_cache_.is_cached(hlink->id)) {
+      tf_rlink_to_blink = transform_cache_.data_[hlink->id];
       break;
     }
 

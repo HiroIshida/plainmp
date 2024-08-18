@@ -314,10 +314,14 @@ class JaxonSpec(RobotSpec):
             # so in the only first call of get_kin() the following code is executed.
             matrix = rotation_matrix(np.pi * 0.5, [0, 0, 1.0])
             rpy = np.flip(rpy_angle(matrix)[0])
-            kin.add_new_link("rarm_end_coords", "RARM_LINK7", np.array([0, 0, -0.220]), rpy)
-            kin.add_new_link("larm_end_coords", "LARM_LINK7", np.array([0, 0, -0.220]), rpy)
-            kin.add_new_link("rleg_end_coords", "RLEG_LINK5", np.array([0, 0, -0.1]), np.zeros(3))
-            kin.add_new_link("lleg_end_coords", "LLEG_LINK5", np.array([0, 0, -0.1]), np.zeros(3))
+            kin.add_new_link("rarm_end_coords", "RARM_LINK7", np.array([0, 0, -0.220]), rpy, True)
+            kin.add_new_link("larm_end_coords", "LARM_LINK7", np.array([0, 0, -0.220]), rpy, True)
+            kin.add_new_link(
+                "rleg_end_coords", "RLEG_LINK5", np.array([0, 0, -0.1]), np.zeros(3), True
+            )
+            kin.add_new_link(
+                "lleg_end_coords", "LLEG_LINK5", np.array([0, 0, -0.1]), np.zeros(3), True
+            )
         return kin
 
     def get_robot_model(self, with_mesh: bool = False) -> RobotModel:

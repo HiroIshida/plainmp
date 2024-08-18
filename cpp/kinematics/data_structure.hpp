@@ -15,9 +15,10 @@ public:
     data_[id] = data;
   }
 
+  inline bool is_cached(size_t id) const { return cache_predicate_vector_[id]; }
+
   DataT const *get_cache(size_t id) const {
-    const bool isAlreadyCached = (cache_predicate_vector_[id] == true);
-    if (!isAlreadyCached) {
+    if (!is_cached(id)) {
       return nullptr;
     } // the cache does not exists
     return const_cast<DataT const *>(&data_[id]);
@@ -31,7 +32,6 @@ public:
   }
   void clear() { cache_predicate_vector_ = std::vector<bool>(cache_size_); }
 
-private:
   int cache_size_;
   std::vector<DataT> data_;
   std::vector<bool> cache_predicate_vector_;
