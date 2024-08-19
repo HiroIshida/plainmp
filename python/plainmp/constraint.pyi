@@ -21,10 +21,10 @@ class RelativePoseCst(EqConstraintBase): ...
 class FixedZAxisCst(EqConstraintBase): ...
 
 class SphereAttachmentSpec:
-    name: str
+    postfix: str
     parent_link_name: str
-    relative_position: np.ndarray
-    radius: float
+    relative_positions: np.ndarray
+    radii: np.ndarray
     ignore_collision: bool
 
 class SphereCollisionCst(IneqConstraintBase):

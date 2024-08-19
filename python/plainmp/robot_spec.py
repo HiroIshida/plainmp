@@ -1,10 +1,8 @@
 import copy
-import pickle
 import uuid
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from enum import Enum
-from hashlib import sha256
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
@@ -127,14 +125,19 @@ class RobotSpec(ABC):
         for parent_link_name, vals in d.items():
             ignore_collision = vals["ignore_collision"]
             spheres_d = vals["spheres"]
-            for spec in spheres_d:
-                vals = np.array(spec)
+            radii = []
+            positions = []
+            for info in spheres_d:
+                vals = np.array(info)
                 center, r = vals[:3], vals[3]
-                pickled = pickle.dumps([parent_link_name, center, r, ignore_collision])
-                name = parent_link_name + "-" + sha256(pickled).hexdigest()
-                sphere_specs.append(
-                    SphereAttachmentSpec(name, parent_link_name, center, r, ignore_collision)
-                )
+                radii.append(r)
+                positions.append(center)
+            radii = np.array(radii)
+            positions = np.array(positions).transpose()
+            spec = SphereAttachmentSpec(
+                "yaml-colsphere", parent_link_name, positions, radii, ignore_collision
+            )
+            sphere_specs.append(spec)
         return sphere_specs
 
     def create_fixed_zaxis_const(self, link_name: str) -> FixedZAxisCst:
@@ -221,18 +224,16 @@ class RobotSpec(ABC):
 
         points_from_center = grid_points - box.worldpos()
         points_from_link = points_from_center + relative_position
-        specs = []
-        for point in points_from_link:
-            pickled = pickle.dumps([parent_link_name, point, 0.0, False])
-            name = parent_link_name + "-" + sha256(pickled).hexdigest()[:10]
-            spec = SphereAttachmentSpec(name, parent_link_name, point, 0.0, False)
-            specs.append(spec)
+        radii = np.zeros(len(points_from_link))
+        spec = SphereAttachmentSpec(
+            "grid-box", parent_link_name, points_from_link.transpose(), radii, False
+        )
 
         cst = SphereCollisionCst(
             self.get_kin(),
             self.control_joint_names,
             self.with_base,
-            specs,
+            [spec],
             [],
             None,
         )
