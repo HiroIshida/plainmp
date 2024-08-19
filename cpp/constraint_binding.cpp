@@ -50,7 +50,7 @@ void bind_collision_constraints(py::module& m) {
       .def("evaluate", &FixedZAxisCst::evaluate);
   py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
       .def(py::init<const std::string&, const std::string&,
-                    const Eigen::Vector3d&, double, bool>())
+                    const Eigen::Matrix3Xd&, Eigen::VectorXd, bool>())
       .def_readonly("parent_link_name",
                     &SphereAttachmentSpec::parent_link_name);
 
@@ -64,7 +64,9 @@ void bind_collision_constraints(py::module& m) {
       .def("set_sdf", &SphereCollisionCst::set_sdf)
       .def("update_kintree", &SphereCollisionCst::update_kintree)
       .def("is_valid", &SphereCollisionCst::is_valid)
-      .def("evaluate", &SphereCollisionCst::evaluate);
+      .def("evaluate", &SphereCollisionCst::evaluate)
+      .def("get_group_spheres", &SphereCollisionCst::get_group_spheres)
+      .def("get_all_spheres", &SphereCollisionCst::get_all_spheres);
 
   py::class_<AppliedForceSpec>(cst_m, "AppliedForceSpec")
       .def(py::init<const std::string&, double>())

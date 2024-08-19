@@ -213,10 +213,19 @@ class FixedZAxisCst : public EqConstraintBase {
 };
 
 struct SphereAttachmentSpec {
-  std::string name;
+  std::string postfix;
   std::string parent_link_name;
-  Eigen::Vector3d relative_position;
-  double radius;
+  Eigen::Matrix3Xd relative_positions;
+  Eigen::VectorXd radii;
+  bool ignore_collision;
+};
+
+struct SphereGroup {
+  std::string parent_link_name;
+  std::vector<size_t> sphere_ids;
+  Eigen::VectorXd radii;
+  size_t group_sphere_id;
+  double group_radius;
   bool ignore_collision;
 };
 
@@ -242,26 +251,25 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
 
   size_t cst_dim() const {
-    if (selcol_pairs_ids_.size() == 0) {
+    if (selcol_group_id_pairs_.size() == 0) {
       return 1;
     } else {
       return 2;
     }
   }
   std::string get_name() const override { return "SphereCollisionCst"; }
+  std::vector<std::pair<Eigen::Vector3d, double>> get_group_spheres() const;
+  std::vector<std::pair<Eigen::Vector3d, double>> get_all_spheres() const;
 
  private:
-  void update_sphere_points_cache();
   void set_all_sdfs();
 
-  std::vector<size_t> sphere_ids_;
-  std::vector<SphereAttachmentSpec> sphere_specs_;
-  Eigen::Matrix3Xd sphere_points_cache_;
-  std::vector<std::pair<size_t, size_t>> selcol_pairs_ids_;
+  std::vector<SphereGroup> sphere_groups_;
+  std::vector<std::pair<size_t, size_t>> selcol_group_id_pairs_;
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user
   std::vector<SDFBase::Ptr> all_sdfs_cache_;
-  std::vector<double> sphere_radius_pairsum_sq_;
+  double cutoff_dist_ = 0.1;
 };
 
 struct AppliedForceSpec {

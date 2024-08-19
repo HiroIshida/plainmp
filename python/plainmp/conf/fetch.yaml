@@ -11,8 +11,6 @@ control_joint_names:
   - wrist_roll_joint
 
 self_collision_pairs:
-  - [head_pan_link,   shoulder_pan_link]
-  - [head_pan_link,   shoulder_lift_link]
   - [head_pan_link,   upperarm_roll_link]
   - [head_pan_link,   elbow_flex_link]
   - [head_pan_link,   forearm_roll_link]
@@ -20,8 +18,6 @@ self_collision_pairs:
   - [head_pan_link,   gripper_link]
   - [head_pan_link,   l_gripper_finger_link]
   - [head_pan_link,   r_gripper_finger_link]
-  - [torso_lift_link, shoulder_pan_link]
-  - [torso_lift_link, shoulder_lift_link]
   - [torso_lift_link, upperarm_roll_link]
   - [torso_lift_link, elbow_flex_link]
   - [torso_lift_link, forearm_roll_link]
