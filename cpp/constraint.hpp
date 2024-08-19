@@ -269,6 +269,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user
   std::vector<SDFBase::Ptr> all_sdfs_cache_;
+  double cutoff_dist_ = 0.1;
 };
 
 struct AppliedForceSpec {
