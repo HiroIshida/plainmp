@@ -355,11 +355,11 @@ struct CollisionAwareSpaceInformation {
     const size_t dim = si_->getStateDimension();
     const auto vec = state_to_vec<Constrained>(state, dim);
     this->is_valid_call_count_++;
-    return is_valid_(vec);
+    return ineq_cst_->is_valid(vec);
   }
 
   ob::SpaceInformationPtr si_;
-  std::function<bool(std::vector<double>)> is_valid_;
+  cst::IneqConstraintBase::Ptr ineq_cst_;
   size_t is_valid_call_count_;
   const size_t max_is_valid_call_;
   std::vector<double> box_width_;
@@ -369,10 +369,10 @@ struct UnconstrianedCollisoinAwareSpaceInformation : public CollisionAwareSpaceI
   UnconstrianedCollisoinAwareSpaceInformation(
       const std::vector<double>& lb,
       const std::vector<double>& ub,
-      const std::function<bool(std::vector<double>)>& is_valid,
+      cst::IneqConstraintBase::Ptr ineq_cst,
       size_t max_is_valid_call,
       const std::vector<double>& box_width)
-      : CollisionAwareSpaceInformation<false>{nullptr, is_valid, 0, max_is_valid_call, box_width}
+      : CollisionAwareSpaceInformation<false>{nullptr, ineq_cst, 0, max_is_valid_call, box_width}
   {
     const auto space = bound2space(lb, ub);
     si_ = std::make_shared<ob::SpaceInformation>(space);
@@ -392,11 +392,11 @@ struct ConstrainedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInf
       const ConstJacFn& jac_const,
       const std::vector<double>& lb,
       const std::vector<double>& ub,
-      const std::function<bool(std::vector<double>)>& is_valid,
+      cst::IneqConstraintBase::Ptr ineq_cst,
       size_t max_is_valid_call,
       const std::vector<double>& box_width,
       ConstStateType cs_type = ConstStateType::PROJECTION)
-      : CollisionAwareSpaceInformation<true>{nullptr, is_valid, 0, max_is_valid_call, box_width}
+      : CollisionAwareSpaceInformation<true>{nullptr, ineq_cst, 0, max_is_valid_call, box_width}
   {
     size_t dim_ambient = lb.size();
     size_t dim_constraint = f_const(lb).size();  // detect by dummy input
@@ -494,11 +494,6 @@ struct PlannerBase {
     return trajectory;
   }
 
-  void resetIsValid(const std::function<bool(std::vector<double>)>& is_valid)
-  {
-    csi_->is_valid_ = is_valid;
-  }
-
   std::shared_ptr<ob::Planner> get_algorithm(const std::string& name, std::optional<double> range)
   {
     const auto space_info = csi_->si_;
@@ -549,13 +544,13 @@ struct PlannerBase {
 struct UnconstrainedPlannerBase : public PlannerBase<false> {
   UnconstrainedPlannerBase(const std::vector<double>& lb,
                            const std::vector<double>& ub,
-                           const std::function<bool(std::vector<double>)>& is_valid,
+                           cst::IneqConstraintBase::Ptr ineq_cst,
                            size_t max_is_valid_call,
                            const std::vector<double>& box_width)
       : PlannerBase<false>{nullptr, nullptr}
   {
     csi_ = std::make_unique<UnconstrianedCollisoinAwareSpaceInformation>(
-        lb, ub, is_valid, max_is_valid_call, box_width);
+        lb, ub, ineq_cst, max_is_valid_call, box_width);
     setup_ = std::make_unique<og::SimpleSetup>(csi_->si_);
     setup_->setStateValidityChecker([this](const ob::State* s) { return this->csi_->is_valid(s); });
   }
@@ -569,9 +564,7 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
               const std::vector<double>& box_width,
               const std::string& algo_name,
               std::optional<double> range)
-      : UnconstrainedPlannerBase(lb, ub,
-              [&ineq_cst](std::vector<double> q) { return ineq_cst->is_valid(q); },
-              max_is_valid_call, box_width)
+      : UnconstrainedPlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
   {
     const auto algo = get_algorithm(algo_name, range);
     setup_->setPlanner(algo);
@@ -665,44 +658,44 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
 //  protected:
 //   std::shared_ptr<LightningRetrieveRepairWrap> repair_planner_;
 // };
-// 
-// struct ERTConnectPlanner : public UnconstrainedPlannerBase {
-//   ERTConnectPlanner(const std::vector<double>& lb,
-//                     const std::vector<double>& ub,
-//                     const std::function<bool(std::vector<double>)>& is_valid,
-//                     size_t max_is_valid_call,
-//                     const std::vector<double>& box_width)
-//       : UnconstrainedPlannerBase(lb, ub, is_valid, max_is_valid_call, box_width)
-//   {
-//     auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
-//     setup_->setPlanner(ert_connect);
-//   }
-// 
-//   void set_heuristic(const std::vector<std::vector<double>>& points)
-//   {
-//     auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
-//     const auto heuristic = geo_path.getStates();
-//     const auto ert_connect = setup_->getPlanner()->as<og::ERTConnect>();
-//     ert_connect->setExperience(heuristic);
-//   }
-// 
-//   void set_parameters(std::optional<double> omega_min,
-//                       std::optional<double> omega_max,
-//                       std::optional<double> eps)
-//   {
-//     const auto planner = setup_->getPlanner();
-//     const auto ert_connect = planner->as<og::ERTConnect>();
-//     if (omega_min) {
-//       ert_connect->setExperienceFractionMin(*omega_min);
-//     }
-//     if (omega_max) {
-//       ert_connect->setExperienceFractionMax(*omega_max);
-//     }
-//     if (eps) {
-//       ert_connect->setExperienceTubularRadius(*eps);
-//     }
-//   }
-// };
+ 
+struct ERTConnectPlanner : public UnconstrainedPlannerBase {
+  ERTConnectPlanner(const std::vector<double>& lb,
+                    const std::vector<double>& ub,
+                    cst::IneqConstraintBase::Ptr ineq_cst,
+                    size_t max_is_valid_call,
+                    const std::vector<double>& box_width)
+      : UnconstrainedPlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
+  {
+    auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
+    setup_->setPlanner(ert_connect);
+  }
+
+  void set_heuristic(const std::vector<std::vector<double>>& points)
+  {
+    auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
+    const auto heuristic = geo_path.getStates();
+    const auto ert_connect = setup_->getPlanner()->as<og::ERTConnect>();
+    ert_connect->setExperience(heuristic);
+  }
+
+  void set_parameters(std::optional<double> omega_min,
+                      std::optional<double> omega_max,
+                      std::optional<double> eps)
+  {
+    const auto planner = setup_->getPlanner();
+    const auto ert_connect = planner->as<og::ERTConnect>();
+    if (omega_min) {
+      ert_connect->setExperienceFractionMin(*omega_min);
+    }
+    if (omega_max) {
+      ert_connect->setExperienceFractionMax(*omega_max);
+    }
+    if (eps) {
+      ert_connect->setExperienceTubularRadius(*eps);
+    }
+  }
+};
 
 void setGlobalSeed(size_t seed) { ompl::RNG::setSeed(seed); }
 
