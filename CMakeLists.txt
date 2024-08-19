@@ -11,6 +11,11 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 add_subdirectory("third/urdf_parser")
 include_directories("third/urdf_parser/include")
 
+find_package(Boost REQUIRED COMPONENTS serialization)
+option(OMPL_REGISTRATION OFF)  # avoid popup in browser
+add_subdirectory(third/ompl)
+include_directories("third/ompl/src")
+
 option(USE_VALGRIND "Use valgrind to profile the code" OFF)
 if(USE_VALGRIND)
     find_path(VALGRIND_INCLUDE_DIR
@@ -26,7 +31,8 @@ if(USE_VALGRIND)
 endif()
 
 file(GLOB_RECURSE SRC_FILES cpp/*.cpp)
+include_directories(cpp)
 add_subdirectory(pybind11)
 pybind11_add_module(_plainmp ${SRC_FILES})
-target_link_libraries(_plainmp urdfdom_model)
+target_link_libraries(_plainmp urdfdom_model ompl ${Boost_LIBRARIES})
 install(TARGETS _plainmp DESTINATION .)
