@@ -139,7 +139,6 @@ SphereCollisionCst::SphereCollisionCst(
       auto name = spec.parent_link_name + "-" + spec.postfix + "-sphere" +
                   std::to_string(j);
       Eigen::Vector3d relpos = spec.relative_positions.col(j);
-      std::cout << "relpos: " << relpos.transpose() << std::endl;
 
       kin_->add_new_link(name, parent_id, {relpos.x(), relpos.y(), relpos.z()},
                          {0.0, 0.0, 0.0}, false);
@@ -186,18 +185,6 @@ SphereCollisionCst::SphereCollisionCst(
     selcol_group_id_pairs_.push_back(
         {group1 - sphere_groups_.begin(), group2 - sphere_groups_.begin()});
   }
-
-  // fill flat structures (these are redundant but for the sake of performance)
-  for (const auto& group : sphere_groups_) {
-    for (size_t id : group.sphere_ids) {
-      sphere_ids_.push_back(id);
-      ignore_collisions_.push_back(group.ignore_collision);
-    }
-    // sphere_ids_.push_back(group.group_sphere_id);
-    // ignore_collisions_.push_back(group.ignore_collision);
-  }
-  sphere_points_cache_ = Eigen::Matrix3Xd(3, sphere_ids_.size());
-  sphere_points_cache_.setZero();
   set_all_sdfs();
 }
 
@@ -205,7 +192,6 @@ bool SphereCollisionCst::is_valid_dirty() {
   if (all_sdfs_cache_.size() == 0) {
     throw std::runtime_error("(cpp) No SDFs are set");
   }
-  update_sphere_points_cache();
   if (!check_ext_collision()) {
     return false;
   }
@@ -383,20 +369,6 @@ SphereCollisionCst::evaluate_dirty() {
   //   jac.row(0) = grad_in_cspace_other;
   //   jac.row(1) = grad_in_cspace_self;
   //   return {vals, jac};
-  // }
-}
-
-void SphereCollisionCst::update_sphere_points_cache() {
-  // bool check_self_collision = selcol_group_id_pairs_.size() > 0;
-  // tinyfk::Transform pose;
-  // for (size_t i = 0; i < sphere_ids_.size(); i++) {
-  //   if (!check_self_collision && ignore_collisions_[i]) {
-  //     continue;
-  //   }
-  //   kin_->get_link_pose(sphere_ids_[i], pose);
-  //   sphere_points_cache_(0, i) = pose.position.x;
-  //   sphere_points_cache_(1, i) = pose.position.y;
-  //   sphere_points_cache_(2, i) = pose.position.z;
   // }
 }
 

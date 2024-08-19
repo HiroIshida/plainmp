@@ -262,15 +262,9 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<std::pair<Eigen::Vector3d, double>> get_all_spheres() const;
 
  private:
-  void update_sphere_points_cache();
   void set_all_sdfs();
 
-  // these are redundant, but for easy to access due to flat structure
-  std::vector<size_t> sphere_ids_;       // flat
-  std::vector<bool> ignore_collisions_;  // flat
-
   std::vector<SphereGroup> sphere_groups_;
-  Eigen::Matrix3Xd sphere_points_cache_;
   std::vector<std::pair<size_t, size_t>> selcol_group_id_pairs_;
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user
