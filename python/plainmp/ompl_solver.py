@@ -4,11 +4,21 @@ from enum import Enum
 from typing import Literal, Optional, TypeVar
 
 import numpy as np
-from ompl import Algorithm, ConstStateType, ERTConnectPlanner, Planner, RepairPlanner
 
 from plainmp.ik import IKResult, solve_ik
 from plainmp.problem import Problem
 from plainmp.trajectory import Trajectory
+
+from ._plainmp.ompl import ERTConnectPlanner, OMPLPlanner
+
+
+class Algorithm(Enum):
+    BKPIECE1 = "BKPIECE1"
+    KPIECE1 = "KPIECE1"
+    LBKPIECE1 = "LBKPIECE1"
+    RRTConnect = "RRTConnect"
+    RRT = "RRT"
+    RRTstar = "RRTstar"
 
 
 @dataclass
@@ -18,10 +28,8 @@ class OMPLSolverConfig:
     algorithm: Algorithm = Algorithm.RRTConnect
     algorithm_range: Optional[float] = 2.0
     simplify: bool = False
-    expbased_planner_backend: Literal["ertconnect", "lightning"] = "lightning"
+    expbased_planner_backend: Literal["ertconnect"] = "lightning"
     ertconnect_eps: float = 5.0  # used only when ertconnect is selected
-    const_state_type: ConstStateType = ConstStateType.PROJECTION
-    timeout: Optional[float] = None
 
 
 class TerminateState(Enum):
@@ -85,42 +93,38 @@ class OMPLSolver:
             q_goal = ik_ret.q
 
         n_count = [0]
-
-        def is_valid(q: np.ndarray) -> bool:
-            n_count[0] += 1
-            if problem.global_ineq_const is None:
-                return True
-            return problem.global_ineq_const.is_valid(q)
-
-        if guess is not None:
-            if self.config.expbased_planner_backend == "ertconnect":
-                planner_t = ERTConnectPlanner
-            elif self.config.expbased_planner_backend == "lightning":
-                planner_t = RepairPlanner  # type: ignore
-            else:
-                assert False
-        else:
-            planner_t = Planner
-
-        planner = planner_t(
-            problem.lb,
-            problem.ub,
-            is_valid,
-            self.config.n_max_call,
-            problem.motion_step_box,
-            self.config.algorithm,
-            self.config.algorithm_range,
-        )
+        # def is_valid(q: np.ndarray) -> bool:
+        #     n_count[0] += 1
+        #     if problem.global_ineq_const is None:
+        #         return True
+        #     return problem.global_ineq_const.is_valid(q)
 
         if guess is not None:
-            assert not isinstance(planner, Planner)
+            planner = ERTConnectPlanner(
+                problem.lb,
+                problem.ub,
+                problem.global_ineq_const,
+                self.config.n_max_call,
+                problem.motion_step_box,
+            )
             planner.set_heuristic(guess.numpy())
+        else:
+            planner = OMPLPlanner(
+                problem.lb,
+                problem.ub,
+                problem.global_ineq_const,
+                self.config.n_max_call,
+                problem.motion_step_box,
+                self.config.algorithm.value,
+                self.config.algorithm_range,
+            )
 
         result = planner.solve(problem.start, q_goal, self.config.simplify)
-
         if result is None:
             return OMPLSolverResult(None, None, -1, TerminateState.FAIL_PLANNING)
         else:
+            for i in range(len(result)):
+                result[i] = np.array(result[i])
             return OMPLSolverResult(
                 Trajectory(result), time.time() - ts, n_count[0], TerminateState.SUCCESS
             )
