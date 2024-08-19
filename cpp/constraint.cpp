@@ -139,13 +139,14 @@ SphereCollisionCst::SphereCollisionCst(
       auto name = spec.parent_link_name + "-" + spec.postfix + "-sphere" +
                   std::to_string(j);
       Eigen::Vector3d relpos = spec.relative_positions.col(j);
+      std::cout << "relpos: " << relpos.transpose() << std::endl;
 
       kin_->add_new_link(name, parent_id, {relpos.x(), relpos.y(), relpos.z()},
                          {0.0, 0.0, 0.0}, false);
       sphere_ids.push_back(kin_->get_link_ids({name})[0]);
       group_center += relpos;
     }
-    group_center /= spec.relative_positions.size();
+    group_center /= spec.relative_positions.cols();
 
     // add group center to kinematic chain
     auto group_center_name = spec.parent_link_name + "-" + spec.postfix +
