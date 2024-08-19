@@ -399,6 +399,32 @@ void SphereCollisionCst::update_sphere_points_cache() {
   // }
 }
 
+std::vector<std::pair<Eigen::Vector3d, double>>
+SphereCollisionCst::get_group_spheres() const {
+  std::vector<std::pair<Eigen::Vector3d, double>> spheres;
+  tinyfk::Transform pose;
+  for (auto& sphere_group : sphere_groups_) {
+    kin_->get_link_pose(sphere_group.group_sphere_id, pose);
+    Eigen::Vector3d pos(pose.position.x, pose.position.y, pose.position.z);
+    spheres.push_back({pos, sphere_group.group_radius});
+  }
+  return spheres;
+}
+
+std::vector<std::pair<Eigen::Vector3d, double>>
+SphereCollisionCst::get_all_spheres() const {
+  tinyfk::Transform pose;
+  std::vector<std::pair<Eigen::Vector3d, double>> spheres;
+  for (auto& sphere_group : sphere_groups_) {
+    for (size_t i = 0; i < sphere_group.sphere_ids.size(); i++) {
+      kin_->get_link_pose(sphere_group.sphere_ids[i], pose);
+      Eigen::Vector3d pos(pose.position.x, pose.position.y, pose.position.z);
+      spheres.push_back({pos, sphere_group.radii[i]});
+    }
+  }
+  return spheres;
+}
+
 void SphereCollisionCst::set_all_sdfs() {
   all_sdfs_cache_.clear();
   if (fixed_sdf_ != nullptr) {

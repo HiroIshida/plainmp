@@ -64,7 +64,9 @@ void bind_collision_constraints(py::module& m) {
       .def("set_sdf", &SphereCollisionCst::set_sdf)
       .def("update_kintree", &SphereCollisionCst::update_kintree)
       .def("is_valid", &SphereCollisionCst::is_valid)
-      .def("evaluate", &SphereCollisionCst::evaluate);
+      .def("evaluate", &SphereCollisionCst::evaluate)
+      .def("get_group_spheres", &SphereCollisionCst::get_group_spheres)
+      .def("get_all_spheres", &SphereCollisionCst::get_all_spheres);
 
   py::class_<AppliedForceSpec>(cst_m, "AppliedForceSpec")
       .def(py::init<const std::string&, double>())

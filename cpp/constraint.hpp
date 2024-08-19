@@ -258,6 +258,8 @@ class SphereCollisionCst : public IneqConstraintBase {
     }
   }
   std::string get_name() const override { return "SphereCollisionCst"; }
+  std::vector<std::pair<Eigen::Vector3d, double>> get_group_spheres() const;
+  std::vector<std::pair<Eigen::Vector3d, double>> get_all_spheres() const;
 
  private:
   void update_sphere_points_cache();
