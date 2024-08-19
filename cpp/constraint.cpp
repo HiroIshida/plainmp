@@ -156,7 +156,7 @@ SphereCollisionCst::SphereCollisionCst(
     size_t group_sphere_id = kin_->get_link_ids({group_center_name})[0];
 
     double max_dist = 0.0;
-    for (size_t j = 0; j < spec.relative_positions.size(); j++) {
+    for (size_t j = 0; j < spec.relative_positions.cols(); j++) {
       double dist = (spec.relative_positions.col(j) - group_center).norm() +
                     spec.radii[j];
       if (dist > max_dist) {
@@ -191,11 +191,12 @@ SphereCollisionCst::SphereCollisionCst(
     for (size_t id : group.sphere_ids) {
       sphere_ids_.push_back(id);
       ignore_collisions_.push_back(group.ignore_collision);
-      sphere_ids_.push_back(group.group_sphere_id);
-      ignore_collisions_.push_back(group.ignore_collision);
     }
+    // sphere_ids_.push_back(group.group_sphere_id);
+    // ignore_collisions_.push_back(group.ignore_collision);
   }
   sphere_points_cache_ = Eigen::Matrix3Xd(3, sphere_ids_.size());
+  sphere_points_cache_.setZero();
   set_all_sdfs();
 }
 
@@ -211,21 +212,35 @@ bool SphereCollisionCst::is_valid_dirty() {
 }
 
 bool SphereCollisionCst::check_ext_collision() {
+  tinyfk::Transform pose;
+
   for (auto& group : sphere_groups_) {
     if (group.ignore_collision) {
       continue;
     }
+
+    kin_->get_link_pose(group.group_sphere_id, pose);
+    Eigen::Vector3d group_center(pose.position.x, pose.position.y,
+                                 pose.position.z);
+
+    bool broad_collision = false;
     for (auto& sdf : all_sdfs_cache_) {
-      if (sdf->is_outside(sphere_points_cache_.col(group.group_sphere_id),
-                          group.group_radius)) {
-        // because the outer volume is outside of the SDF, we can determine that
-        // the inner volume is also outside of the SDF. so we can skip the inner
-        // volume check
-        continue;
+      if (!sdf->is_outside(group_center, group.group_radius)) {
+        broad_collision = true;
+        break;
       }
+    }
+    if (!broad_collision) {
+      continue;
+    }
+
+    for (auto& sdf : all_sdfs_cache_) {
       for (size_t i = 0; i < group.sphere_ids.size(); i++) {
-        if (!sdf->is_outside(sphere_points_cache_.col(group.sphere_ids[i]),
-                             group.radii[i])) {
+        tinyfk::Transform pose;
+        kin_->get_link_pose(group.sphere_ids[i], pose);
+        Eigen::Vector3d center(pose.position.x, pose.position.y,
+                               pose.position.z);
+        if (!sdf->is_outside(center, group.radii[i])) {
           return false;
         }
       }
@@ -235,14 +250,19 @@ bool SphereCollisionCst::check_ext_collision() {
 }
 
 bool SphereCollisionCst::check_self_collision() {
+  tinyfk::Transform pose;
+
   for (auto& group_id_pair : selcol_group_id_pairs_) {
     auto& group1 = sphere_groups_[group_id_pair.first];
     auto& group2 = sphere_groups_[group_id_pair.second];
 
-    // check if the outer volumes are colliding
-    double outer_sqdist = (sphere_points_cache_.col(group1.group_sphere_id) -
-                           sphere_points_cache_.col(group2.group_sphere_id))
-                              .squaredNorm();
+    kin_->get_link_pose(group1.group_sphere_id, pose);
+    Eigen::Vector3d group1_center(pose.position.x, pose.position.y,
+                                  pose.position.z);
+    kin_->get_link_pose(group2.group_sphere_id, pose);
+    Eigen::Vector3d group2_center(pose.position.x, pose.position.y,
+                                  pose.position.z);
+    double outer_sqdist = (group1_center - group2_center).squaredNorm();
     double outer_r_sum = group1.group_radius + group2.group_radius;
     if (outer_sqdist > outer_r_sum * outer_r_sum) {
       continue;
@@ -251,9 +271,15 @@ bool SphereCollisionCst::check_self_collision() {
     // check if the inner volumes are colliding
     for (size_t i = 0; i < group1.sphere_ids.size(); i++) {
       for (size_t j = 0; j < group2.sphere_ids.size(); j++) {
-        double sqdist = (sphere_points_cache_.col(group1.sphere_ids[i]) -
-                         sphere_points_cache_.col(group2.sphere_ids[j]))
-                            .squaredNorm();
+        kin_->get_link_pose(group1.sphere_ids[i], pose);
+        Eigen::Vector3d center1(pose.position.x, pose.position.y,
+                                pose.position.z);
+
+        kin_->get_link_pose(group2.sphere_ids[j], pose);
+        Eigen::Vector3d center2(pose.position.x, pose.position.y,
+                                pose.position.z);
+
+        double sqdist = (center1 - center2).squaredNorm();
         double r_sum = group1.radii[i] + group2.radii[j];
         if (sqdist < r_sum * r_sum) {
           return false;
@@ -360,17 +386,17 @@ SphereCollisionCst::evaluate_dirty() {
 }
 
 void SphereCollisionCst::update_sphere_points_cache() {
-  bool check_self_collision = selcol_group_id_pairs_.size() > 0;
-  tinyfk::Transform pose;
-  for (size_t i = 0; i < sphere_ids_.size(); i++) {
-    if (!check_self_collision && ignore_collisions_[i]) {
-      continue;
-    }
-    kin_->get_link_pose(sphere_ids_[i], pose);
-    sphere_points_cache_(0, i) = pose.position.x;
-    sphere_points_cache_(1, i) = pose.position.y;
-    sphere_points_cache_(2, i) = pose.position.z;
-  }
+  // bool check_self_collision = selcol_group_id_pairs_.size() > 0;
+  // tinyfk::Transform pose;
+  // for (size_t i = 0; i < sphere_ids_.size(); i++) {
+  //   if (!check_self_collision && ignore_collisions_[i]) {
+  //     continue;
+  //   }
+  //   kin_->get_link_pose(sphere_ids_[i], pose);
+  //   sphere_points_cache_(0, i) = pose.position.x;
+  //   sphere_points_cache_(1, i) = pose.position.y;
+  //   sphere_points_cache_(2, i) = pose.position.z;
+  // }
 }
 
 void SphereCollisionCst::set_all_sdfs() {
