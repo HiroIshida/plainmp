@@ -6,9 +6,9 @@ except ImportError:
 setup(
     name="plainmp",
     version="0.0.2",
-    description="experimental",
+    description="GPL release version of (legacy) plainmp",
     author="Hirokazu Ishida",
-    license="PolyForm NonCommercial 1.0.0",
+    license="GPLv3",
     install_requires=["numpy", "scipy", "scikit-robot", "pyyaml", "ompl-thin"],
     packages=["plainmp"],
     package_dir={"": "python"},
