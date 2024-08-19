@@ -11,7 +11,6 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 option(BUILD_PYTHON_INTERFACE OFF)
 add_subdirectory("tinyfk")
 include_directories("tinyfk/include")
-include_directories("primitive_sdf")
 # add_executable(main main.cpp)
 # target_link_libraries(main tinyfk)
 

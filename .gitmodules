@@ -1,9 +1,6 @@
 [submodule "tinyfk"]
 	path = tinyfk
 	url = https://github.com/HiroIshida/tinyfk.git
-[submodule "primitive_sdf"]
-	path = primitive_sdf
-	url = https://github.com/HiroIshida/primitive_sdf.git
 [submodule "pybind11"]
 	path = pybind11
 	url = https://github.com/pybind/pybind11.git
