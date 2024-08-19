@@ -2,6 +2,7 @@
 #include "collision/primitive_sdf_binding.hpp"
 #include "constraint_binding.hpp"
 #include "kinematics/tinyfk_binding.hpp"
+#include "ompl/ompl_binding.hpp"
 
 #ifdef USE_VALGRIND
 #include <valgrind/callgrind.h>
@@ -28,6 +29,7 @@ PYBIND11_MODULE(_plainmp, m) {
   primitive_sdf::bind_primitive_sdf(m);
   cst::bind_collision_constraints(m);
   tinyfk::bind_tinyfk(m);
+  bind_ompl(m);
   m.def("start_profiling", &start_profiling);
   m.def("stop_profiling", &stop_profiling);
 }

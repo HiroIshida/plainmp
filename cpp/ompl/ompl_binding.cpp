@@ -4,14 +4,15 @@
 
 #include "higher.hpp"
 #include "constraint.hpp"
+#include "ompl_binding.hpp"
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(_omplpy, m)
+void bind_ompl(py::module &m)
 {
-  m.doc() = "unofficial ompl python wrapper";
-  m.def("set_random_seed", &setGlobalSeed);
-  m.def("set_log_level_none", &setLogLevelNone);
+  auto ompl_m = m.def_submodule("ompl");
+  ompl_m.def("set_random_seed", &setGlobalSeed);
+  ompl_m.def("set_log_level_none", &setLogLevelNone);
 
   // py::enum_<ConstStateType>(m, "ConstStateType")
   //     .value("PROJECTION", ConstStateType::PROJECTION)
@@ -32,7 +33,7 @@ PYBIND11_MODULE(_omplpy, m)
   //     .def("reset_is_valid", &ConstrainedPlanner::resetIsValid)
   //     .def("solve", &ConstrainedPlanner::solve);
 
-  py::class_<OMPLPlanner>(m, "_OMPLPlanner")
+  py::class_<OMPLPlanner>(ompl_m, "_OMPLPlanner")
       .def(py::init<std::vector<double>&,
                     std::vector<double>&,
                     cst::IneqConstraintBase::Ptr,
@@ -74,10 +75,10 @@ PYBIND11_MODULE(_omplpy, m)
   //     .def("solve", &LightningRepairPlanner::solve)
   //     .def("set_heuristic", &LightningRepairPlanner::set_heuristic);
 
-  py::class_<ERTConnectPlanner>(m, "_ERTConnectPlanner")
+  py::class_<ERTConnectPlanner>(ompl_m, "_ERTConnectPlanner")
       .def(py::init<std::vector<double>,
                     std::vector<double>,
-                    std::function<bool(std::vector<double>)>,
+                    cst::IneqConstraintBase::Ptr,
                     size_t,
                     std::vector<double>>())
       .def("solve", &ERTConnectPlanner::solve)
