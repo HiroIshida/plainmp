@@ -32,7 +32,7 @@ jobs:
               run: |
                   sudo apt-get install libeigen3-dev libboost-all-dev
                   pip install scikit-build
-                  pip install -e . -v
+                  MAKEFLAGS="-j$(nproc)" pip install -e . -v
 
             - name: Test
               run: |
