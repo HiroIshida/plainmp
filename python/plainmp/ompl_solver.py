@@ -1,7 +1,7 @@
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Literal, Optional, TypeVar
+from typing import Optional, TypeVar
 
 import numpy as np
 
@@ -28,7 +28,6 @@ class OMPLSolverConfig:
     algorithm: Algorithm = Algorithm.RRTConnect
     algorithm_range: Optional[float] = 2.0
     simplify: bool = False
-    expbased_planner_backend: Literal["ertconnect"] = "lightning"
     ertconnect_eps: float = 5.0  # used only when ertconnect is selected
 
 
