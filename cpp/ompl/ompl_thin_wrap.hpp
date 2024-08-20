@@ -511,6 +511,10 @@ struct PlannerBase {
     throw std::runtime_error("algorithm " + name + " is not supported");
   }
 
+  size_t getCallCount() const {
+    return csi_->is_valid_call_count_;
+  }
+
   typedef typename std::conditional<Constrained,
                                     ConstrainedCollisoinAwareSpaceInformation,
                                     UnconstrianedCollisoinAwareSpaceInformation>::type CsiType;

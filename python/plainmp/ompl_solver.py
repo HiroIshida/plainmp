@@ -92,13 +92,6 @@ class OMPLSolver:
                 return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
             q_goal = ik_ret.q
 
-        n_count = [0]
-        # def is_valid(q: np.ndarray) -> bool:
-        #     n_count[0] += 1
-        #     if problem.global_ineq_const is None:
-        #         return True
-        #     return problem.global_ineq_const.is_valid(q)
-
         if guess is not None:
             planner = ERTConnectPlanner(
                 problem.lb,
@@ -125,6 +118,7 @@ class OMPLSolver:
         else:
             for i in range(len(result)):
                 result[i] = np.array(result[i])
+            n_call = planner.get_call_count()
             return OMPLSolverResult(
-                Trajectory(result), time.time() - ts, n_count[0], TerminateState.SUCCESS
+                Trajectory(result), time.time() - ts, n_call, TerminateState.SUCCESS
             )

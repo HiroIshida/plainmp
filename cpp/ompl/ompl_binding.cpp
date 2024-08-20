@@ -41,6 +41,7 @@ void bind_ompl(py::module &m)
                     std::vector<double>,
                     std::string,
                     std::optional<double>>())
+      .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("solve", &OMPLPlanner::solve);
 
   // py::class_<LightningDBWrap>(m, "_LightningDB")
@@ -81,6 +82,7 @@ void bind_ompl(py::module &m)
                     cst::IneqConstraintBase::Ptr,
                     size_t,
                     std::vector<double>>())
+      .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("solve", &ERTConnectPlanner::solve)
       .def("set_parameters", &ERTConnectPlanner::set_parameters)
       .def("set_heuristic", &ERTConnectPlanner::set_heuristic);
