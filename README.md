@@ -9,7 +9,7 @@ pip install scikit-robot
 ```
 install this
 ```bash
-sudo apt install libeigen3-dev
+sudo apt install libeigen3-dev libboost-all-dev
 pip install scikit-build
 pip install plainmp
 ```
