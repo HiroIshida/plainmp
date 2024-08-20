@@ -2,7 +2,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "higher.hpp"
+#include "ompl_thin_wrap.hpp"
 #include "constraint.hpp"
 #include "ompl_binding.hpp"
 
