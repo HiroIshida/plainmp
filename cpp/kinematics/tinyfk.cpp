@@ -68,11 +68,11 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   int num_dof = joint_ids.size();
   std::vector<double> joint_angles(num_dof, 0.0);
 
-  std::cout << "warning(tinyfk): adhoc N_link * 5, plese update stack and cache when adding new link" << std::endl;
-  transform_stack_ = SizedStack<LinkIdAndTransform>(N_link * 5);
+  transform_stack_ = SizedStack<LinkIdAndTransform>(N_link);
   transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, Transform>>(
-      N_link* 5); // for batch update
-  transform_cache_ = SizedCache<Transform>(N_link * 5);
+      N_link); // for batch update
+  transform_cache_ = SizedCache<Transform>(N_link);
+
   root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
   links_ = links;
   link_ids_ = link_ids;
@@ -251,7 +251,10 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
   links_.push_back(new_link);
   links_[parent_id]->child_links.push_back(new_link);
   links_[parent_id]->child_joints.push_back(fixed_joint);
+
   transform_cache_.extend();
+  transform_stack_.extend();
+  transform_stack2_.extend();
 
   this->update_rptable(); // set _rptable
 

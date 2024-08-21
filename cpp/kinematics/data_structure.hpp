@@ -54,6 +54,9 @@ public:
     return const_cast<ElementT &>(data_[current_idx_ - 1]);
   }
   inline void pop() { current_idx_--; }
+  void extend() {
+    data_.push_back(ElementT());
+  }
 
 private:
   std::vector<ElementT> data_;
