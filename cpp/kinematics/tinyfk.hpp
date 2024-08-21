@@ -151,6 +151,7 @@ public: // functions
                                    bool consider_rotation);
 
 private:
+  void get_link_pose_inner2(size_t link_id, Transform &out_tf_root_to_ef) const;
   void get_link_pose_inner(size_t link_id, Transform &out_tf_root_to_ef) const;
   void update_rptable();
 };
