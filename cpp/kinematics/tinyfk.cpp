@@ -76,7 +76,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   for(size_t hid = 0; hid < N_link; hid++) {
     auto pjoint = links[hid]->parent_joint;
     if(pjoint != nullptr) {
-      parent_to_here_transform_cache_[hid] = pjoint->parent_to_joint_origin_transform;
+      tf_plink_to_hlink_cache_[hid] = pjoint->parent_to_joint_origin_transform;
     }
   }
 
