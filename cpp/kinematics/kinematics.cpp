@@ -35,7 +35,11 @@ void KinematicModel::get_link_pose(size_t link_id,
     out_tf_rlink_to_elink = transform_cache_.data_[link_id];
     return;
   }
+  this->get_link_pose_cache_not_found(link_id, out_tf_rlink_to_elink);
+}
 
+void KinematicModel::get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_rlink_to_elink) const
+{
   if(links_[link_id]->consider_rotation) {
     this->get_link_pose_inner(link_id, out_tf_rlink_to_elink);
   } else {
@@ -43,7 +47,11 @@ void KinematicModel::get_link_pose(size_t link_id,
     auto plink = hlink->getParent();
     auto pjoint = hlink->parent_joint;
     Transform tf_rlink_to_plink;
-    get_link_pose(plink->id, tf_rlink_to_plink); // recursive call
+    if(transform_cache_.is_cached(plink->id)) {
+      tf_rlink_to_plink = transform_cache_.data_[plink->id];
+    } else {
+      get_link_pose_inner(plink->id, tf_rlink_to_plink);
+    }
     auto&& new_pos = tf_rlink_to_plink.position + tf_rlink_to_plink.rotation * pjoint->parent_to_joint_origin_transform.position;
     out_tf_rlink_to_elink.position = new_pos;
 
