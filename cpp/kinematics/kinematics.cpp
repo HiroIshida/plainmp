@@ -72,25 +72,25 @@ void KinematicModel::get_link_pose_inner(
       break;
     }
 
-    Transform tf_plink_to_hlink;
-    { // compute tf_plink_to_hlink
-      const urdf::JointSharedPtr &pjoint = hlink->parent_joint;
-      const Transform &tf_plink_to_pjoint =
-          pjoint->parent_to_joint_origin_transform;
+    // Transform tf_plink_to_hlink;
+    // { // compute tf_plink_to_hlink
+    //   const urdf::JointSharedPtr &pjoint = hlink->parent_joint;
+    //   const Transform &tf_plink_to_pjoint =
+    //       pjoint->parent_to_joint_origin_transform;
 
-      if (pjoint->type == urdf::Joint::FIXED) {
-        tf_plink_to_hlink = tf_plink_to_pjoint;
-      } else {
-        double angle = joint_angles_[pjoint->id];
-        Transform tf_pjoint_to_hlink = pjoint->transform(angle);
-        tf_plink_to_hlink =
-            pose_transform(tf_plink_to_pjoint, tf_pjoint_to_hlink);
-      }
-    }
+    //   if (pjoint->type == urdf::Joint::FIXED) {
+    //     tf_plink_to_hlink = tf_plink_to_pjoint;
+    //   } else {
+    //     double angle = joint_angles_[pjoint->id];
+    //     Transform tf_pjoint_to_hlink = pjoint->transform(angle);
+    //     tf_plink_to_hlink =
+    //         pose_transform(tf_plink_to_pjoint, tf_pjoint_to_hlink);
+    //   }
+    // }
 
     // update
-    transform_stack_.push(LinkIdAndTransform{
-        hlink->id, std::move(tf_plink_to_hlink)}); // TODO(HiroIshida): move?
+    auto& tf_plink_to_hlink = transform_cache_.data_[hlink->id];
+    transform_stack_.push(LinkIdAndTransform{hlink->id, tf_plink_to_hlink});
     hlink = plink;
   }
 
