@@ -65,9 +65,10 @@ public: // members
   int num_dof_;
   double total_mass_;
 
-  mutable SizedStack<LinkIdAndTransform> transform_stack_;
+  mutable SizedStack<size_t> link_id_stack_;
   mutable SizedStack<std::pair<urdf::LinkSharedPtr, Transform>> transform_stack2_;
   mutable SizedCache<Transform> transform_cache_;
+  mutable std::vector<Transform> tf_plink_to_hlink_cache_;
 
 public: // functions
   KinematicModel(const std::string &xml_string);

@@ -2,6 +2,7 @@
 #include "urdf_model/pose.h"
 #include <Eigen/Dense>
 #include <cmath>
+#include <stack>
 
 namespace tinyfk {
 
@@ -59,48 +60,32 @@ void KinematicModel::get_link_pose_inner(
 
   Transform tf_rlink_to_blink = base_pose_;
 
-  transform_stack_.reset();
+  link_id_stack_.reset();
   while (true) {
 
+    size_t hlink_id = hlink->id;
     urdf::LinkSharedPtr plink = hlink->getParent();
     if (plink == nullptr) {
       break;
     } // hit the root link
 
-    if(transform_cache_.is_cached(hlink->id)) {
-      tf_rlink_to_blink = transform_cache_.data_[hlink->id];
+    if(transform_cache_.is_cached(hlink_id)) {
+      tf_rlink_to_blink = transform_cache_.data_[hlink_id];
       break;
     }
 
-    Transform tf_plink_to_hlink;
-    { // compute tf_plink_to_hlink
-      const urdf::JointSharedPtr &pjoint = hlink->parent_joint;
-      const Transform &tf_plink_to_pjoint =
-          pjoint->parent_to_joint_origin_transform;
-
-      if (pjoint->type == urdf::Joint::FIXED) {
-        tf_plink_to_hlink = tf_plink_to_pjoint;
-      } else {
-        double angle = joint_angles_[pjoint->id];
-        Transform tf_pjoint_to_hlink = pjoint->transform(angle);
-        tf_plink_to_hlink =
-            pose_transform(tf_plink_to_pjoint, tf_pjoint_to_hlink);
-      }
-    }
-
-    // update
-    transform_stack_.push(LinkIdAndTransform{
-        hlink->id, std::move(tf_plink_to_hlink)}); // TODO(HiroIshida): move?
+    link_id_stack_.push(hlink_id);
     hlink = plink;
   }
 
   Transform tf_rlink_to_plink = std::move(tf_rlink_to_blink);
-  while (!transform_stack_.empty()) {
-
-    const auto &pose_id_pair = transform_stack_.top();
-    const Transform &tf_plink_to_hlink = pose_id_pair.pose;
-    const size_t hid = pose_id_pair.id;
-    transform_stack_.pop();
+  while(!link_id_stack_.empty()) {
+    // const auto &pose_id_pair = transform_stack_.top();
+    // const Transform &tf_plink_to_hlink = pose_id_pair.pose;
+    // const size_t hid = pose_id_pair.id;
+    size_t hid = link_id_stack_.top();
+    link_id_stack_.pop();
+    auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[hid];
     Transform tf_rlink_to_hlink =
         pose_transform(tf_rlink_to_plink, tf_plink_to_hlink);
     transform_cache_.set_cache(hid, tf_rlink_to_hlink);

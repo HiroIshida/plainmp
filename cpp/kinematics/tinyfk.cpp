@@ -68,10 +68,17 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   int num_dof = joint_ids.size();
   std::vector<double> joint_angles(num_dof, 0.0);
 
-  transform_stack_ = SizedStack<LinkIdAndTransform>(N_link);
+  link_id_stack_ = SizedStack<size_t>(N_link);
   transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, Transform>>(
       N_link); // for batch update
   transform_cache_ = SizedCache<Transform>(N_link);
+  tf_plink_to_hlink_cache_ = std::vector<Transform>(N_link);
+  for(size_t hid = 0; hid < N_link; hid++) {
+    auto pjoint = links[hid]->parent_joint;
+    if(pjoint != nullptr) {
+      tf_plink_to_hlink_cache_[hid] = pjoint->parent_to_joint_origin_transform;
+    }
+  }
 
   root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
   links_ = links;
@@ -113,7 +120,13 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
                                       const std::vector<double> &joint_angles) {
   for (size_t i = 0; i < joint_ids.size(); i++) {
-    joint_angles_[joint_ids[i]] = joint_angles[i];
+    auto joint_id = joint_ids[i];
+    joint_angles_[joint_id] = joint_angles[i];
+    auto joint = joints_[joint_id];
+    auto& tf_plink_to_pjoint = joint->parent_to_joint_origin_transform;
+    auto&& tf_pjoint_to_hlink = joint->transform(joint_angles[i]);
+    auto&& tf_plink_to_hlink = urdf::pose_transform(tf_plink_to_pjoint, tf_pjoint_to_hlink);
+    tf_plink_to_hlink_cache_[joint->getChildLink()->id] = tf_plink_to_hlink;
   }
   transform_cache_.clear();
 }
@@ -245,8 +258,9 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
   links_[parent_id]->child_joints.push_back(fixed_joint);
 
   transform_cache_.extend();
-  transform_stack_.extend();
+  link_id_stack_.extend();
   transform_stack2_.extend();
+  tf_plink_to_hlink_cache_.push_back(pose);
 
   this->update_rptable(); // set _rptable
 
