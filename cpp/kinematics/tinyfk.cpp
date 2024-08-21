@@ -72,6 +72,10 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, Transform>>(
       N_link); // for batch update
   transform_cache_ = SizedCache<Transform>(N_link);
+  parent_to_here_transform_cache_ = std::vector<Transform>(N_link);
+  for(size_t hid = 0; hid < N_link; hid++) {
+    parent_to_here_transform_cache_[hid] = links[hid]->parent_joint->parent_to_joint_origin_transform;
+  }
 
   root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
   links_ = links;
@@ -247,6 +251,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
   transform_cache_.extend();
   transform_stack_.extend();
   transform_stack2_.extend();
+  parent_to_here_transform_cache_.push_back(pose);
 
   this->update_rptable(); // set _rptable
 
