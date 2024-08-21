@@ -112,19 +112,11 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
 
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
                                       const std::vector<double> &joint_angles) {
-  this->_set_joint_angles(joint_ids, joint_angles);
-  transform_cache_.clear();
-}
-
-void KinematicModel::_set_joint_angles(
-    const std::vector<size_t> &joint_ids,
-    const std::vector<double> &joint_angles) {
   for (size_t i = 0; i < joint_ids.size(); i++) {
     joint_angles_[joint_ids[i]] = joint_angles[i];
   }
+  transform_cache_.clear();
 }
-
-void KinematicModel::_set_base_pose(Transform pose) { this->base_pose_ = pose; }
 
 void KinematicModel::clear_cache() { transform_cache_.clear(); }
 

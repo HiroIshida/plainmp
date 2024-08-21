@@ -74,19 +74,14 @@ public: // functions
 
   virtual ~KinematicModel() {}
 
-  void set_joint_angles( // this will clear all the cache stored
-      const std::vector<size_t> &joint_ids,
-      const std::vector<double> &joint_angles);
-  void _set_joint_angles( // lower version of the set_joint_angle which does not
-                          // clear cache
+  void set_joint_angles(
       const std::vector<size_t> &joint_ids,
       const std::vector<double> &joint_angles);
 
-  void set_base_pose(Transform pose) {
-    this->_set_base_pose(pose);
+  void set_base_pose(const Transform& pose) {
+    base_pose_ = pose;
     this->clear_cache();
   }
-  void _set_base_pose(Transform pose);
 
   void clear_cache();
 
