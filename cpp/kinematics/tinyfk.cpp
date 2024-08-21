@@ -117,7 +117,13 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
                                       const std::vector<double> &joint_angles) {
   for (size_t i = 0; i < joint_ids.size(); i++) {
-    joint_angles_[joint_ids[i]] = joint_angles[i];
+    auto joint_id = joint_ids[i];
+    joint_angles_[joint_id] = joint_angles[i];
+    auto joint = joints_[joint_id];
+    auto& tf_plink_to_pjoint = joint->parent_to_joint_origin_transform;
+    auto&& tf_pjoint_to_hlink = joint->transform(joint_angles[i]);
+    auto&& tf_plink_to_hlink = urdf::pose_transform(tf_plink_to_pjoint, tf_pjoint_to_hlink);
+    parent_to_here_transform_cache_[joint->getChildLink()->id] = tf_plink_to_hlink;
   }
   transform_cache_.clear();
 }
