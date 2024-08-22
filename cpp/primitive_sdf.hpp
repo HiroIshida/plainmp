@@ -62,6 +62,10 @@ class UnionSDF : public SDFBase {
   using Ptr = std::shared_ptr<UnionSDF>;
   UnionSDF(std::vector<SDFBase::Ptr> sdfs, bool create_bvh) : sdfs_(sdfs) {
     if (create_bvh) {
+      throw std::runtime_error(
+          "UnionSDF with BVH is buggy. Please disable it.");
+    }
+    if (create_bvh) {
       aabb_ = get_aabb();
     }
   }
