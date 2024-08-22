@@ -106,6 +106,14 @@ struct QuatTrans {
     inline QuatTrans<Scalar> operator*(const QuatTrans<Scalar>& other) const {
         return {q * other.q, t + q * other.t};
     }
+
+    static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3d& xyz, const Eigen::Vector3d& rpy) {
+        Eigen::Quaternion<Scalar> q;
+        q = Eigen::AngleAxis<Scalar>(rpy[0], Eigen::Matrix<Scalar, 3, 1>::UnitX())
+            * Eigen::AngleAxis<Scalar>(rpy[1], Eigen::Matrix<Scalar, 3, 1>::UnitY())
+            * Eigen::AngleAxis<Scalar>(rpy[2], Eigen::Matrix<Scalar, 3, 1>::UnitZ());
+        return {q, xyz};
+    }
 };
 
 }
