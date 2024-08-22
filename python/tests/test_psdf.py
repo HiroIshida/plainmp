@@ -43,7 +43,7 @@ sksdfs = [
 
 
 @pytest.mark.parametrize("sksdf", sksdfs)
-def test_primitive_sdfs(sksdf):
+def test_closed_primitive_sdfs(sksdf):
     for _ in range(10):
         xyz = np.random.randn(3)
         ypr = np.random.randn(3)
@@ -57,6 +57,15 @@ def test_primitive_sdfs(sksdf):
 
         check_single_batch_consistency(cppsdf, points)
         check_is_outside_consistency(cppsdf, points)
+
+
+def test_ground_sdf():
+    sdf = psdf.GroundSDF(1.0)
+    assert sdf.evaluate(np.array([0.0, 0.0, 0.0])) == 1.0
+    assert sdf.evaluate(np.array([1.0, 0.0, 0.0])) == 1.0
+
+    check_single_batch_consistency(sdf, np.random.randn(100, 3) * 3)
+    check_is_outside_consistency(sdf, np.random.randn(100, 3) * 3)
 
 
 def test_union_sdf():

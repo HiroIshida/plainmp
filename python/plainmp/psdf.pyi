@@ -10,7 +10,7 @@ class Pose:
     def __init__(self, translation: np.ndarray, rotation: np.ndarray) -> None: ...
 
 class SDFBase:
-    def evaluate(self, point: np.ndarray) -> np.ndarray:
+    def evaluate(self, point: np.ndarray) -> float:
         """Evaluate the SDF at the given points.
         Args:
             point: The (3,) point to evaluate the SDF at.
@@ -33,11 +33,16 @@ class UnionSDF(SDFBase):
 
 class PrimitiveSDFBase(SDFBase): ...
 
-class BoxSDF(PrimitiveSDFBase):
+class GroundSDF(PrimitiveSDFBase):
+    def __init__(self, height: float) -> None: ...
+
+class ClosedPrimitiveSDFBase(PrimitiveSDFBase): ...
+
+class BoxSDF(ClosedPrimitiveSDFBase):
     def __init__(self, size: np.ndarray, pose: Pose) -> None: ...
 
-class CylinderSDF(PrimitiveSDFBase):
+class CylinderSDF(ClosedPrimitiveSDFBase):
     def __init__(self, radius: float, height: float, pose: Pose) -> None: ...
 
-class SphereSDF(PrimitiveSDFBase):
+class SphereSDF(ClosedPrimitiveSDFBase):
     def __init__(self, radius: float, pose: Pose) -> None: ...

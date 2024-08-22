@@ -112,7 +112,34 @@ class UnionSDF : public SDFBase {
 class PrimitiveSDFBase : public SDFBase {
  public:
   using Ptr = std::shared_ptr<PrimitiveSDFBase>;
-  PrimitiveSDFBase(const Pose& tf) : tf_(tf), tf_inv_(tf.inverse()) {}
+};
+
+class GroundSDF : public PrimitiveSDFBase {
+ public:
+  using Ptr = std::shared_ptr<GroundSDF>;
+  GroundSDF(double height) : height_(height) {}
+  Values evaluate_batch(const Points& p) const override {
+    return p.row(2).array() + height_;
+  }
+  double evaluate(const Point& p) const override { return p(2) + height_; }
+  bool is_outside(const Point& p, double radius) const override {
+    return p(2) + height_ > radius;
+  }
+  AABB get_aabb() const override {
+    return {{-std::numeric_limits<double>::max(),
+             -std::numeric_limits<double>::max(), height_},
+            {std::numeric_limits<double>::max(),
+             std::numeric_limits<double>::max(), height_}};
+  }
+
+ private:
+  double height_;
+};
+
+class ClosedPrimitiveSDFBase : public PrimitiveSDFBase {
+ public:
+  using Ptr = std::shared_ptr<ClosedPrimitiveSDFBase>;
+  ClosedPrimitiveSDFBase(const Pose& tf) : tf_(tf), tf_inv_(tf.inverse()) {}
 
   Values evaluate_batch(const Points& p) const override {
     auto p_local = tf_.transform_points(p);
@@ -150,13 +177,13 @@ class PrimitiveSDFBase : public SDFBase {
   virtual Eigen::Matrix3Xd get_local_aabb_vertices() const = 0;
 };
 
-class BoxSDF : public PrimitiveSDFBase {
+class BoxSDF : public ClosedPrimitiveSDFBase {
  public:
   using Ptr = std::shared_ptr<BoxSDF>;
   Eigen::Vector3d width_;
 
   BoxSDF(const Eigen::Vector3d& width, const Pose& tf)
-      : PrimitiveSDFBase(tf), width_(width) {}
+      : ClosedPrimitiveSDFBase(tf), width_(width) {}
 
  private:
   Values evaluate_in_local_frame(const Points& p) const override {
@@ -198,13 +225,13 @@ class BoxSDF : public PrimitiveSDFBase {
   };
 };
 
-class CylinderSDF : public PrimitiveSDFBase {
+class CylinderSDF : public ClosedPrimitiveSDFBase {
  public:
   using Ptr = std::shared_ptr<CylinderSDF>;
   double radius_;
   double height_;
   CylinderSDF(double radius, double height, const Pose& tf)
-      : PrimitiveSDFBase(tf), radius_(radius), height_(height) {}
+      : ClosedPrimitiveSDFBase(tf), radius_(radius), height_(height) {}
 
  private:
   Values evaluate_in_local_frame(const Points& p) const override {
@@ -246,13 +273,13 @@ class CylinderSDF : public PrimitiveSDFBase {
   }
 };
 
-class SphereSDF : public PrimitiveSDFBase {
+class SphereSDF : public ClosedPrimitiveSDFBase {
  public:
   using Ptr = std::shared_ptr<SphereSDF>;
   double radius_;
 
   SphereSDF(double radius, const Pose& tf)
-      : PrimitiveSDFBase(tf), radius_(radius) {}
+      : ClosedPrimitiveSDFBase(tf), radius_(radius) {}
 
  private:
   Values evaluate_in_local_frame(const Eigen::Matrix3Xd& p) const override {
