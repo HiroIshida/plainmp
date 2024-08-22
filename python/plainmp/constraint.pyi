@@ -1,8 +1,9 @@
 from typing import Sequence, Tuple
 
 import numpy as np
-from fused.psdf import SDFBase
 from scipy.sparse import csc_matrix
+
+from plainmp.psdf import SDFBase
 
 class ConstraintBase:
     def update_kintree(self, q: np.ndarray) -> None: ...
@@ -29,6 +30,7 @@ class SphereAttachmentSpec:
 
 class SphereCollisionCst(IneqConstraintBase):
     def set_sdf(self, sdf: SDFBase) -> None: ...
+    def get_sdf(self) -> SDFBase: ...
     def get_all_spheres(self) -> List[Tuple[np.ndarray, float]]: ...
     def get_group_spheres(self) -> List[Tuple[np.ndarray, float]]: ...
 
