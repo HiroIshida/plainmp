@@ -30,9 +30,10 @@ def check_single_batch_consistency(cppsdf: psdf.SDFBase, points):
 
 
 def check_is_outside_consistency(cppsdf: psdf.SDFBase, points):
-    values = [cppsdf.is_outside(p, 0.0) for p in points]
-    values_batch = cppsdf.evaluate_batch(points.T) > 0.0
-    assert np.allclose(values, values_batch)
+    for r in np.linspace(0.0, 2.0, 10):
+        values = [cppsdf.is_outside(p, r) for p in points]
+        values_batch = cppsdf.evaluate_batch(points.T) > r
+        assert np.allclose(values, values_batch)
 
 
 sksdfs = [
