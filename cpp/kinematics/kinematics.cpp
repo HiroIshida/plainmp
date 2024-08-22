@@ -88,9 +88,6 @@ void KinematicModel::get_link_pose_inner(
 
   Transform tf_rlink_to_plink = std::move(tf_rlink_to_blink);
   while(!link_id_stack_.empty()) {
-    // const auto &pose_id_pair = transform_stack_.top();
-    // const Transform &tf_plink_to_hlink = pose_id_pair.pose;
-    // const size_t hid = pose_id_pair.id;
     size_t hid = link_id_stack_.top();
     link_id_stack_.pop();
     auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[hid];

@@ -40,11 +40,6 @@ struct RelevancePredicateTable {
   }
 };
 
-struct LinkIdAndTransform {
-  size_t id;
-  Transform pose;
-};
-
 enum class RotationType { IGNORE, RPY, XYZW };
 
 class KinematicModel {
