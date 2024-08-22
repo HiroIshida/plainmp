@@ -3,10 +3,10 @@ name: build_and_test
 on:
     push:
         branches:
-            - master
+            - old
     pull_request:
         branches:
-            - master
+            - old
 
 jobs:
     build:
