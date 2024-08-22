@@ -33,7 +33,7 @@ void bind_ompl(py::module &m)
   //     .def("reset_is_valid", &ConstrainedPlanner::resetIsValid)
   //     .def("solve", &ConstrainedPlanner::solve);
 
-  py::class_<OMPLPlanner>(ompl_m, "OMPLPlanner")
+  py::class_<OMPLPlanner>(ompl_m, "OMPLPlanner", py::module_local())
       .def(py::init<std::vector<double>&,
                     std::vector<double>&,
                     cst::IneqConstraintBase::Ptr,
@@ -76,7 +76,7 @@ void bind_ompl(py::module &m)
   //     .def("solve", &LightningRepairPlanner::solve)
   //     .def("set_heuristic", &LightningRepairPlanner::set_heuristic);
 
-  py::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner")
+  py::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner", py::module_local())
       .def(py::init<std::vector<double>,
                     std::vector<double>,
                     cst::IneqConstraintBase::Ptr,
