@@ -103,6 +103,9 @@ struct QuatTrans {
         q = Eigen::Quaternion<Scalar>::Identity();
         t = Eigen::Matrix<Scalar, 3, 1>::Zero();
     }
+    inline QuatTrans<Scalar> operator*(const QuatTrans<Scalar>& other) const {
+        return {q * other.q, t + q * other.t};
+    }
 };
 
 }

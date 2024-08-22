@@ -19,7 +19,7 @@
 namespace tinyfk {
 
 using Bound = std::pair<double, double>;
-using Transform = urdf::Pose;
+using Transform = urdf::QuatTrans<double>;
 using Vector3 = urdf::Vector3;
 using Rotation = urdf::Rotation;
 
@@ -125,7 +125,7 @@ public: // functions
                                RotationType rot_type = RotationType::IGNORE,
                                bool with_base = false);
 
-  Vector3 get_com();
+  Eigen::Vector3d get_com();
 
   Eigen::MatrixXd get_com_jacobian(const std::vector<size_t> &joint_ids,
                                    bool with_base);
