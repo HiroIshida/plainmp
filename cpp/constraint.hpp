@@ -175,13 +175,12 @@ class RelativePoseCst : public EqConstraintBase {
         link_id2_(kin_->get_link_ids({link_name2})[0]),
         relative_pose_(relative_pose) {
     // TODO: because name is hard-coded, we cannot create two RelativePoseCst...
-    auto dummy_link_name = link_name1 + "-relative-" + link_name2;
     tinyfk::Transform pose;
     pose.position.x = relative_pose[0];
     pose.position.y = relative_pose[1];
     pose.position.z = relative_pose[2];
     size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
-    auto new_link = kin_->add_new_link(dummy_link_name, link_id1_, pose, true);
+    auto new_link = kin_->add_new_link(link_id1_, pose, true);
     dummy_link_id_ = new_link->id;
   }
 

@@ -1,6 +1,7 @@
 #include "tinyfk.hpp"
 #include "urdf_model/pose.h"
 #include <Eigen/Geometry>
+#include <functional>
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
@@ -98,13 +99,11 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
       if (link->inertial == nullptr) {
         continue;
       }
-      const auto com_dummy_link_name = link->name + "_com";
       Transform new_link_pose;
       new_link_pose.position.x = link->inertial->origin.position.x;
       new_link_pose.position.y = link->inertial->origin.position.y;
       new_link_pose.position.z = link->inertial->origin.position.z;
-      const auto new_link =
-          this->add_new_link(com_dummy_link_name, link->id, new_link_pose, false);
+      const auto new_link = this->add_new_link(link->id, new_link_pose, false);
       // set new link's inertial as the same as the parent
       // except its origin is zero
       new_link->inertial = link->inertial;
@@ -216,27 +215,45 @@ KinematicModel::get_link_ids(std::vector<std::string> link_names) const {
   return link_ids;
 }
 
-urdf::LinkSharedPtr
-KinematicModel::add_new_link(const std::string &link_name, size_t parent_id,
-                             const std::array<double, 3> &position,
-                             const std::array<double, 3> &rpy,
-                             bool consider_rotation) {
+urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id,
+                                 const std::array<double, 3> &position,
+                                 const std::array<double, 3> &rpy,
+                                 bool consider_rotation,
+                                 std::optional<std::string> link_name){
   Transform pose;
   pose.position.x = position[0];
   pose.position.y = position[1];
   pose.position.z = position[2];
   pose.rotation.setFromRPY(rpy[0], rpy[1], rpy[2]);
-  return this->add_new_link(link_name, parent_id, pose, consider_rotation);
+  return this->add_new_link(parent_id, pose, consider_rotation, link_name);
 }
 
-urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
-                                                 size_t parent_id,
-                                                 const Transform &pose,
-                                                 bool consider_rotation) {
-  bool link_name_exists = (link_ids_.find(link_name) != link_ids_.end());
-  if (link_name_exists) {
-    std::string message = "link name " + link_name + " already exists";
-    throw std::invalid_argument("link name : " + link_name + " already exists");
+urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const Transform &pose,
+                                 bool consider_rotation,
+                                 std::optional<std::string> link_name) {
+
+  if(link_name == std::nullopt) {
+    // if link_name is not given, generate a unique name
+    std::hash<double> hasher;
+    std::size_t hval = 0;
+    hval ^= hasher(pose.position.x) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.position.y) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.position.z) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.rotation.x) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.rotation.y) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.rotation.z) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.rotation.w) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    link_name = "hash_" + std::to_string(hval) + "_" + std::to_string(parent_id) + "_" + std::to_string(consider_rotation);
+    bool link_name_exists = (link_ids_.find(link_name.value()) != link_ids_.end());
+    if (link_name_exists) {
+      return links_[link_ids_[link_name.value()]];
+    }
+  }else{
+    bool link_name_exists = (link_ids_.find(link_name.value()) != link_ids_.end());
+    if (link_name_exists) {
+      std::string message = "link name " + link_name.value() + " already exists";
+      throw std::runtime_error("link name : " + link_name.value() + " already exists");
+    }
   }
 
   auto fixed_joint = std::make_shared<urdf::Joint>();
@@ -248,11 +265,11 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(const std::string &link_name,
   auto new_link = std::make_shared<urdf::Link>();
   new_link->parent_joint = fixed_joint;
   new_link->setParent(links_[parent_id]);
-  new_link->name = link_name;
+  new_link->name = link_name.value();
   new_link->id = link_id;
   new_link->consider_rotation = consider_rotation;
 
-  link_ids_[link_name] = link_id;
+  link_ids_[link_name.value()] = link_id;
   links_.push_back(new_link);
   links_[parent_id]->child_links.push_back(new_link);
   links_[parent_id]->child_joints.push_back(fixed_joint);

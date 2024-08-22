@@ -6,6 +6,7 @@
 #include "urdf_parser/urdf_parser.h"
 #include <Eigen/Core> // slow compile...
 #include <array>
+#include <optional>
 #include <assert.h>
 #include <fstream>
 #include <iostream>
@@ -140,15 +141,15 @@ public: // functions
     joint_angles_[joint_id] = angle;
   }
 
-  urdf::LinkSharedPtr add_new_link(const std::string &link_name,
-                                   size_t parent_id,
+  urdf::LinkSharedPtr add_new_link(size_t parent_id,
                                    const std::array<double, 3> &position,
                                    const std::array<double, 3> &rpy,
-                                   bool consider_rotation);
+                                   bool consider_rotation,
+                                   std::optional<std::string> link_name = std::nullopt);
 
-  urdf::LinkSharedPtr add_new_link(const std::string &link_name,
-                                   size_t parent_id, const Transform &pose,
-                                   bool consider_rotation);
+  urdf::LinkSharedPtr add_new_link(size_t parent_id, const Transform &pose,
+                                   bool consider_rotation,
+                                   std::optional<std::string> link_name = std::nullopt);
 
 private:
   void get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_root_to_ef) const;

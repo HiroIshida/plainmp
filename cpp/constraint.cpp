@@ -78,20 +78,20 @@ FixedZAxisCst::FixedZAxisCst(
     const std::string& link_name)
     : EqConstraintBase(kin, control_joint_names, with_base),
       link_id_(kin_->get_link_ids({link_name})[0]) {
-  auto new_link_name1 = link_name + "-x-plus1";
+  aux_link_ids_.clear();
   {
     tinyfk::Transform pose;
     pose.position.x = 1;
-    kin_->add_new_link(new_link_name1, link_id_, pose, false);
+    auto new_link = kin_->add_new_link(link_id_, pose, false);
+    aux_link_ids_.push_back(new_link->id);
   }
 
-  auto new_link_name2 = link_name + "-y-plus1";
   {
     tinyfk::Transform pose;
     pose.position.y = 1;
-    kin_->add_new_link(new_link_name2, link_id_, pose, false);
+    auto new_link = kin_->add_new_link(link_id_, pose, false);
+    aux_link_ids_.push_back(new_link->id);
   }
-  aux_link_ids_ = kin_->get_link_ids({new_link_name1, new_link_name2});
 }
 
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
@@ -136,24 +136,19 @@ SphereCollisionCst::SphereCollisionCst(
     Eigen::Vector3d group_center = {0.0, 0.0, 0.0};
     std::vector<size_t> sphere_ids;
     for (size_t j = 0; j < spec.relative_positions.cols(); j++) {
-      auto name = spec.parent_link_name + "-" + spec.postfix + "-sphere" +
-                  std::to_string(j);
       Eigen::Vector3d relpos = spec.relative_positions.col(j);
 
-      kin_->add_new_link(name, parent_id, {relpos.x(), relpos.y(), relpos.z()},
-                         {0.0, 0.0, 0.0}, false);
-      sphere_ids.push_back(kin_->get_link_ids({name})[0]);
+      auto new_link =
+          kin_->add_new_link(parent_id, {relpos.x(), relpos.y(), relpos.z()},
+                             {0.0, 0.0, 0.0}, false);
+      sphere_ids.push_back(new_link->id);
       group_center += relpos;
     }
     group_center /= spec.relative_positions.cols();
 
-    // add group center to kinematic chain
-    auto group_center_name = spec.parent_link_name + "-" + spec.postfix +
-                             "-group-center" + std::to_string(i);
-    kin_->add_new_link(group_center_name, parent_id,
-                       {group_center.x(), group_center.y(), group_center.z()},
-                       {0.0, 0.0, 0.0}, false);
-    size_t group_sphere_id = kin_->get_link_ids({group_center_name})[0];
+    auto group_sphere_link = kin_->add_new_link(
+        parent_id, {group_center.x(), group_center.y(), group_center.z()},
+        {0.0, 0.0, 0.0}, false);
 
     double max_dist = 0.0;
     for (size_t j = 0; j < spec.relative_positions.cols(); j++) {
@@ -165,7 +160,7 @@ SphereCollisionCst::SphereCollisionCst(
     }
     double group_radius = max_dist;
     sphere_groups_.push_back({spec.parent_link_name, sphere_ids, spec.radii,
-                              group_sphere_id, group_radius,
+                              group_sphere_link->id, group_radius,
                               spec.ignore_collision});
   }
 
