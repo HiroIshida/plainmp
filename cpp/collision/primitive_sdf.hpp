@@ -61,6 +61,7 @@ class UnionSDF : public SDFBase {
   using Ptr = std::shared_ptr<UnionSDF>;
   UnionSDF(std::vector<SDFBase::Ptr> sdfs, bool create_bvh) : sdfs_(sdfs) {
     if (create_bvh) {
+      throw std::runtime_error("Buggy implementation, do not use");
       aabb_ = get_aabb();
     }
   }

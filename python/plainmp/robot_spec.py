@@ -154,7 +154,7 @@ class RobotSpec(ABC):
         if self_collision:
             self_collision_pairs = self.conf_dict["self_collision_pairs"]
             sksdf = UnionSDF([p.sdf for p in self.self_body_collision_primitives()])
-            cppsdf = sksdf_to_cppsdf(sksdf, create_bvh=True)
+            cppsdf = sksdf_to_cppsdf(sksdf, create_bvh=False)
         else:
             self_collision_pairs = []
             cppsdf = None
