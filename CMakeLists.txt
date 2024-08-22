@@ -10,29 +10,30 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 add_subdirectory("third/urdf_parser")
 include_directories("third/urdf_parser/include")
+add_library(tinyfk SHARED cpp/kinematics/kinematics.cpp cpp/kinematics/tinyfk.cpp)
 
-find_package(Boost REQUIRED COMPONENTS serialization)
-option(OMPL_REGISTRATION OFF)  # avoid popup in browser
-add_subdirectory(third/ompl)
-include_directories("third/ompl/src")
-
-option(USE_VALGRIND "Use valgrind to profile the code" OFF)
-if(USE_VALGRIND)
-    find_path(VALGRIND_INCLUDE_DIR
-        NAMES valgrind/callgrind.h
-        PATHS /usr/include /usr/local/include
-    )
-    if(VALGRIND_INCLUDE_DIR)
-        include_directories(${VALGRIND_INCLUDE_DIR})
-    else()
-        message(FATAL_ERROR "Could not find valgrind/callgrind.h. Please install the valgrind development package.")
-    endif()
-    add_definitions(-DUSE_VALGRIND)
-endif()
-
-file(GLOB_RECURSE SRC_FILES cpp/*.cpp)
-include_directories(cpp)
-add_subdirectory(pybind11)
-pybind11_add_module(_plainmp ${SRC_FILES})
-target_link_libraries(_plainmp urdfdom_model ompl ${Boost_LIBRARIES})
-install(TARGETS _plainmp DESTINATION .)
+# find_package(Boost REQUIRED COMPONENTS serialization)
+# option(OMPL_REGISTRATION OFF)  # avoid popup in browser
+# add_subdirectory(third/ompl)
+# include_directories("third/ompl/src")
+# 
+# option(USE_VALGRIND "Use valgrind to profile the code" OFF)
+# if(USE_VALGRIND)
+#     find_path(VALGRIND_INCLUDE_DIR
+#         NAMES valgrind/callgrind.h
+#         PATHS /usr/include /usr/local/include
+#     )
+#     if(VALGRIND_INCLUDE_DIR)
+#         include_directories(${VALGRIND_INCLUDE_DIR})
+#     else()
+#         message(FATAL_ERROR "Could not find valgrind/callgrind.h. Please install the valgrind development package.")
+#     endif()
+#     add_definitions(-DUSE_VALGRIND)
+# endif()
+# 
+# file(GLOB_RECURSE SRC_FILES cpp/*.cpp)
+# include_directories(cpp)
+# add_subdirectory(pybind11)
+# pybind11_add_module(_plainmp ${SRC_FILES})
+# target_link_libraries(_plainmp urdfdom_model ompl ${Boost_LIBRARIES})
+# install(TARGETS _plainmp DESTINATION .)
