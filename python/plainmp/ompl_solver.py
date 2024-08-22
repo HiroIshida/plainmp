@@ -9,7 +9,7 @@ from plainmp.ik import IKResult, solve_ik
 from plainmp.problem import Problem
 from plainmp.trajectory import Trajectory
 
-from ._plainmp.ompl import ERTConnectPlanner, OMPLPlanner
+from ._plainmp.ompl import ERTConnectPlanner, OMPLPlanner, set_log_level_none
 
 
 class Algorithm(Enum):
