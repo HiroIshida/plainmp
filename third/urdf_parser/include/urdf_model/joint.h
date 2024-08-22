@@ -196,7 +196,7 @@ public:
   ///   origin specifies the transform from Parent Link to Joint Frame
   std::string parent_link_name;
   /// transform from Parent Link frame to Joint frame
-  Pose  parent_to_joint_origin_transform;
+  QuatTrans<double>  parent_to_joint_origin_transform;
 
   /// Joint Dynamics
   JointDynamicsSharedPtr dynamics;

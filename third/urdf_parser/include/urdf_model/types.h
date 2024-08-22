@@ -38,6 +38,8 @@
 #define URDF_MODEL_TYPES_H
 
 #include <memory>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 #define URDF_TYPEDEF_CLASS_POINTER(Class) \
 class Class; \
@@ -85,6 +87,23 @@ std::shared_ptr<T> static_pointer_cast(std::shared_ptr<U> const & r)
 {
   return std::static_pointer_cast<T>(r);
 }
+
+template<typename Scalar>
+struct QuatTrans {
+    Eigen::Quaternion<Scalar> q;
+    Eigen::Matrix<Scalar, 3, 1> t;
+
+    static QuatTrans<Scalar> Identity() {
+        QuatTrans<Scalar> qt;
+        qt.q = Eigen::Quaternion<Scalar>::Identity();
+        qt.t = Eigen::Matrix<Scalar, 3, 1>::Zero();
+        return qt;
+    }
+    void clear() {
+        q = Eigen::Quaternion<Scalar>::Identity();
+        t = Eigen::Matrix<Scalar, 3, 1>::Zero();
+    }
+};
 
 }
 

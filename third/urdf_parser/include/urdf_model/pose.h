@@ -45,6 +45,7 @@
 
 #include <urdf_exception/exception.h>
 #include <urdf_model/utils.h>
+#include <urdf_model/types.h>
 
 namespace urdf{
 
@@ -354,6 +355,16 @@ public:
     Pose pose_out = *this;
     pose_out.inverse_inplace();
     return pose_out;
+  }
+
+  QuatTrans<double> to_quattrans() const{
+    QuatTrans<double> qt;
+    qt.q.x() = rotation.x;
+    qt.q.y() = rotation.y;
+    qt.q.z() = rotation.z;
+    qt.q.w() = rotation.w;
+    qt.t = {position.x, position.y, position.z};
+    return qt;
   }
 };
 
