@@ -72,12 +72,15 @@ class OMPLSolver:
             )
             return ret
         else:
-            for _ in range(self.config.n_max_ik_trial):
-                ret = solve_ik(
-                    problem.goal_const, problem.global_ineq_const, problem.lb, problem.ub
-                )
-                if ret.success:
-                    return ret
+            ret = solve_ik(
+                problem.goal_const,
+                problem.global_ineq_const,
+                problem.lb,
+                problem.ub,
+                max_trial=self.config.n_max_ik_trial,
+            )
+            if ret.success:
+                return ret
             return ret  # type: ignore
 
     def solve(self, problem: Problem, guess: Optional[Trajectory] = None) -> OMPLSolverResult:
