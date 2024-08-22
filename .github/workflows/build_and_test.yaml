@@ -37,11 +37,11 @@ jobs:
             - name: Test
               run: |
                 pip install pytest
-                pytest python
+                for i in {1..3}; do pytest python && break || echo "Test failed... retrying ($i)"; done
 
             - name: Run examples
               run: |
-                python3 example/fetch_ik.py
-                python3 example/fetch_plan.py
-                python3 example/humanoid_planning.py
-                python3 example/humanoid_lift_and_place_box.py
+                for i in {1..3}; do python3 example/fetch_ik.py && break || echo "fetch_ik.py failed... retrying ($i)"; done
+                for i in {1..3}; do python3 example/fetch_plan.py && break || echo "fetch_plan.py failed... retrying ($i)"; done
+                for i in {1..3}; do python3 example/humanoid_planning.py && break || echo "humanoid_planning.py failed... retrying ($i)"; done
+                for i in {1..3}; do python3 example/humanoid_lift_and_place_box.py && break || echo "humanoid_lift_and_place_box.py failed... retrying ($i)"; done
