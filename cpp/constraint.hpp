@@ -244,6 +244,7 @@ class SphereCollisionCst : public IneqConstraintBase {
     sdf_ = sdf;
     set_all_sdfs();
   }
+  SDFBase::Ptr get_sdf() const { return sdf_; }
 
   bool is_valid_dirty() override;
   bool check_ext_collision();
