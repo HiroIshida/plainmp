@@ -6,27 +6,25 @@
 
 namespace tinyfk {
 
-Vector3 rpy_derivative(const Vector3 &rpy, const Vector3 &axis) {
-  Vector3 drpy_dt;
-  double a2 = -rpy.y;
-  double a3 = -rpy.z;
-  drpy_dt.x = cos(a3) / cos(a2) * axis.x - sin(a3) / cos(a2) * axis.y;
-  drpy_dt.y = sin(a3) * axis.x + cos(a3) * axis.y;
-  drpy_dt.z = -cos(a3) * sin(a2) / cos(a2) * axis.x +
-              sin(a3) * sin(a2) / cos(a2) * axis.y + axis.z;
+Eigen::Vector3d rpy_derivative(const Eigen::Vector3d &rpy, const Eigen::Vector3d &axis) {
+  Eigen::Vector3d drpy_dt;
+  double a2 = -rpy.y();
+  double a3 = -rpy.z();
+  drpy_dt.x() = cos(a3) / cos(a2) * axis.x ()- sin(a3) / cos(a2) * axis.y();
+  drpy_dt.y() = sin(a3) * axis.x() + cos(a3) * axis.y();
+  drpy_dt.z() = -cos(a3) * sin(a2) / cos(a2) * axis.x() +
+              sin(a3) * sin(a2) / cos(a2) * axis.y() + axis.z();
   return drpy_dt;
 }
 
-Rotation q_derivative(const Rotation &q, const Vector3 &omega) {
-  const double dxdt =
-      0.5 * (0 * q.x + omega.z * q.y - omega.y * q.z + omega.x * q.w);
-  const double dydt =
-      0.5 * (-omega.z * q.x + 0 * q.y + omega.x * q.z + omega.y * q.w);
-  const double dzdt =
-      0.5 * (omega.y * q.x - omega.x * q.y + 0 * q.z + omega.z * q.w);
-  const double dwdt =
-      0.5 * (-omega.x * q.x - omega.y * q.y - omega.z * q.z + 0 * q.w);
-  return Rotation(dxdt, dydt, dzdt, -dwdt); // TODO: why minus????
+Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector3d &omega) {
+  const double dxdt = 0.5 * (omega.z() * q.y() - omega.y() * q.z() + omega.x() * q.w());
+  const double dydt = 0.5 * (-omega.z() * q.x() + 0 * q.y() + omega.x() * q.z() + omega.y() * q.w());
+  const double dzdt = 0.5 * (omega.y() * q.x() - omega.x() * q.y() + 0 * q.z() + omega.z() * q.w());
+  const double dwdt = 0.5 * (-omega.x() * q.x() - omega.y() * q.y() - omega.z() * q.z() + 0 * q.w());
+  // return Rotation(dxdt, dydt, dzdt, -dwdt); // TODO: why minus????
+  std::cout << "you sure? the order?" << std::endl;
+  return Eigen::Quaterniond(-dwdt, dxdt, dydt, dzdt);
 }
 
 void KinematicModel::get_link_pose(size_t link_id,
@@ -144,132 +142,121 @@ Eigen::MatrixXd
 KinematicModel::get_jacobian(size_t elink_id,
                              const std::vector<size_t> &joint_ids,
                              RotationType rot_type, bool with_base) {
-  // const size_t dim_jacobi = 3 + (rot_type == RotationType::RPY) * 3 +
-  //                           (rot_type == RotationType::XYZW) * 4;
-  // const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
+  const size_t dim_jacobi = 3 + (rot_type == RotationType::RPY) * 3 +
+                            (rot_type == RotationType::XYZW) * 4;
+  const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
 
-  // // compute values shared through the loop
-  // ExpTransform tf_rlink_to_elink;
-  // this->get_link_pose(elink_id, tf_rlink_to_elink);
-  // Vector3 &epos = tf_rlink_to_elink.position;
-  // Rotation &erot = tf_rlink_to_elink.rotation;
+  // compute values shared through the loop
+  Transform tmp;
+  this->get_link_pose(elink_id, tmp);
+  ExpTransform tf_rlink_to_elink = tmp.to_quattrans();
 
-  // Vector3 erpy;
-  // Rotation erot_inverse;
-  // if (rot_type == RotationType::RPY) {
-  //   erpy = erot.getRPY();
-  // }
-  // if (rot_type == RotationType::XYZW) {
-  //   erot_inverse = erot.inverse();
-  // }
+  auto &epos = tf_rlink_to_elink.t;
+  auto &erot = tf_rlink_to_elink.q;
 
-  // // Jacobian computation
-  // Eigen::MatrixXd jacobian = Eigen::MatrixXd::Zero(dim_jacobi, dim_dof);
+  Eigen::Vector3d erpy;
+  Eigen::Quaterniond erot_inverse;
+  if (rot_type == RotationType::RPY) {
+    erpy = tf_rlink_to_elink.getRPY();
+  }
+  if (rot_type == RotationType::XYZW) {
+    erot_inverse = erot.inverse();
+  }
 
-  // for (size_t i = 0; i < joint_ids.size(); i++) {
-  //   int jid = joint_ids[i];
-  //   if (rptable_.isRelevant(elink_id, jid)) {
-  //     const urdf::JointSharedPtr &hjoint = joints_[jid];
-  //     size_t type = hjoint->type;
-  //     if (type == urdf::Joint::FIXED) {
-  //       assert(type != urdf::Joint::FIXED && "fixed type is not accepted");
-  //     }
-  //     urdf::LinkSharedPtr clink =
-  //         hjoint->getChildLink(); // rotation of clink and hlink is same. so
-  //                                 // clink is ok.
+  // Jacobian computation
+  Eigen::MatrixXd jacobian = Eigen::MatrixXd::Zero(dim_jacobi, dim_dof);
 
-  //     ExpTransform tf_rlink_to_clink;
-  //     this->get_link_pose(clink->id, tf_rlink_to_clink);
+  for (size_t i = 0; i < joint_ids.size(); i++) {
+    int jid = joint_ids[i];
+    if (rptable_.isRelevant(elink_id, jid)) {
+      const urdf::JointSharedPtr &hjoint = joints_[jid];
+      size_t type = hjoint->type;
+      if (type == urdf::Joint::FIXED) {
+        assert(type != urdf::Joint::FIXED && "fixed type is not accepted");
+      }
+      urdf::LinkSharedPtr clink =
+          hjoint->getChildLink(); // rotation of clink and hlink is same. so
+                                  // clink is ok.
 
-  //     Rotation &crot = tf_rlink_to_clink.rotation;
-  //     Vector3 &&world_axis = crot * hjoint->axis; // axis w.r.t root link
-  //     Vector3 dpos;
-  //     if (type == urdf::Joint::PRISMATIC) {
-  //       dpos = world_axis;
-  //     } else { // revolute or continuous
-  //       Vector3 &cpos = tf_rlink_to_clink.position;
-  //       Vector3 vec_clink_to_elink = {epos.x - cpos.x, epos.y - cpos.y,
-  //                                     epos.z - cpos.z};
-  //       cross_product(world_axis, vec_clink_to_elink, dpos);
-  //     }
-  //     jacobian(0, i) = dpos.x;
-  //     jacobian(1, i) = dpos.y;
-  //     jacobian(2, i) = dpos.z;
-  //     if (type == urdf::Joint::PRISMATIC) {
-  //       // jacobian for rotation is all zero
-  //     } else {
+      Transform tmp;
+      this->get_link_pose(clink->id, tmp);
+      ExpTransform tf_rlink_to_clink = tmp.to_quattrans();
 
-  //       if (rot_type == RotationType::RPY) { // (compute rpy jacobian)
-  //         Vector3 drpy_dt = rpy_derivative(erpy, world_axis);
-  //         jacobian(3, i) = drpy_dt.x;
-  //         jacobian(4, i) = drpy_dt.y;
-  //         jacobian(5, i) = drpy_dt.z;
-  //       }
+      auto &crot = tf_rlink_to_clink.q;
+      auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
+      Eigen::Vector3d dpos;
+      if (type == urdf::Joint::PRISMATIC) {
+        dpos = world_axis;
+      } else { // revolute or continuous
+        auto &cpos = tf_rlink_to_clink.t;
+        auto vec_clink_to_elink = epos - cpos;
+        // cross_product(world_axis, vec_clink_to_elink, dpos);
+        std::cout << "check this later!!!!!!" << std::endl;
+        dpos = world_axis.cross(vec_clink_to_elink);
+      }
+      jacobian.block<3, 1>(0, i) = dpos;
+      if (type == urdf::Joint::PRISMATIC) {
+        // jacobian for rotation is all zero
+      } else {
 
-  //       if (rot_type == RotationType::XYZW) { // (compute quat jacobian)
-  //         Rotation dq_dt = q_derivative(erot_inverse, world_axis);
-  //         jacobian(3, i) = dq_dt.x;
-  //         jacobian(4, i) = dq_dt.y;
-  //         jacobian(5, i) = dq_dt.z;
-  //         jacobian(6, i) = dq_dt.w;
-  //       }
-  //     }
-  //   }
-  // }
+        if (rot_type == RotationType::RPY) { // (compute rpy jacobian)
+          auto drpy_dt = rpy_derivative(erpy, world_axis);
+          jacobian.block<3, 1>(3, i) = drpy_dt;
+        }
 
-  // ExpTransform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
-  // Vector3 rpy_rlink_to_blink;
-  // if (with_base) {
-  //   this->get_link_pose(this->root_link_id_, tf_rlink_to_blink);
-  //   tf_blink_to_rlink = tf_rlink_to_blink.inverse();
-  //   rpy_rlink_to_blink = tf_rlink_to_blink.rotation.getRPY();
-  //   tf_blink_to_elink = pose_transform(tf_blink_to_rlink, tf_rlink_to_elink);
-  // }
+        if (rot_type == RotationType::XYZW) { // (compute quat jacobian)
+          auto dq_dt = q_derivative(erot_inverse, world_axis);
+          jacobian.block<4, 1>(3, i) = dq_dt.coeffs();
+        }
+      }
+    }
+  }
 
-  // if (with_base) {
-  //   const size_t dim_dof = joint_ids.size();
+  ExpTransform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
+  Eigen::Vector3d rpy_rlink_to_blink;
+  if (with_base) {
+    Transform tmp;
+    this->get_link_pose(this->root_link_id_, tmp);
+    ExpTransform tf_rlink_to_blink = tmp.to_quattrans();
+    tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
+    rpy_rlink_to_blink = tf_rlink_to_blink.getRPY();
+    tf_blink_to_elink = tf_blink_to_rlink * tf_rlink_to_elink;
+  }
 
-  //   jacobian(0, dim_dof + 0) = 1.0;
-  //   jacobian(1, dim_dof + 1) = 1.0;
-  //   jacobian(2, dim_dof + 2) = 1.0;
+  if (with_base) {
+    const size_t dim_dof = joint_ids.size();
 
-  //   // we resort to numerical method to base pose jacobian (just because I don't
-  //   // have time)
-  //   // TODO(HiroIshida): compute using analytical method.
-  //   constexpr double eps = 1e-7;
-  //   for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
-  //     const size_t idx_col = dim_dof + 3 + rpy_idx;
+    jacobian(0, dim_dof + 0) = 1.0;
+    jacobian(1, dim_dof + 1) = 1.0;
+    jacobian(2, dim_dof + 2) = 1.0;
 
-  //     auto rpy_tweaked = rpy_rlink_to_blink;
-  //     rpy_tweaked[rpy_idx] += eps;
+    // we resort to numerical method to base pose jacobian (just because I don't
+    // have time)
+    // TODO(HiroIshida): compute using analytical method.
+    constexpr double eps = 1e-7;
+    for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
+      const size_t idx_col = dim_dof + 3 + rpy_idx;
 
-  //     ExpTransform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
-  //     tf_rlink_to_blink_tweaked.rotation.setFromRPY(
-  //         rpy_tweaked.x, rpy_tweaked.y, rpy_tweaked.z);
-  //     ExpTransform tf_rlink_to_elink_tweaked =
-  //         pose_transform(tf_rlink_to_blink_tweaked, tf_blink_to_elink);
-  //     auto pose_out = tf_rlink_to_elink_tweaked;
+      auto rpy_tweaked = rpy_rlink_to_blink;
+      rpy_tweaked[rpy_idx] += eps;
 
-  //     const auto pos_diff = pose_out.position - tf_rlink_to_elink.position;
-  //     jacobian(0, idx_col) = pos_diff.x / eps;
-  //     jacobian(1, idx_col) = pos_diff.y / eps;
-  //     jacobian(2, idx_col) = pos_diff.z / eps;
-  //     if (rot_type == RotationType::RPY) {
-  //       auto erpy_tweaked = pose_out.rotation.getRPY();
-  //       const auto erpy_diff = erpy_tweaked - erpy;
-  //       jacobian(3, idx_col) = erpy_diff.x / eps;
-  //       jacobian(4, idx_col) = erpy_diff.y / eps;
-  //       jacobian(5, idx_col) = erpy_diff.z / eps;
-  //     }
-  //     if (rot_type == RotationType::XYZW) {
-  //       jacobian(3, idx_col) = (pose_out.rotation.x - erot.x) / eps;
-  //       jacobian(4, idx_col) = (pose_out.rotation.y - erot.y) / eps;
-  //       jacobian(5, idx_col) = (pose_out.rotation.z - erot.z) / eps;
-  //       jacobian(6, idx_col) = (pose_out.rotation.w - erot.w) / eps;
-  //     }
-  //   }
-  // }
-  auto jacobian = Eigen::MatrixXd(3, 3);
+      ExpTransform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
+      tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
+      ExpTransform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
+      auto pose_out = tf_rlink_to_elink_tweaked;
+
+      const auto pos_diff = pose_out.t - tf_rlink_to_elink.t;
+      jacobian.block<3, 1>(0, idx_col) = pos_diff / eps;
+      if (rot_type == RotationType::RPY) {
+        auto erpy_tweaked = pose_out.getRPY();
+        jacobian.block<3, 1>(3, idx_col) = (erpy_tweaked - erpy) / eps;
+      }
+      if (rot_type == RotationType::XYZW) {
+        // jacobian.block<4, 1>(3, idx_col) = (pose_out.q.coeffs() - erot).toEigen() / eps;
+        jacobian.block<4, 1>(3, idx_col) = (pose_out.q.coeffs() - erot.coeffs()) / eps;
+      }
+    }
+  }
   return jacobian;
 }
 
