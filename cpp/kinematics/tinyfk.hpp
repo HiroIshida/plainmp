@@ -19,7 +19,7 @@
 namespace tinyfk {
 
 using Bound = std::pair<double, double>;
-using Transform = urdf::QuatTrans<double>;
+using ExpTransform = urdf::QuatTrans<double>;
 using Vector3 = urdf::Vector3;
 using Rotation = urdf::Rotation;
 
@@ -55,16 +55,16 @@ public: // members
   std::vector<urdf::JointSharedPtr> joints_;
   std::unordered_map<std::string, int> joint_ids_;
   std::vector<double> joint_angles_;
-  Transform base_pose_;
+  ExpTransform base_pose_;
 
   RelevancePredicateTable rptable_;
   int num_dof_;
   double total_mass_;
 
   mutable SizedStack<size_t> link_id_stack_;
-  mutable SizedStack<std::pair<urdf::LinkSharedPtr, Transform>> transform_stack2_;
-  mutable SizedCache<Transform> transform_cache_;
-  mutable std::vector<Transform> tf_plink_to_hlink_cache_;
+  mutable SizedStack<std::pair<urdf::LinkSharedPtr, ExpTransform>> transform_stack2_;
+  mutable SizedCache<ExpTransform> transform_cache_;
+  mutable std::vector<ExpTransform> tf_plink_to_hlink_cache_;
 
 public: // functions
   KinematicModel(const std::string &xml_string);
@@ -75,7 +75,7 @@ public: // functions
       const std::vector<size_t> &joint_ids,
       const std::vector<double> &joint_angles);
 
-  void set_base_pose(const Transform& pose) {
+  void set_base_pose(const ExpTransform& pose) {
     base_pose_ = pose;
     this->clear_cache();
   }
@@ -116,7 +116,7 @@ public: // functions
     return link_names;
   }
 
-  void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
+  void get_link_pose(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
 
   void update_tree();
 
@@ -142,13 +142,13 @@ public: // functions
                                    bool consider_rotation,
                                    std::optional<std::string> link_name = std::nullopt);
 
-  urdf::LinkSharedPtr add_new_link(size_t parent_id, const Transform &pose,
+  urdf::LinkSharedPtr add_new_link(size_t parent_id, const ExpTransform &pose,
                                    bool consider_rotation,
                                    std::optional<std::string> link_name = std::nullopt);
 
 private:
-  void get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_root_to_ef) const;
-  void get_link_pose_inner(size_t link_id, Transform &out_tf_root_to_ef) const;
+  void get_link_pose_cache_not_found(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
+  void get_link_pose_inner(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
   void update_rptable();
 };
 
