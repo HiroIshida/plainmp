@@ -429,15 +429,19 @@ bool parseJoint(Joint &joint, TiXmlElement* config)
     TiXmlElement *axis_xml = config->FirstChildElement("axis");
     if (!axis_xml){
       //CONSOLE_BRIDGE_logDebug("urdfdom: no axis elemement for Joint link [%s], defaulting to (1,0,0) axis", joint.name.c_str());
-      joint.axis = Vector3(1.0, 0.0, 0.0);
+      joint.axis = Eigen::Vector3d::Zero();
     }
     else{
       if (axis_xml->Attribute("xyz")){
         try {
-          joint.axis.init(axis_xml->Attribute("xyz"));
+          Vector3 joint_axis_tmp;  // to parse
+          joint_axis_tmp.init(axis_xml->Attribute("xyz"));
+          joint.axis.x() = joint_axis_tmp.x;
+          joint.axis.y() = joint_axis_tmp.y;
+          joint.axis.z() = joint_axis_tmp.z;
         }
         catch (ParseError &e) {
-          joint.axis.clear();
+          joint.axis.setZero();
           //CONSOLE_BRIDGE_logError("Malformed axis element for joint [%s]: %s", joint.name.c_str(), e.what());
           return false;
         }
