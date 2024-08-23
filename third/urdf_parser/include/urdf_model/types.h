@@ -108,6 +108,11 @@ struct QuatTrans {
         return {q * other.q, t + q * other.t};
     }
 
+    QuatTrans<Scalar> getInverse() const {
+        Eigen::Quaternion<Scalar> q_inv = q.inverse();
+        return {q_inv, q_inv * (-t)};
+    }
+
     Eigen::Vector3d getRPY() const {
       auto sqx = q.x() * q.x();
       auto sqy = q.y() * q.y();
@@ -135,6 +140,16 @@ struct QuatTrans {
         yaw = atan2(2 * (q.x() * q.y() + q.w() * q.z()), sqw + sqx - sqy - sqz);
       }
       return {roll, pitch, yaw};
+    }
+
+    void setQuaternionFromRPY(const Eigen::Vector3d& rpy) {
+        auto phi = rpy[0] / 2.0;
+        auto the = rpy[1] / 2.0;
+        auto psi = rpy[2] / 2.0;
+        q.x() = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
+        q.y() = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
+        q.z() = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+        q.w() = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
     }
 
     static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3d& xyz, const Eigen::Vector3d& rpy) {
