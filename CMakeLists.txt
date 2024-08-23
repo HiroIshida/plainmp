@@ -11,6 +11,9 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 add_subdirectory("third/urdf_parser")
 include_directories("third/urdf_parser/include")
 add_library(tinyfk SHARED cpp/kinematics/kinematics.cpp cpp/kinematics/tinyfk.cpp)
+include_directories(cpp)
+add_executable(test_urdf tmp/test_urdf.cpp)
+target_link_libraries(test_urdf tinyfk urdfdom_model)
 
 # find_package(Boost REQUIRED COMPONENTS serialization)
 # option(OMPL_REGISTRATION OFF)  # avoid popup in browser
