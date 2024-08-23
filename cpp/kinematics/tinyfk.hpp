@@ -20,6 +20,7 @@ namespace tinyfk {
 
 using Bound = std::pair<double, double>;
 using ExpTransform = urdf::QuatTrans<double>;
+using Transform = urdf::Pose;
 using Vector3 = urdf::Vector3;
 using Rotation = urdf::Rotation;
 
@@ -75,8 +76,28 @@ public: // functions
       const std::vector<size_t> &joint_ids,
       const std::vector<double> &joint_angles);
 
-  void set_base_pose(const ExpTransform& pose) {
-    base_pose_ = pose;
+  Transform get_base_pose() const {
+    Transform pose;
+    pose.position.x = base_pose_.t.x();
+    pose.position.y = base_pose_.t.y();
+    pose.position.z = base_pose_.t.z();
+    pose.rotation.x = base_pose_.q.x();
+    pose.rotation.y = base_pose_.q.y();
+    pose.rotation.z = base_pose_.q.z();
+    pose.rotation.w = base_pose_.q.w();
+    return pose;
+  }
+
+  void set_base_pose(const Transform& pose) {
+    ExpTransform pose_exp;
+    pose_exp.t.x() = pose.position.x;
+    pose_exp.t.y() = pose.position.y;
+    pose_exp.t.z() = pose.position.z;
+    pose_exp.q.x() = pose.rotation.x;
+    pose_exp.q.y() = pose.rotation.y;
+    pose_exp.q.z() = pose.rotation.z;
+    pose_exp.q.w() = pose.rotation.w;
+    base_pose_ = pose_exp;
     this->clear_cache();
   }
 
@@ -116,7 +137,7 @@ public: // functions
     return link_names;
   }
 
-  void get_link_pose(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
+  void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
 
   void update_tree();
 
@@ -147,7 +168,7 @@ public: // functions
                                    std::optional<std::string> link_name = std::nullopt);
 
 private:
-  void get_link_pose_cache_not_found(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
+  void get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_root_to_ef) const;
   void get_link_pose_inner(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
   void update_rptable();
 };
