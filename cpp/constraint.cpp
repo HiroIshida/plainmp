@@ -80,15 +80,15 @@ FixedZAxisCst::FixedZAxisCst(
       link_id_(kin_->get_link_ids({link_name})[0]) {
   aux_link_ids_.clear();
   {
-    tinyfk::Transform pose;
-    pose.position.x = 1;
+    auto pose = tinyfk::ExpTransform::Identity();
+    pose.t.x() = 1;
     auto new_link = kin_->add_new_link(link_id_, pose, false);
     aux_link_ids_.push_back(new_link->id);
   }
 
   {
-    tinyfk::Transform pose;
-    pose.position.y = 1;
+    auto pose = tinyfk::ExpTransform::Identity();
+    pose.t.y() = 1;
     auto new_link = kin_->add_new_link(link_id_, pose, false);
     aux_link_ids_.push_back(new_link->id);
   }
@@ -464,8 +464,7 @@ void SphereCollisionCst::set_all_sdfs() {
 
 bool ComInPolytopeCst::is_valid_dirty() {
   // COPIED from evaluate() >> START
-  auto com_tmp = kin_->get_com();
-  Eigen::Vector3d com(com_tmp.x, com_tmp.y, com_tmp.z);
+  auto com = kin_->get_com();
   if (force_link_ids_.size() > 0) {
     double vertical_force_sum = 1.0;  // 1.0 for normalized self
     tinyfk::Transform pose;
@@ -487,9 +486,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
   Eigen::VectorXd vals(cst_dim());
   Eigen::MatrixXd jac(cst_dim(), q_dim());
 
-  auto com_tmp = kin_->get_com();
-  Eigen::Vector3d com(com_tmp.x, com_tmp.y, com_tmp.z);
-
+  auto com = kin_->get_com();
   auto com_jaco = kin_->get_com_jacobian(control_joint_ids_, q_dim());
   if (force_link_ids_.size() > 0) {
     double vertical_force_sum = 1.0;  // 1.0 for normalized self

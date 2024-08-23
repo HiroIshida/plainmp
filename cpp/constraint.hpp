@@ -112,7 +112,7 @@ class ConfigPointCst : public EqConstraintBase {
     }
     if (with_base_) {
       size_t head = control_joint_ids_.size();
-      auto& base_pose = kin_->base_pose_;
+      auto base_pose = kin_->get_base_pose();
       q_now(head) = base_pose.position.x;
       q_now(head + 1) = base_pose.position.y;
       q_now(head + 2) = base_pose.position.z;
@@ -175,10 +175,8 @@ class RelativePoseCst : public EqConstraintBase {
         link_id2_(kin_->get_link_ids({link_name2})[0]),
         relative_pose_(relative_pose) {
     // TODO: because name is hard-coded, we cannot create two RelativePoseCst...
-    tinyfk::Transform pose;
-    pose.position.x = relative_pose[0];
-    pose.position.y = relative_pose[1];
-    pose.position.z = relative_pose[2];
+    auto pose = tinyfk::ExpTransform::Identity();
+    pose.t = relative_pose;
     size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
     auto new_link = kin_->add_new_link(link_id1_, pose, true);
     dummy_link_id_ = new_link->id;

@@ -61,11 +61,10 @@ void KinematicModel::get_link_pose_cache_not_found(size_t link_id, Transform &ou
       get_link_pose_inner(plink->id, tf_rlink_to_plink);
     }
     out_tmp.t = tf_rlink_to_plink.t + tf_rlink_to_plink.q * pjoint->parent_to_joint_origin_transform.t;
-
     // HACK: we want to update the only position part
     // thus, we commented out the private: and directly access the data
     transform_cache_.cache_predicate_vector_[link_id] = true;
-    transform_cache_.data_[link_id].t = std::move(out_tmp.t);
+    transform_cache_.data_[link_id].t = out_tmp.t;
   }
   out_tf_rlink_to_elink.position.x = out_tmp.t.x();
   out_tf_rlink_to_elink.position.y = out_tmp.t.y();
@@ -74,6 +73,9 @@ void KinematicModel::get_link_pose_cache_not_found(size_t link_id, Transform &ou
   out_tf_rlink_to_elink.rotation.y = out_tmp.q.y();
   out_tf_rlink_to_elink.rotation.z = out_tmp.q.z();
   out_tf_rlink_to_elink.rotation.w = out_tmp.q.w();
+  // compare out_tmp.t with out_tf_rlink_to_elink.position
+  // std::cout << "out_tmp.t: " << out_tmp.t.x() << ", " << out_tmp.t.y() << ", " << out_tmp.t.z() << std::endl;
+  // std::cout << "out_tf_rlink_to_elink.position: " << out_tf_rlink_to_elink.position.x << ", " << out_tf_rlink_to_elink.position.y << ", " << out_tf_rlink_to_elink.position.z << std::endl;
 }
 
 void KinematicModel::get_link_pose_inner(
