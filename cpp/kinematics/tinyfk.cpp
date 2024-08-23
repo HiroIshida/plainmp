@@ -121,15 +121,8 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
     joint_angles_[joint_id] = joint_angles[i];
     auto joint = joints_[joint_id];
     auto& tf_plink_to_pjoint = joint->parent_to_joint_origin_transform;
-    // std::cout << "fix this!" << std::endl;
-    // std::cout << "fix this!" << std::endl;
-    // std::cout << "fix this!" << std::endl;
-    auto&& tf_pjoint_to_hlink = joint->transform(joint_angles[i]).to_quattrans();
-    // std::cout << "fix this!" << std::endl;
-    // std::cout << "fix this!" << std::endl;
-    // std::cout << "fix this!" << std::endl;
+    auto&& tf_pjoint_to_hlink = joint->transform(joint_angles[i]);
     auto&& tf_plink_to_hlink = tf_plink_to_pjoint * tf_pjoint_to_hlink;
-    // std::cout << "caching h => p transform: " << tf_plink_to_hlink.t << std::endl;
     tf_plink_to_hlink_cache_[joint->getChildLink()->id] = tf_plink_to_hlink;
   }
   transform_cache_.clear();
