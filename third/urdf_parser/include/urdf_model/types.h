@@ -109,10 +109,24 @@ struct QuatTrans {
 
     static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3d& xyz, const Eigen::Vector3d& rpy) {
         Eigen::Quaternion<Scalar> q;
-        q = Eigen::AngleAxis<Scalar>(rpy[0], Eigen::Matrix<Scalar, 3, 1>::UnitX())
-            * Eigen::AngleAxis<Scalar>(rpy[1], Eigen::Matrix<Scalar, 3, 1>::UnitY())
-            * Eigen::AngleAxis<Scalar>(rpy[2], Eigen::Matrix<Scalar, 3, 1>::UnitZ());
-        return {q, xyz};
+        auto phi = rpy[0] / 2.0;
+        auto the = rpy[1] / 2.0;
+        auto psi = rpy[2] / 2.0;
+        auto x = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
+        auto y = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
+        auto z = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+        auto w = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
+        return {Eigen::Quaternion<Scalar>(w, x, y, z), xyz};
+    }
+    static QuatTrans<Scalar> fromXYZRPY(Scalar x, Scalar y, Scalar z, Scalar roll, Scalar pitch, Scalar yaw) {
+        return fromXYZRPY(Eigen::Vector3d(x, y, z), Eigen::Vector3d(roll, pitch, yaw));
+    }
+
+    static QuatTrans<Scalar> fromXYZ(const Eigen::Vector3d& xyz) {
+        return {Eigen::Quaternion<Scalar>::Identity(), xyz};
+    } 
+    static QuatTrans<Scalar> fromXYZ(Scalar x, Scalar y, Scalar z) {
+        return fromXYZ(Eigen::Vector3d(x, y, z));
     }
 };
 
