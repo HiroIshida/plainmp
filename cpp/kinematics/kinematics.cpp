@@ -147,7 +147,7 @@ KinematicModel::get_jacobian(size_t elink_id,
   Transform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
   Eigen::Vector3d rpy_rlink_to_blink;
   if (with_base) {
-    const auto& tf_rlink_to_blink = get_link_pose(root_link_id_);
+    tf_rlink_to_blink = get_link_pose(root_link_id_);
     tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
     rpy_rlink_to_blink = tf_rlink_to_blink.getRPY();
     tf_blink_to_elink = tf_blink_to_rlink * tf_rlink_to_elink;
