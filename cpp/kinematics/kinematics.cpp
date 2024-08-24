@@ -217,7 +217,7 @@ KinematicModel::get_jacobian(size_t elink_id,
   if (with_base) {
     Transform tmp;
     this->get_link_pose(this->root_link_id_, tmp);
-    ExpTransform tf_rlink_to_blink = tmp.to_quattrans();
+    tf_rlink_to_blink = tmp.to_quattrans();
     tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
     rpy_rlink_to_blink = tf_rlink_to_blink.getRPY();
     tf_blink_to_elink = tf_blink_to_rlink * tf_rlink_to_elink;
