@@ -219,10 +219,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id,
                                  std::optional<std::string> link_name){
   Transform pose;
   pose.trans()  = Eigen::Vector3d(position[0], position[1], position[2]);
-  // pose.rotation.setFromRPY(rpy[0], rpy[1], rpy[2]);
-  pose.quat() = Eigen::AngleAxisd(rpy[0], Eigen::Vector3d::UnitX()) *
-                           Eigen::AngleAxisd(rpy[1], Eigen::Vector3d::UnitY()) *
-                           Eigen::AngleAxisd(rpy[2], Eigen::Vector3d::UnitZ());
+  pose.setQuaternionFromRPY(rpy[0], rpy[1], rpy[2]);
   return this->add_new_link(parent_id, pose, consider_rotation, link_name);
 }
 
