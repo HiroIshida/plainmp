@@ -46,6 +46,7 @@
 namespace urdf{
 
 bool parsePose(Pose &pose, TiXmlElement* xml);
+bool parsePose(QuatTrans<double>& pose, TiXmlElement* xml);
 
 bool parseJointDynamics(JointDynamics &jd, TiXmlElement* config)
 {
@@ -428,15 +429,19 @@ bool parseJoint(Joint &joint, TiXmlElement* config)
     TiXmlElement *axis_xml = config->FirstChildElement("axis");
     if (!axis_xml){
       //CONSOLE_BRIDGE_logDebug("urdfdom: no axis elemement for Joint link [%s], defaulting to (1,0,0) axis", joint.name.c_str());
-      joint.axis = Vector3(1.0, 0.0, 0.0);
+      joint.axis = Eigen::Vector3d::Zero();
     }
     else{
       if (axis_xml->Attribute("xyz")){
         try {
-          joint.axis.init(axis_xml->Attribute("xyz"));
+          Vector3 joint_axis_tmp;  // to parse
+          joint_axis_tmp.init(axis_xml->Attribute("xyz"));
+          joint.axis.x() = joint_axis_tmp.x;
+          joint.axis.y() = joint_axis_tmp.y;
+          joint.axis.z() = joint_axis_tmp.z;
         }
         catch (ParseError &e) {
-          joint.axis.clear();
+          joint.axis.setZero();
           //CONSOLE_BRIDGE_logError("Malformed axis element for joint [%s]: %s", joint.name.c_str(), e.what());
           return false;
         }
@@ -587,54 +592,54 @@ bool exportJointMimic(JointMimic &jm, TiXmlElement* xml)
 
 bool exportJoint(Joint &joint, TiXmlElement* xml)
 {
-  TiXmlElement * joint_xml = new TiXmlElement("joint");
-  joint_xml->SetAttribute("name", joint.name);
-  if (joint.type == urdf::Joint::PLANAR)
-    joint_xml->SetAttribute("type", "planar");
-  else if (joint.type == urdf::Joint::FLOATING)
-    joint_xml->SetAttribute("type", "floating");
-  else if (joint.type == urdf::Joint::REVOLUTE)
-    joint_xml->SetAttribute("type", "revolute");
-  else if (joint.type == urdf::Joint::CONTINUOUS)
-    joint_xml->SetAttribute("type", "continuous");
-  else if (joint.type == urdf::Joint::PRISMATIC)
-    joint_xml->SetAttribute("type", "prismatic");
-  else if (joint.type == urdf::Joint::FIXED)
-    joint_xml->SetAttribute("type", "fixed");
-  else
-    //CONSOLE_BRIDGE_logError("ERROR:  Joint [%s] type [%d] is not a defined type.\n",joint.name.c_str(), joint.type);
+  // TiXmlElement * joint_xml = new TiXmlElement("joint");
+  // joint_xml->SetAttribute("name", joint.name);
+  // if (joint.type == urdf::Joint::PLANAR)
+  //   joint_xml->SetAttribute("type", "planar");
+  // else if (joint.type == urdf::Joint::FLOATING)
+  //   joint_xml->SetAttribute("type", "floating");
+  // else if (joint.type == urdf::Joint::REVOLUTE)
+  //   joint_xml->SetAttribute("type", "revolute");
+  // else if (joint.type == urdf::Joint::CONTINUOUS)
+  //   joint_xml->SetAttribute("type", "continuous");
+  // else if (joint.type == urdf::Joint::PRISMATIC)
+  //   joint_xml->SetAttribute("type", "prismatic");
+  // else if (joint.type == urdf::Joint::FIXED)
+  //   joint_xml->SetAttribute("type", "fixed");
+  // else
+  //   //CONSOLE_BRIDGE_logError("ERROR:  Joint [%s] type [%d] is not a defined type.\n",joint.name.c_str(), joint.type);
 
-  // origin
-  exportPose(joint.parent_to_joint_origin_transform, joint_xml);
+  // // origin
+  // // exportPose(joint.parent_to_joint_origin_transform, joint_xml);
 
-  // axis
-  TiXmlElement * axis_xml = new TiXmlElement("axis");
-  axis_xml->SetAttribute("xyz", urdf_export_helpers::values2str(joint.axis));
-  joint_xml->LinkEndChild(axis_xml);
+  // // axis
+  // TiXmlElement * axis_xml = new TiXmlElement("axis");
+  // axis_xml->SetAttribute("xyz", urdf_export_helpers::values2str(joint.axis));
+  // joint_xml->LinkEndChild(axis_xml);
 
-  // parent 
-  TiXmlElement * parent_xml = new TiXmlElement("parent");
-  parent_xml->SetAttribute("link", joint.parent_link_name);
-  joint_xml->LinkEndChild(parent_xml);
+  // // parent 
+  // TiXmlElement * parent_xml = new TiXmlElement("parent");
+  // parent_xml->SetAttribute("link", joint.parent_link_name);
+  // joint_xml->LinkEndChild(parent_xml);
 
-  // child
-  TiXmlElement * child_xml = new TiXmlElement("child");
-  child_xml->SetAttribute("link", joint.child_link_name);
-  joint_xml->LinkEndChild(child_xml);
+  // // child
+  // TiXmlElement * child_xml = new TiXmlElement("child");
+  // child_xml->SetAttribute("link", joint.child_link_name);
+  // joint_xml->LinkEndChild(child_xml);
 
-  if (joint.dynamics)
-    exportJointDynamics(*(joint.dynamics), joint_xml);
-  if (joint.limits)
-    exportJointLimits(*(joint.limits), joint_xml);
-  if (joint.safety)
-    exportJointSafety(*(joint.safety), joint_xml);
-  if (joint.calibration)
-    exportJointCalibration(*(joint.calibration), joint_xml);
-  if (joint.mimic)
-    exportJointMimic(*(joint.mimic), joint_xml);
+  // if (joint.dynamics)
+  //   exportJointDynamics(*(joint.dynamics), joint_xml);
+  // if (joint.limits)
+  //   exportJointLimits(*(joint.limits), joint_xml);
+  // if (joint.safety)
+  //   exportJointSafety(*(joint.safety), joint_xml);
+  // if (joint.calibration)
+  //   exportJointCalibration(*(joint.calibration), joint_xml);
+  // if (joint.mimic)
+  //   exportJointMimic(*(joint.mimic), joint_xml);
 
-  xml->LinkEndChild(joint_xml);
-  return true;
+  // xml->LinkEndChild(joint_xml);
+  // return true;
 }
 
 

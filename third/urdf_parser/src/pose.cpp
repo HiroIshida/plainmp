@@ -125,6 +125,16 @@ bool parsePose(Pose &pose, TiXmlElement* xml)
   return true;
 }
 
+bool parsePose(QuatTrans<double>& pose, TiXmlElement* xml) {
+  Pose tmp;
+  if(!parsePose(tmp, xml)) {
+    return false;
+  }
+  pose = tmp.to_quattrans();
+  return true;
+}
+
+
 bool exportPose(Pose &pose, TiXmlElement* xml)
 {
   TiXmlElement *origin = new TiXmlElement("origin");
