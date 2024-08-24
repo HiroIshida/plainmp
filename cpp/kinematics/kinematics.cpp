@@ -92,32 +92,6 @@ void KinematicModel::get_link_pose_inner(
   out_tf_rlink_to_elink = std::move(tf_rlink_to_plink);
 }
 
-void KinematicModel::update_tree() {
-  // transform_stack2_.reset();
-  // transform_stack2_.push(std::make_pair(links_[root_link_id_], base_pose_));
-  // while(!transform_stack2_.empty()) {
-  //   auto [hlink, tf_b2h] = transform_stack2_.top();
-  //   transform_stack2_.pop();
-  //   transform_cache_.set_cache(hlink->id, tf_b2h);
-  //   for (size_t i = 0; i < hlink->child_joints.size(); i++) {
-  //     auto cjoint = hlink->child_joints[i];
-  //     auto clink = hlink->child_links[i];
-  //     if(cjoint->type == urdf::Joint::FIXED) {
-  //       auto& tf_h2c = cjoint->parent_to_joint_origin_transform;
-  //       auto&& tf_b2c = tf_b2h * tf_h2c;
-  //       transform_stack2_.push({clink, tf_b2c});
-  //     } else {
-  //       auto angle = joint_angles_[cjoint->id];
-  //       auto& tf_h2cj = cjoint->parent_to_joint_origin_transform;
-  //       auto&& tf_cj2c = cjoint->transform(angle);
-  //       auto&& tf_h2c = tf_h2cj * tf_cj2c;
-  //       auto&& tf_b2c = tf_b2h * tf_h2c;
-  //       transform_stack2_.push({clink, tf_b2c});
-  //     }
-  //   }
-  // }
-}
-
 Eigen::MatrixXd
 KinematicModel::get_jacobian(size_t elink_id,
                              const std::vector<size_t> &joint_ids,
@@ -262,54 +236,6 @@ KinematicModel::get_com_jacobian(const std::vector<size_t> &joint_ids,
   }
   jac_average /= mass_total;
   return jac_average;
-}
-
-Eigen::Matrix3d KinematicModel::get_total_inertia_matrix() {
-  auto com = this->get_com();
-
-  Eigen::Matrix3d Imat_total = Eigen::Matrix3d::Zero();
-  throw std::runtime_error("Not implemented");
-  // for (const auto &link : com_dummy_links_) {
-  //   const auto inertial = link->inertial;
-  //   if (inertial != nullptr) {
-  //     double mass = inertial->mass;
-  //     double ixx = inertial->ixx;
-  //     double iyy = inertial->iyy;
-  //     double izz = inertial->izz;
-  //     double ixy = inertial->ixy;
-  //     double ixz = inertial->ixz;
-  //     double iyz = inertial->iyz;
-  //     Eigen::Matrix3d Imat;
-  //     Imat << ixx, ixy, ixz, ixy, iyy, iyz, ixz, iyz, izz;
-  //     size_t link_id = link->id;
-
-  //     ExpTransform tf_base_to_link;
-  //     this->get_link_pose(link_id, tf_base_to_link);
-  //     const auto &trans = tf_base_to_link.position;
-  //     Eigen::Vector3d vec;
-  //     vec << trans.x - com.x, trans.y - com.y, trans.z - com.z;
-  //     const auto &rot = tf_base_to_link.rotation;
-  //     double xy2 = 2 * (rot.x * rot.y);
-  //     double xz2 = 2 * (rot.x * rot.z);
-  //     double xw2 = 2 * (rot.x * rot.w);
-  //     double yz2 = 2 * (rot.y * rot.z);
-  //     double yw2 = 2 * (rot.y * rot.w);
-  //     double zw2 = 2 * (rot.z * rot.w);
-  //     double xx2 = 2 * (rot.x * rot.x);
-  //     double yy2 = 2 * (rot.y * rot.y);
-  //     double zz2 = 2 * (rot.z * rot.z);
-
-  //     Eigen::Matrix3d R;
-  //     R << 1 - yy2 - zz2, xy2 - zw2, xz2 + yw2, xy2 + zw2, 1 - xx2 - zz2,
-  //         yz2 - xw2, xz2 - yw2, yz2 + xw2, 1 - xx2 - yy2;
-
-  //     Eigen::Matrix3d trans_term =
-  //         mass * (vec.norm() * vec.norm() * Eigen::Matrix3d::Identity() -
-  //                 vec * vec.transpose());
-  //     Imat_total += (R * Imat * R.transpose() + trans_term);
-  //   }
-  // }
-  return Imat_total;
 }
 
 }; // namespace tinyfk

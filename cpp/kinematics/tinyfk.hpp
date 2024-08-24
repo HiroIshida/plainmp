@@ -122,8 +122,6 @@ public: // functions
 
   void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
 
-  void update_tree();
-
   Eigen::MatrixXd get_jacobian(size_t elink_id,
                                const std::vector<size_t> &joint_ids,
                                RotationType rot_type = RotationType::IGNORE,
@@ -133,8 +131,6 @@ public: // functions
 
   Eigen::MatrixXd get_com_jacobian(const std::vector<size_t> &joint_ids,
                                    bool with_base);
-
-  Eigen::Matrix3d get_total_inertia_matrix();
 
   void set_joint_angle(size_t joint_id, double angle) {
     joint_angles_[joint_id] = angle;
