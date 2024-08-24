@@ -38,6 +38,9 @@
 #define URDF_MODEL_TYPES_H
 
 #include <memory>
+#include <iostream>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 #define URDF_TYPEDEF_CLASS_POINTER(Class) \
 class Class; \
@@ -85,6 +88,101 @@ std::shared_ptr<T> static_pointer_cast(std::shared_ptr<U> const & r)
 {
   return std::static_pointer_cast<T>(r);
 }
+
+template<typename Scalar>
+struct QuatTrans {
+    Eigen::Quaternion<Scalar> quat_;
+    Eigen::Matrix<Scalar, 3, 1> trans_;
+
+    // acceessor
+    inline Eigen::Quaternion<Scalar>& quat() { return quat_; }
+    inline Eigen::Matrix<Scalar, 3, 1>& trans() { return trans_; }
+    // const accessor
+    inline const Eigen::Quaternion<Scalar>& quat() const { return quat_; }
+    inline const Eigen::Matrix<Scalar, 3, 1>& trans() const { return trans_; }
+
+    static QuatTrans<Scalar> Identity() {
+        QuatTrans<Scalar> qt;
+        qt.quat_ = Eigen::Quaternion<Scalar>::Identity();
+        qt.trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
+        return qt;
+    }
+    void clear() {
+        quat_ = Eigen::Quaternion<Scalar>::Identity();
+        trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
+    }
+    inline QuatTrans<Scalar> operator*(const QuatTrans<Scalar>& other) const {
+        return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
+    }
+
+    QuatTrans<Scalar> getInverse() const {
+        Eigen::Quaternion<Scalar> q_inv = quat_.inverse();
+        return {q_inv, q_inv * (-trans_)};
+    }
+
+    Eigen::Vector3d getRPY() const {
+      auto sqx = quat_.x() * quat_.x();
+      auto sqy = quat_.y() * quat_.y();
+      auto sqz = quat_.z() * quat_.z();
+      auto sqw = quat_.w() * quat_.w();
+
+      // Cases derived from https://orbitalstation.wordpress.com/tag/quat_ernion/
+      auto sarg = -2 * (quat_.x() * quat_.z() - quat_.w() * quat_.y());
+      const double pi_2 = 1.57079632679489661923;
+
+      Scalar roll, pitch, yaw;
+      if (sarg <= -0.99999) {
+        pitch = -pi_2;
+        roll  = 0;
+        yaw   = -2 * atan2(quat_.x(), quat_.y());
+      } else if (sarg >= 0.99999) {
+        pitch = pi_2;
+        roll  = 0;
+        yaw   = 2 * atan2(quat_.x(), quat_.y());
+      } else {
+        pitch = asin(sarg);
+        roll = atan2(2 * (quat_.y() * quat_.z() + quat_.w() * quat_.x()), sqw - sqx - sqy + sqz);
+        yaw = atan2(2 * (quat_.x() * quat_.y() + quat_.w() * quat_.z()), sqw + sqx - sqy - sqz);
+      }
+      return {roll, pitch, yaw};
+    }
+
+    void setQuaternionFromRPY(const Eigen::Vector3d& rpy) {
+        auto phi = rpy[0] / 2.0;
+        auto the = rpy[1] / 2.0;
+        auto psi = rpy[2] / 2.0;
+        quat_.x() = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
+        quat_.y() = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
+        quat_.z() = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+        quat_.w() = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
+    }
+
+    void setQuaternionFromRPY(Scalar roll, Scalar pitch, Scalar yaw) {
+        setQuaternionFromRPY(Eigen::Matrix<Scalar, 3, 1>(roll, pitch, yaw));
+    }
+
+    static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3f& xyz, const Eigen::Vector3f& rpy) {
+        Eigen::Quaternion<Scalar> q;
+        auto phi = rpy[0] / 2.0;
+        auto the = rpy[1] / 2.0;
+        auto psi = rpy[2] / 2.0;
+        auto x = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
+        auto y = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
+        auto z = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+        auto w = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
+        return {Eigen::Quaternion<Scalar>(w, x, y, z), xyz};
+    }
+    static QuatTrans<Scalar> fromXYZRPY(Scalar x, Scalar y, Scalar z, Scalar roll, Scalar pitch, Scalar yaw) {
+        return fromXYZRPY(Eigen::Vector3d(x, y, z), Eigen::Vector3d(roll, pitch, yaw));
+    }
+
+    static QuatTrans<Scalar> fromXYZ(const Eigen::Vector3d& xyz) {
+        return {Eigen::Quaternion<Scalar>::Identity(), xyz};
+    }
+    static QuatTrans<Scalar> fromXYZ(Scalar x, Scalar y, Scalar z) {
+        return fromXYZ(Eigen::Vector3d(x, y, z));
+    }
+};
 
 }
 

@@ -19,7 +19,7 @@
 namespace tinyfk {
 
 using Bound = std::pair<double, double>;
-using Transform = urdf::Pose;
+using Transform = urdf::QuatTrans<double>;
 using Vector3 = urdf::Vector3;
 using Rotation = urdf::Rotation;
 
@@ -75,12 +75,16 @@ public: // functions
       const std::vector<size_t> &joint_ids,
       const std::vector<double> &joint_angles);
 
-  void set_base_pose(const Transform& pose) {
+  inline Transform get_base_pose() const {
+    return base_pose_;
+  }
+
+  inline void set_base_pose(const Transform& pose) {
     base_pose_ = pose;
     this->clear_cache();
   }
 
-  void clear_cache();
+  inline void clear_cache() { transform_cache_.clear(); }
 
   void set_init_angles();
 
@@ -118,19 +122,15 @@ public: // functions
 
   void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
 
-  void update_tree();
-
   Eigen::MatrixXd get_jacobian(size_t elink_id,
                                const std::vector<size_t> &joint_ids,
                                RotationType rot_type = RotationType::IGNORE,
                                bool with_base = false);
 
-  Vector3 get_com();
+  Eigen::Vector3d get_com();
 
   Eigen::MatrixXd get_com_jacobian(const std::vector<size_t> &joint_ids,
                                    bool with_base);
-
-  Eigen::Matrix3d get_total_inertia_matrix();
 
   void set_joint_angle(size_t joint_id, double angle) {
     joint_angles_[joint_id] = angle;

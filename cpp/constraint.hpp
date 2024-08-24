@@ -32,10 +32,10 @@ class ConstraintBase {
       kin_->set_joint_angles(control_joint_ids_, q_head);
       tinyfk::Transform pose;
       size_t head = control_joint_ids_.size();
-      pose.position.x = q[head];
-      pose.position.y = q[head + 1];
-      pose.position.z = q[head + 2];
-      pose.rotation.setFromRPY(q[head + 3], q[head + 4], q[head + 5]);
+      pose.trans().x() = q[head];
+      pose.trans().y() = q[head + 1];
+      pose.trans().z() = q[head + 2];
+      pose.setQuaternionFromRPY(q[head + 3], q[head + 4], q[head + 5]);
       kin_->set_base_pose(pose);
     } else {
       kin_->set_joint_angles(control_joint_ids_, q);
@@ -112,14 +112,14 @@ class ConfigPointCst : public EqConstraintBase {
     }
     if (with_base_) {
       size_t head = control_joint_ids_.size();
-      auto& base_pose = kin_->base_pose_;
-      q_now(head) = base_pose.position.x;
-      q_now(head + 1) = base_pose.position.y;
-      q_now(head + 2) = base_pose.position.z;
-      auto base_rpy = base_pose.rotation.getRPY();
-      q_now(head + 3) = base_rpy.x;
-      q_now(head + 4) = base_rpy.y;
-      q_now(head + 5) = base_rpy.z;
+      auto base_pose = kin_->get_base_pose();
+      q_now(head) = base_pose.trans().x();
+      q_now(head + 1) = base_pose.trans().y();
+      q_now(head + 2) = base_pose.trans().z();
+      auto base_rpy = base_pose.getRPY();
+      q_now(head + 3) = base_rpy.x();
+      q_now(head + 4) = base_rpy.y();
+      q_now(head + 5) = base_rpy.z();
     }
     return {q_now - q_, Eigen::MatrixXd::Identity(dof, dof)};
   }
@@ -175,10 +175,8 @@ class RelativePoseCst : public EqConstraintBase {
         link_id2_(kin_->get_link_ids({link_name2})[0]),
         relative_pose_(relative_pose) {
     // TODO: because name is hard-coded, we cannot create two RelativePoseCst...
-    tinyfk::Transform pose;
-    pose.position.x = relative_pose[0];
-    pose.position.y = relative_pose[1];
-    pose.position.z = relative_pose[2];
+    auto pose = tinyfk::Transform::Identity();
+    pose.trans() = relative_pose;
     size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
     auto new_link = kin_->add_new_link(link_id1_, pose, true);
     dummy_link_id_ = new_link->id;
