@@ -216,15 +216,15 @@ public:
   QuatTrans<double> transform(double angle){
       if(type == REVOLUTE || type==CONTINUOUS){
         QuatTrans<double> tf;
-        tf.q.coeffs().segment(0,3) = axis * sin(angle * 0.5);
-        tf.q.w() = cos(angle * 0.5);
-        tf.t.setZero();
+        tf.quat.coeffs().segment(0,3) = axis * sin(angle * 0.5);
+        tf.quat.w() = cos(angle * 0.5);
+        tf.trans.setZero();
         return tf;
       }
       if(type == PRISMATIC){
         QuatTrans<double> tf;
-        tf.q.setIdentity();
-        tf.t = axis * angle;
+        tf.quat.setIdentity();
+        tf.trans = axis * angle;
         return tf;
       }
       if(type == FIXED){

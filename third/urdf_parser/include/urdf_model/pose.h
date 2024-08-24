@@ -359,11 +359,11 @@ public:
 
   QuatTrans<double> to_quattrans() const{
     QuatTrans<double> qt;
-    qt.q.x() = rotation.x;
-    qt.q.y() = rotation.y;
-    qt.q.z() = rotation.z;
-    qt.q.w() = rotation.w;
-    qt.t = {position.x, position.y, position.z};
+    qt.quat.x() = rotation.x;
+    qt.quat.y() = rotation.y;
+    qt.quat.z() = rotation.z;
+    qt.quat.w() = rotation.w;
+    qt.trans = {position.x, position.y, position.z};
     return qt;
   }
 };
