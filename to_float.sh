@@ -2,6 +2,7 @@
 
 # Array of search and replace patterns
 patterns=(
+    's/Vector2d/Vector2f/g'
     's/MatrixXd/MatrixXf/g'
     's/VectorXd/VectorXf/g'
     's/Matrix3Xd/Matrix3Xf/g'
