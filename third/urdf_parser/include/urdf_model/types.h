@@ -91,51 +91,58 @@ std::shared_ptr<T> static_pointer_cast(std::shared_ptr<U> const & r)
 
 template<typename Scalar>
 struct QuatTrans {
-    Eigen::Quaternion<Scalar> quat;
-    Eigen::Matrix<Scalar, 3, 1> trans;
+    Eigen::Quaternion<Scalar> quat_;
+    Eigen::Matrix<Scalar, 3, 1> trans_;
+
+    // acceessor
+    inline Eigen::Quaternion<Scalar>& quat() { return quat_; }
+    inline Eigen::Matrix<Scalar, 3, 1>& trans() { return trans_; }
+    // const accessor
+    inline const Eigen::Quaternion<Scalar>& quat() const { return quat_; }
+    inline const Eigen::Matrix<Scalar, 3, 1>& trans() const { return trans_; }
 
     static QuatTrans<Scalar> Identity() {
         QuatTrans<Scalar> qt;
-        qt.quat = Eigen::Quaternion<Scalar>::Identity();
-        qt.trans = Eigen::Matrix<Scalar, 3, 1>::Zero();
+        qt.quat_ = Eigen::Quaternion<Scalar>::Identity();
+        qt.trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
         return qt;
     }
     void clear() {
-        quat = Eigen::Quaternion<Scalar>::Identity();
-        trans = Eigen::Matrix<Scalar, 3, 1>::Zero();
+        quat_ = Eigen::Quaternion<Scalar>::Identity();
+        trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
     }
     inline QuatTrans<Scalar> operator*(const QuatTrans<Scalar>& other) const {
-        return {quat * other.quat, trans + quat * other.trans};
+        return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
     }
 
     QuatTrans<Scalar> getInverse() const {
-        Eigen::Quaternion<Scalar> q_inv = quat.inverse();
-        return {q_inv, q_inv * (-trans)};
+        Eigen::Quaternion<Scalar> q_inv = quat_.inverse();
+        return {q_inv, q_inv * (-trans_)};
     }
 
     Eigen::Vector3d getRPY() const {
-      auto sqx = quat.x() * quat.x();
-      auto sqy = quat.y() * quat.y();
-      auto sqz = quat.z() * quat.z();
-      auto sqw = quat.w() * quat.w();
+      auto sqx = quat_.x() * quat_.x();
+      auto sqy = quat_.y() * quat_.y();
+      auto sqz = quat_.z() * quat_.z();
+      auto sqw = quat_.w() * quat_.w();
 
-      // Cases derived from https://orbitalstation.wordpress.com/tag/quaternion/
-      auto sarg = -2 * (quat.x() * quat.z() - quat.w() * quat.y());
+      // Cases derived from https://orbitalstation.wordpress.com/tag/quat_ernion/
+      auto sarg = -2 * (quat_.x() * quat_.z() - quat_.w() * quat_.y());
       const double pi_2 = 1.57079632679489661923;
 
       Scalar roll, pitch, yaw;
       if (sarg <= -0.99999) {
         pitch = -pi_2;
         roll  = 0;
-        yaw   = -2 * atan2(quat.x(), quat.y());
+        yaw   = -2 * atan2(quat_.x(), quat_.y());
       } else if (sarg >= 0.99999) {
         pitch = pi_2;
         roll  = 0;
-        yaw   = 2 * atan2(quat.x(), quat.y());
+        yaw   = 2 * atan2(quat_.x(), quat_.y());
       } else {
         pitch = asin(sarg);
-        roll = atan2(2 * (quat.y() * quat.z() + quat.w() * quat.x()), sqw - sqx - sqy + sqz);
-        yaw = atan2(2 * (quat.x() * quat.y() + quat.w() * quat.z()), sqw + sqx - sqy - sqz);
+        roll = atan2(2 * (quat_.y() * quat_.z() + quat_.w() * quat_.x()), sqw - sqx - sqy + sqz);
+        yaw = atan2(2 * (quat_.x() * quat_.y() + quat_.w() * quat_.z()), sqw + sqx - sqy - sqz);
       }
       return {roll, pitch, yaw};
     }
@@ -144,13 +151,17 @@ struct QuatTrans {
         auto phi = rpy[0] / 2.0;
         auto the = rpy[1] / 2.0;
         auto psi = rpy[2] / 2.0;
-        quat.x() = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
-        quat.y() = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
-        quat.z() = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
-        quat.w() = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
+        quat_.x() = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
+        quat_.y() = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
+        quat_.z() = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+        quat_.w() = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
     }
 
-    static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3d& xyz, const Eigen::Vector3d& rpy) {
+    void setQuaternionFromRPY(Scalar roll, Scalar pitch, Scalar yaw) {
+        setQuaternionFromRPY(Eigen::Vector3f(roll, pitch, yaw));
+    }
+
+    static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3f& xyz, const Eigen::Vector3f& rpy) {
         Eigen::Quaternion<Scalar> q;
         auto phi = rpy[0] / 2.0;
         auto the = rpy[1] / 2.0;
