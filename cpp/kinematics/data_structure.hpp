@@ -10,19 +10,12 @@ public:
 
   SizedCache() : SizedCache(0) {}
 
-  void set_cache(size_t id, const DataT &data) {
+  inline void set_cache(size_t id, const DataT &data) {
     cache_predicate_vector_[id] = true;
     data_[id] = data;
   }
 
   inline bool is_cached(size_t id) const { return cache_predicate_vector_[id]; }
-
-  DataT const *get_cache(size_t id) const {
-    if (!is_cached(id)) {
-      return nullptr;
-    } // the cache does not exists
-    return const_cast<DataT const *>(&data_[id]);
-  }
 
   void extend() {
     cache_size_++;
@@ -30,7 +23,10 @@ public:
     cache_predicate_vector_.push_back(false);
     this->clear();
   }
-  void clear() { cache_predicate_vector_ = std::vector<bool>(cache_size_); }
+
+  // this looks inefficient (due to dynamic allocation), but it is somehow 
+  // faster than using std::fill ...
+  inline void clear() { cache_predicate_vector_ = std::vector<bool>(cache_size_); }
 
   int cache_size_;
   std::vector<DataT> data_;
