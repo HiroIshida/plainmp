@@ -10,37 +10,26 @@ namespace cst {
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty() {
   Eigen::VectorXd vals(cst_dim());
   Eigen::MatrixXd jac(cst_dim(), q_dim());
-  tinyfk::Transform pose;
+  tinyfk::ExpTransform pose;
   size_t head = 0;
   for (size_t i = 0; i < link_ids_.size(); i++) {
     kin_->get_link_pose(link_ids_[i], pose);
     if (poses_[i].size() == 3) {
-      vals.segment(head, 3) =
-          Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z) -
-          poses_[i];
+      vals.segment(head, 3) = pose.trans() - poses_[i];
       jac.block(head, 0, 3, q_dim()) =
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
                              tinyfk::RotationType::IGNORE, with_base_);
       head += 3;
     } else if (poses_[i].size() == 6) {
-      vals.segment(head, 3) =
-          Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z) -
-          poses_[i];
-      auto rpy = pose.rotation.getRPY();
-      vals.segment(head + 3, 3) =
-          Eigen::Vector3d(rpy.x, rpy.y, rpy.z) - poses_[i].segment(3, 3);
+      vals.segment(head, 3) = pose.trans() - poses_[i].head(3);
+      vals.segment(head + 3, 3) = pose.getRPY() - poses_[i].tail(3);
       jac.block(head, 0, 6, q_dim()) =
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
                              tinyfk::RotationType::RPY, with_base_);
       head += 6;
     } else {
-      vals.segment(head, 3) =
-          Eigen::Vector3d(pose.position.x, pose.position.y, pose.position.z) -
-          poses_[i];
-      vals[head + 3] = pose.rotation.x - poses_[i][3];
-      vals[head + 4] = pose.rotation.y - poses_[i][4];
-      vals[head + 5] = pose.rotation.z - poses_[i][5];
-      vals[head + 6] = pose.rotation.w - poses_[i][6];
+      vals.segment(head, 3) = pose.trans() - poses_[i].head(3);
+      vals.segment(head + 3, 4) = pose.quat().coeffs() - poses_[i].tail(4);
       jac.block(head, 0, 7, q_dim()) =
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
                              tinyfk::RotationType::XYZW, with_base_);
@@ -53,17 +42,11 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty() {
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
   Eigen::VectorXd vals(cst_dim());
   Eigen::MatrixXd jac(cst_dim(), q_dim());
-  tinyfk::Transform pose_dummy, pose2;
+  tinyfk::ExpTransform pose_dummy, pose2;
   kin_->get_link_pose(dummy_link_id_, pose_dummy);
   kin_->get_link_pose(link_id2_, pose2);
-  vals[0] = pose_dummy.position.x - pose2.position.x;
-  vals[1] = pose_dummy.position.y - pose2.position.y;
-  vals[2] = pose_dummy.position.z - pose2.position.z;
-  vals[3] = pose_dummy.rotation.x - pose2.rotation.x;
-  vals[4] = pose_dummy.rotation.y - pose2.rotation.y;
-  vals[5] = pose_dummy.rotation.z - pose2.rotation.z;
-  vals[6] = pose_dummy.rotation.w - pose2.rotation.w;
-
+  vals.head(3) = pose_dummy.trans();
+  vals.segment(3, 4) = pose_dummy.quat().coeffs();
   jac = kin_->get_jacobian(dummy_link_id_, control_joint_ids_,
                            tinyfk::RotationType::XYZW, with_base_) -
         kin_->get_jacobian(link_id2_, control_joint_ids_,
@@ -95,13 +78,13 @@ FixedZAxisCst::FixedZAxisCst(
 }
 
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
-  tinyfk::Transform pose_here, pose_plus1_x, pose_plus1_y;
+  tinyfk::ExpTransform pose_here, pose_plus1_x, pose_plus1_y;
   kin_->get_link_pose(link_id_, pose_here);
   kin_->get_link_pose(aux_link_ids_[0], pose_plus1_x);
   kin_->get_link_pose(aux_link_ids_[1], pose_plus1_y);
   Eigen::VectorXd vals(2);
-  double diff_plus1_x_z = pose_plus1_x.position.z - pose_here.position.z;
-  double diff_plus1_y_z = pose_plus1_y.position.z - pose_here.position.z;
+  double diff_plus1_x_z = pose_plus1_x.trans().z() - pose_here.trans().z();
+  double diff_plus1_y_z = pose_plus1_y.trans().z() - pose_here.trans().z();
   vals << diff_plus1_x_z, diff_plus1_y_z;
 
   // jacobian
@@ -194,20 +177,16 @@ bool SphereCollisionCst::is_valid_dirty() {
 }
 
 bool SphereCollisionCst::check_ext_collision() {
-  tinyfk::Transform pose;
-
   for (auto& group : sphere_groups_) {
     if (group.ignore_collision) {
       continue;
     }
 
-    kin_->get_link_pose(group.group_sphere_id, pose);
-    Eigen::Vector3d group_center(pose.position.x, pose.position.y,
-                                 pose.position.z);
-
+    tinyfk::ExpTransform group_center;
+    kin_->get_link_pose(group.group_sphere_id, group_center);
     bool broad_collision = false;
     for (auto& sdf : all_sdfs_cache_) {
-      if (!sdf->is_outside(group_center, group.group_radius)) {
+      if (!sdf->is_outside(group_center.trans(), group.group_radius)) {
         broad_collision = true;
         break;
       }
@@ -218,11 +197,9 @@ bool SphereCollisionCst::check_ext_collision() {
 
     for (auto& sdf : all_sdfs_cache_) {
       for (size_t i = 0; i < group.sphere_ids.size(); i++) {
-        tinyfk::Transform pose;
-        kin_->get_link_pose(group.sphere_ids[i], pose);
-        Eigen::Vector3d center(pose.position.x, pose.position.y,
-                               pose.position.z);
-        if (!sdf->is_outside(center, group.radii[i])) {
+        tinyfk::ExpTransform center;
+        kin_->get_link_pose(group.sphere_ids[i], center);
+        if (!sdf->is_outside(center.trans(), group.radii[i])) {
           return false;
         }
       }
@@ -232,19 +209,15 @@ bool SphereCollisionCst::check_ext_collision() {
 }
 
 bool SphereCollisionCst::check_self_collision() {
-  tinyfk::Transform pose;
-
   for (auto& group_id_pair : selcol_group_id_pairs_) {
     auto& group1 = sphere_groups_[group_id_pair.first];
     auto& group2 = sphere_groups_[group_id_pair.second];
 
-    kin_->get_link_pose(group1.group_sphere_id, pose);
-    Eigen::Vector3d group1_center(pose.position.x, pose.position.y,
-                                  pose.position.z);
-    kin_->get_link_pose(group2.group_sphere_id, pose);
-    Eigen::Vector3d group2_center(pose.position.x, pose.position.y,
-                                  pose.position.z);
-    double outer_sqdist = (group1_center - group2_center).squaredNorm();
+    tinyfk::ExpTransform group1_center, group2_center;
+    kin_->get_link_pose(group1.group_sphere_id, group1_center);
+    kin_->get_link_pose(group2.group_sphere_id, group2_center);
+    double outer_sqdist =
+        (group1_center.trans() - group2_center.trans()).squaredNorm();
     double outer_r_sum = group1.group_radius + group2.group_radius;
     if (outer_sqdist > outer_r_sum * outer_r_sum) {
       continue;
@@ -253,15 +226,10 @@ bool SphereCollisionCst::check_self_collision() {
     // check if the inner volumes are colliding
     for (size_t i = 0; i < group1.sphere_ids.size(); i++) {
       for (size_t j = 0; j < group2.sphere_ids.size(); j++) {
-        kin_->get_link_pose(group1.sphere_ids[i], pose);
-        Eigen::Vector3d center1(pose.position.x, pose.position.y,
-                                pose.position.z);
-
-        kin_->get_link_pose(group2.sphere_ids[j], pose);
-        Eigen::Vector3d center2(pose.position.x, pose.position.y,
-                                pose.position.z);
-
-        double sqdist = (center1 - center2).squaredNorm();
+        tinyfk::ExpTransform sphere1, sphere2;
+        kin_->get_link_pose(group1.sphere_ids[i], sphere1);
+        kin_->get_link_pose(group2.sphere_ids[j], sphere2);
+        double sqdist = (sphere1.trans() - sphere2.trans()).squaredNorm();
         double r_sum = group1.radii[i] + group2.radii[j];
         if (sqdist < r_sum * r_sum) {
           return false;
@@ -278,8 +246,6 @@ SphereCollisionCst::evaluate_dirty() {
     throw std::runtime_error("(cpp) No SDFs are set");
   }
 
-  tinyfk::Transform pose_tmp;
-
   // collision vs outers
   Eigen::VectorXd grad_in_cspace_other(q_dim());
   double min_val_other = cutoff_dist_;
@@ -294,12 +260,12 @@ SphereCollisionCst::evaluate_dirty() {
       }
 
       // filter out groups that are not colliding with margin of cutoff
-      kin_->get_link_pose(group.group_sphere_id, pose_tmp);
-      Eigen::Vector3d group_center(pose_tmp.position.x, pose_tmp.position.y,
-                                   pose_tmp.position.z);
+      tinyfk::ExpTransform group_center;
+      kin_->get_link_pose(group.group_sphere_id, group_center);
       bool broad_collision = false;
       for (auto& sdf : all_sdfs_cache_) {
-        if (!sdf->is_outside(group_center, group.group_radius + cutoff_dist_)) {
+        if (!sdf->is_outside(group_center.trans(),
+                             group.group_radius + cutoff_dist_)) {
           broad_collision = true;
           break;
         }
@@ -309,10 +275,9 @@ SphereCollisionCst::evaluate_dirty() {
         for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
           auto& sdf = all_sdfs_cache_[j];
           for (size_t k = 0; k < group.sphere_ids.size(); k++) {
-            kin_->get_link_pose(group.sphere_ids[k], pose_tmp);
-            Eigen::Vector3d center(pose_tmp.position.x, pose_tmp.position.y,
-                                   pose_tmp.position.z);
-            double val = sdf->evaluate(center) - group.radii[k];
+            tinyfk::ExpTransform sphere;
+            kin_->get_link_pose(group.sphere_ids[k], sphere);
+            double val = sdf->evaluate(sphere.trans()) - group.radii[k];
             if (val < min_val_other) {
               min_val_other = val;
               min_group_idx = i;
@@ -330,13 +295,12 @@ SphereCollisionCst::evaluate_dirty() {
     } else {
       size_t min_sphere_id =
           sphere_groups_[*min_group_idx].sphere_ids[*min_sphere_idx];
-      kin_->get_link_pose(min_sphere_id, pose_tmp);
-      Eigen::Vector3d center(pose_tmp.position.x, pose_tmp.position.y,
-                             pose_tmp.position.z);
+      tinyfk::ExpTransform min_sphere;
+      kin_->get_link_pose(min_sphere_id, min_sphere);
       double r = sphere_groups_[*min_group_idx].radii[*min_sphere_idx];
       Eigen::Vector3d grad;
       for (size_t i = 0; i < 3; i++) {
-        Eigen::Vector3d perturbed_center = center;
+        Eigen::Vector3d perturbed_center = min_sphere.trans();
         perturbed_center[i] += 1e-6;
         double val =
             all_sdfs_cache_[*min_sdf_idx]->evaluate(perturbed_center) - r;
@@ -361,13 +325,11 @@ SphereCollisionCst::evaluate_dirty() {
       auto& group1 = sphere_groups_[group_id_pair.first];
       auto& group2 = sphere_groups_[group_id_pair.second];
 
-      kin_->get_link_pose(group1.group_sphere_id, pose_tmp);
-      Eigen::Vector3d group1_center(pose_tmp.position.x, pose_tmp.position.y,
-                                    pose_tmp.position.z);
-      kin_->get_link_pose(group2.group_sphere_id, pose_tmp);
-      Eigen::Vector3d group2_center(pose_tmp.position.x, pose_tmp.position.y,
-                                    pose_tmp.position.z);
-      double outer_sqdist = (group1_center - group2_center).squaredNorm();
+      tinyfk::ExpTransform group1_center, group2_center;
+      kin_->get_link_pose(group1.group_sphere_id, group1_center);
+      kin_->get_link_pose(group2.group_sphere_id, group2_center);
+      double outer_sqdist =
+          (group1_center.trans() - group2_center.trans()).squaredNorm();
       double outer_r_sum_with_margin =
           group1.group_radius + group2.group_radius + cutoff_dist_;
       if (outer_sqdist > outer_r_sum_with_margin * outer_r_sum_with_margin) {
@@ -375,14 +337,11 @@ SphereCollisionCst::evaluate_dirty() {
       }
       for (size_t i = 0; i < group1.sphere_ids.size(); i++) {
         for (size_t j = 0; j < group2.sphere_ids.size(); j++) {
-          kin_->get_link_pose(group1.sphere_ids[i], pose_tmp);
-          Eigen::Vector3d center1(pose_tmp.position.x, pose_tmp.position.y,
-                                  pose_tmp.position.z);
-          kin_->get_link_pose(group2.sphere_ids[j], pose_tmp);
-          Eigen::Vector3d center2(pose_tmp.position.x, pose_tmp.position.y,
-                                  pose_tmp.position.z);
-          double dist =
-              (center1 - center2).norm() - (group1.radii[i] + group2.radii[j]);
+          tinyfk::ExpTransform group1_center, group2_center;
+          kin_->get_link_pose(group1.sphere_ids[i], group1_center);
+          kin_->get_link_pose(group2.sphere_ids[j], group2_center);
+          double dist = (group1_center.trans() - group2_center.trans()).norm() -
+                        (group1.radii[i] + group2.radii[j]);
           if (dist < dist_min) {
             dist_min = dist;
             min_pairs = {group_id_pair.first, i, group_id_pair.second, j};
@@ -402,13 +361,10 @@ SphereCollisionCst::evaluate_dirty() {
       auto& group2 = sphere_groups_[min_pairs->at(2)];
       auto& sphere1 = group1.sphere_ids[min_pairs->at(1)];
       auto& sphere2 = group2.sphere_ids[min_pairs->at(3)];
-      kin_->get_link_pose(sphere1, pose_tmp);
-      Eigen::Vector3d center1(pose_tmp.position.x, pose_tmp.position.y,
-                              pose_tmp.position.z);
-      kin_->get_link_pose(sphere2, pose_tmp);
-      Eigen::Vector3d center2(pose_tmp.position.x, pose_tmp.position.y,
-                              pose_tmp.position.z);
-      Eigen::Vector3d center_diff = center1 - center2;
+      tinyfk::ExpTransform center1, center2;
+      kin_->get_link_pose(sphere1, center1);
+      kin_->get_link_pose(sphere2, center2);
+      Eigen::Vector3d center_diff = center1.trans() - center2.trans();
       Eigen::MatrixXd&& jac1 =
           kin_->get_jacobian(sphere1, control_joint_ids_,
                              tinyfk::RotationType::IGNORE, with_base_);
@@ -429,24 +385,22 @@ SphereCollisionCst::evaluate_dirty() {
 std::vector<std::pair<Eigen::Vector3d, double>>
 SphereCollisionCst::get_group_spheres() const {
   std::vector<std::pair<Eigen::Vector3d, double>> spheres;
-  tinyfk::Transform pose;
   for (auto& sphere_group : sphere_groups_) {
+    tinyfk::ExpTransform pose;
     kin_->get_link_pose(sphere_group.group_sphere_id, pose);
-    Eigen::Vector3d pos(pose.position.x, pose.position.y, pose.position.z);
-    spheres.push_back({pos, sphere_group.group_radius});
+    spheres.push_back({pose.trans(), sphere_group.group_radius});
   }
   return spheres;
 }
 
 std::vector<std::pair<Eigen::Vector3d, double>>
 SphereCollisionCst::get_all_spheres() const {
-  tinyfk::Transform pose;
   std::vector<std::pair<Eigen::Vector3d, double>> spheres;
   for (auto& sphere_group : sphere_groups_) {
     for (size_t i = 0; i < sphere_group.sphere_ids.size(); i++) {
+      tinyfk::ExpTransform pose;
       kin_->get_link_pose(sphere_group.sphere_ids[i], pose);
-      Eigen::Vector3d pos(pose.position.x, pose.position.y, pose.position.z);
-      spheres.push_back({pos, sphere_group.radii[i]});
+      spheres.push_back({pose.trans(), sphere_group.radii[i]});
     }
   }
   return spheres;
@@ -467,14 +421,12 @@ bool ComInPolytopeCst::is_valid_dirty() {
   auto com = kin_->get_com();
   if (force_link_ids_.size() > 0) {
     double vertical_force_sum = 1.0;  // 1.0 for normalized self
-    tinyfk::Transform pose;
     for (size_t j = 0; j < force_link_ids_.size(); ++j) {
       double force = applied_force_values_[j] / kin_->total_mass_;
       vertical_force_sum += force;
+      tinyfk::ExpTransform pose;
       kin_->get_link_pose(force_link_ids_[j], pose);
-      Eigen::Vector3d force_pos(pose.position.x, pose.position.y,
-                                pose.position.z);
-      com += force * force_pos;
+      com += force * pose.trans();
     }
     com /= vertical_force_sum;
   }
@@ -490,14 +442,12 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
   auto com_jaco = kin_->get_com_jacobian(control_joint_ids_, q_dim());
   if (force_link_ids_.size() > 0) {
     double vertical_force_sum = 1.0;  // 1.0 for normalized self
-    tinyfk::Transform pose;
     for (size_t j = 0; j < force_link_ids_.size(); ++j) {
       double force = applied_force_values_[j] / kin_->total_mass_;
       vertical_force_sum += force;
+      tinyfk::ExpTransform pose;
       kin_->get_link_pose(force_link_ids_[j], pose);
-      Eigen::Vector3d force_pos(pose.position.x, pose.position.y,
-                                pose.position.z);
-      com += force * force_pos;
+      com += force * pose.trans();
 
       com_jaco += kin_->get_jacobian(force_link_ids_[j], control_joint_ids_,
                                      tinyfk::RotationType::IGNORE, with_base_) *
