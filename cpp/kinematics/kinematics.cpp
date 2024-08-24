@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <stack>
+#include <stdexcept>
 
 namespace tinyfk {
 
@@ -27,69 +28,55 @@ Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector
 
 void KinematicModel::get_link_pose(size_t link_id,
                                    Transform &out_tf_rlink_to_elink) const {
-  if(transform_cache_.is_cached(link_id)) {
-    out_tf_rlink_to_elink = transform_cache_.data_[link_id];
-    return;
+  if(!transform_cache_.is_cached(link_id)) {
+    build_cache_until(link_id);
   }
-  this->get_link_pose_cache_not_found(link_id, out_tf_rlink_to_elink);
+  out_tf_rlink_to_elink = transform_cache_.data_[link_id];
 }
 
-void KinematicModel::get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_rlink_to_elink) const
+void KinematicModel::build_cache_until(size_t link_id) const
 {
   if(links_[link_id]->consider_rotation) {
-    this->get_link_pose_inner(link_id, out_tf_rlink_to_elink);
+    this->build_cache_until_inner(link_id);
   } else {
     auto hlink = links_[link_id];
     auto plink = hlink->getParent();
     auto pjoint = hlink->parent_joint;
-    Transform tf_rlink_to_plink;
-    if(transform_cache_.is_cached(plink->id)) {
-      tf_rlink_to_plink = transform_cache_.data_[plink->id];
-    } else {
-      get_link_pose_inner(plink->id, tf_rlink_to_plink);
+    if(!transform_cache_.is_cached(plink->id)) {
+      build_cache_until_inner(plink->id);
     }
-    out_tf_rlink_to_elink.trans() =  tf_rlink_to_plink.trans() + tf_rlink_to_plink.quat() * pjoint->parent_to_joint_origin_transform.trans();
+    Transform& tf_rlink_to_plink = transform_cache_.data_[plink->id];
+    Eigen::Vector3d&& pos = tf_rlink_to_plink.trans() + tf_rlink_to_plink.quat() * pjoint->parent_to_joint_origin_transform.trans();
     // HACK: we want to update the only position part
     // thus, we commented out the private: and directly access the data
     transform_cache_.cache_predicate_vector_[link_id] = true;
-    transform_cache_.data_[link_id].trans() = out_tf_rlink_to_elink.trans();
+    transform_cache_.data_[link_id].trans() = std::move(pos);
   }
 }
 
-void KinematicModel::get_link_pose_inner(
-    size_t link_id, Transform &out_tf_rlink_to_elink) const {
-  urdf::LinkSharedPtr hlink = links_[link_id];
-
-  Transform tf_rlink_to_blink = base_pose_;
+void KinematicModel::build_cache_until_inner(size_t link_id) const {
+  auto hlink = links_[link_id];
 
   link_id_stack_.reset();
-  while (true) {
-
-    size_t hlink_id = hlink->id;
+  while(!transform_cache_.is_cached(hlink->id)) {
     urdf::LinkSharedPtr plink = hlink->getParent();
-    if (plink == nullptr) {
-      break;
-    } // hit the root link
-
-    if(transform_cache_.is_cached(hlink_id)) {
-      tf_rlink_to_blink = transform_cache_.data_[hlink_id];
+    if (plink == nullptr) { // root link
+      transform_cache_.set_cache(hlink->id, base_pose_);
       break;
     }
-
-    link_id_stack_.push(hlink_id);
+    link_id_stack_.push(hlink->id);
     hlink = plink;
   }
 
-  Transform tf_rlink_to_plink = std::move(tf_rlink_to_blink);
+  Transform tf_rlink_to_plink = transform_cache_.data_[hlink->id];
   while(!link_id_stack_.empty()) {
     size_t hid = link_id_stack_.top();
     link_id_stack_.pop();
     auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[hid];
     Transform tf_rlink_to_hlink = tf_rlink_to_plink * tf_plink_to_hlink;
     transform_cache_.set_cache(hid, tf_rlink_to_hlink);
-    tf_rlink_to_plink = std::move(tf_rlink_to_hlink);
+    tf_rlink_to_plink = tf_rlink_to_hlink;
   }
-  out_tf_rlink_to_elink = std::move(tf_rlink_to_plink);
 }
 
 Eigen::MatrixXd

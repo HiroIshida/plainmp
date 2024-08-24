@@ -14,6 +14,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty() {
   size_t head = 0;
   for (size_t i = 0; i < link_ids_.size(); i++) {
     kin_->get_link_pose(link_ids_[i], pose);
+
     if (poses_[i].size() == 3) {
       vals.segment(head, 3) = pose.trans() - poses_[i];
       jac.block(head, 0, 3, q_dim()) =
