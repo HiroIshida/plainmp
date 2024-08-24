@@ -45,8 +45,8 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
   tinyfk::ExpTransform pose_dummy, pose2;
   kin_->get_link_pose(dummy_link_id_, pose_dummy);
   kin_->get_link_pose(link_id2_, pose2);
-  vals.head(3) = pose_dummy.trans();
-  vals.segment(3, 4) = pose_dummy.quat().coeffs();
+  vals.head(3) = pose_dummy.trans() - pose2.trans();
+  vals.segment(3, 4) = pose_dummy.quat().coeffs() - pose2.quat().coeffs();
   jac = kin_->get_jacobian(dummy_link_id_, control_joint_ids_,
                            tinyfk::RotationType::XYZW, with_base_) -
         kin_->get_jacobian(link_id2_, control_joint_ids_,
