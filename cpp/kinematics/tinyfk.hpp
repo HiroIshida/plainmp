@@ -120,7 +120,7 @@ public: // functions
     return link_names;
   }
 
-  void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
+  const Transform& get_link_pose(size_t link_id) const;
 
   Eigen::MatrixXd get_jacobian(size_t elink_id,
                                const std::vector<size_t> &joint_ids,
