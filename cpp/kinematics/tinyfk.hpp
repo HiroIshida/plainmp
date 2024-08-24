@@ -120,7 +120,7 @@ public: // functions
     return link_names;
   }
 
-  void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
+  const Transform& get_link_pose(size_t link_id) const;
 
   Eigen::MatrixXd get_jacobian(size_t elink_id,
                                const std::vector<size_t> &joint_ids,
@@ -147,8 +147,8 @@ public: // functions
                                    std::optional<std::string> link_name = std::nullopt);
 
 private:
-  void get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_root_to_ef) const;
-  void get_link_pose_inner(size_t link_id, Transform &out_tf_root_to_ef) const;
+  void build_cache_until(size_t link_id) const;
+  void build_cache_until_inner(size_t link_id) const;
   void update_rptable();
 };
 
