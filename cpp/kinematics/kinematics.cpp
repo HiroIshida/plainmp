@@ -235,7 +235,7 @@ KinematicModel::get_jacobian(size_t elink_id,
 }
 
 Eigen::Vector3d KinematicModel::get_com() {
-  Eigen::Vector3d com_average;
+  Eigen::Vector3d com_average = Eigen::Vector3d::Zero();
   double mass_total = 0.0;
   ExpTransform tf_base_to_com;
   for (const auto &link : com_dummy_links_) {
