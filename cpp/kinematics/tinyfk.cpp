@@ -100,7 +100,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
         continue;
       }
       ExpTransform new_link_pose;
-      new_link_pose.t = link->inertial->origin.t;
+      new_link_pose.trans = link->inertial->origin.trans;
       const auto new_link = this->add_new_link(link->id, new_link_pose, false);
       // set new link's inertial as the same as the parent
       // except its origin is zero
@@ -219,9 +219,9 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id,
                                  bool consider_rotation,
                                  std::optional<std::string> link_name){
   ExpTransform pose;
-  pose.t  = Eigen::Vector3d(position[0], position[1], position[2]);
+  pose.trans  = Eigen::Vector3d(position[0], position[1], position[2]);
   // pose.rotation.setFromRPY(rpy[0], rpy[1], rpy[2]);
-  pose.q = Eigen::AngleAxisd(rpy[0], Eigen::Vector3d::UnitX()) *
+  pose.quat = Eigen::AngleAxisd(rpy[0], Eigen::Vector3d::UnitX()) *
                            Eigen::AngleAxisd(rpy[1], Eigen::Vector3d::UnitY()) *
                            Eigen::AngleAxisd(rpy[2], Eigen::Vector3d::UnitZ());
   return this->add_new_link(parent_id, pose, consider_rotation, link_name);
@@ -235,13 +235,13 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const ExpTran
     // if link_name is not given, generate a unique name
     std::hash<double> hasher;
     std::size_t hval = 0;
-    hval ^= hasher(pose.t(0)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
-    hval ^= hasher(pose.t(1)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
-    hval ^= hasher(pose.t(2)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
-    hval ^= hasher(pose.q.x()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
-    hval ^= hasher(pose.q.y()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
-    hval ^= hasher(pose.q.z()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
-    hval ^= hasher(pose.q.w()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.trans(0)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.trans(1)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.trans(2)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.quat.x()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.quat.y()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.quat.z()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
+    hval ^= hasher(pose.quat.w()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
     link_name = "hash_" + std::to_string(hval) + "_" + std::to_string(parent_id) + "_" + std::to_string(consider_rotation);
     bool link_name_exists = (link_ids_.find(link_name.value()) != link_ids_.end());
     if (link_name_exists) {
