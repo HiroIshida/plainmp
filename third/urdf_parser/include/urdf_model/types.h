@@ -158,7 +158,7 @@ struct QuatTrans {
     }
 
     void setQuaternionFromRPY(Scalar roll, Scalar pitch, Scalar yaw) {
-        setQuaternionFromRPY(Eigen::Vector3f(roll, pitch, yaw));
+        setQuaternionFromRPY(Eigen::Matrix<Scalar, 3, 1>(roll, pitch, yaw));
     }
 
     static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3f& xyz, const Eigen::Vector3f& rpy) {

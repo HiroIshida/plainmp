@@ -20,7 +20,7 @@ namespace tinyfk {
 
 using Bound = std::pair<double, double>;
 using ExpTransform = urdf::QuatTrans<double>;
-using Transform = urdf::Pose;
+// using Transform = urdf::Pose;
 using Vector3 = urdf::Vector3;
 using Rotation = urdf::Rotation;
 
@@ -76,32 +76,16 @@ public: // functions
       const std::vector<size_t> &joint_ids,
       const std::vector<double> &joint_angles);
 
-  Transform get_base_pose() const {
-    Transform pose;
-    pose.position.x = base_pose_.trans().x();
-    pose.position.y = base_pose_.trans().y();
-    pose.position.z = base_pose_.trans().z();
-    pose.rotation.x = base_pose_.quat().x();
-    pose.rotation.y = base_pose_.quat().y();
-    pose.rotation.z = base_pose_.quat().z();
-    pose.rotation.w = base_pose_.quat().w();
-    return pose;
+  inline ExpTransform get_base_pose() const {
+    return base_pose_;
   }
 
-  void set_base_pose(const Transform& pose) {
-    ExpTransform pose_exp;
-    pose_exp.trans().x() = pose.position.x;
-    pose_exp.trans().y() = pose.position.y;
-    pose_exp.trans().z() = pose.position.z;
-    pose_exp.quat().x() = pose.rotation.x;
-    pose_exp.quat().y() = pose.rotation.y;
-    pose_exp.quat().z() = pose.rotation.z;
-    pose_exp.quat().w() = pose.rotation.w;
-    base_pose_ = pose_exp;
+  inline void set_base_pose(const ExpTransform& pose) {
+    base_pose_ = pose;
     this->clear_cache();
   }
 
-  void clear_cache();
+  inline void clear_cache() { transform_cache_.clear(); }
 
   void set_init_angles();
 

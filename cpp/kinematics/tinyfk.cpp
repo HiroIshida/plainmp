@@ -111,7 +111,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
     this->com_dummy_links_ = com_dummy_links;
   }
 
-  this->set_base_pose(Transform()); // initial base pose
+  this->set_base_pose(ExpTransform::Identity());
 }
 
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
@@ -128,7 +128,6 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
   transform_cache_.clear();
 }
 
-void KinematicModel::clear_cache() { transform_cache_.clear(); }
 
 void KinematicModel::set_init_angles() {
   std::vector<double> joint_angles(num_dof_, 0.0);

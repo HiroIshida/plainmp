@@ -30,12 +30,12 @@ class ConstraintBase {
       std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
                 q_head.begin());
       kin_->set_joint_angles(control_joint_ids_, q_head);
-      tinyfk::Transform pose;
+      tinyfk::ExpTransform pose;
       size_t head = control_joint_ids_.size();
-      pose.position.x = q[head];
-      pose.position.y = q[head + 1];
-      pose.position.z = q[head + 2];
-      pose.rotation.setFromRPY(q[head + 3], q[head + 4], q[head + 5]);
+      pose.trans().x() = q[head];
+      pose.trans().y() = q[head + 1];
+      pose.trans().z() = q[head + 2];
+      pose.setQuaternionFromRPY(q[head + 3], q[head + 4], q[head + 5]);
       kin_->set_base_pose(pose);
     } else {
       kin_->set_joint_angles(control_joint_ids_, q);
@@ -113,13 +113,13 @@ class ConfigPointCst : public EqConstraintBase {
     if (with_base_) {
       size_t head = control_joint_ids_.size();
       auto base_pose = kin_->get_base_pose();
-      q_now(head) = base_pose.position.x;
-      q_now(head + 1) = base_pose.position.y;
-      q_now(head + 2) = base_pose.position.z;
-      auto base_rpy = base_pose.rotation.getRPY();
-      q_now(head + 3) = base_rpy.x;
-      q_now(head + 4) = base_rpy.y;
-      q_now(head + 5) = base_rpy.z;
+      q_now(head) = base_pose.trans().x();
+      q_now(head + 1) = base_pose.trans().y();
+      q_now(head + 2) = base_pose.trans().z();
+      auto base_rpy = base_pose.getRPY();
+      q_now(head + 3) = base_rpy.x();
+      q_now(head + 4) = base_rpy.y();
+      q_now(head + 5) = base_rpy.z();
     }
     return {q_now - q_, Eigen::MatrixXd::Identity(dof, dof)};
   }
