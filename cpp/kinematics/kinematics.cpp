@@ -26,13 +26,6 @@ Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector
   return Eigen::Quaterniond(-dwdt, dxdt, dydt, dzdt);
 }
 
-const Transform& KinematicModel::get_link_pose(size_t link_id) const {
-  if(!transform_cache_.is_cached(link_id)) {
-    build_cache_until(link_id);
-  }
-  return transform_cache_.data_[link_id];
-}
-
 void KinematicModel::build_cache_until(size_t link_id) const
 {
   if(links_[link_id]->consider_rotation) {

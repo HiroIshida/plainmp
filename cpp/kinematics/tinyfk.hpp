@@ -120,7 +120,12 @@ public: // functions
     return link_names;
   }
 
-  const Transform& get_link_pose(size_t link_id) const;
+  const Transform& get_link_pose(size_t link_id) const {
+    if(!transform_cache_.is_cached(link_id)) {
+      build_cache_until(link_id);
+    }
+    return transform_cache_.data_[link_id];
+  }
 
   Eigen::MatrixXd get_jacobian(size_t elink_id,
                                const std::vector<size_t> &joint_ids,
