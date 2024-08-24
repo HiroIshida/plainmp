@@ -184,7 +184,7 @@ public:
   ///            FLOATING    N/A
   ///            PLANAR      plane normal axis
   ///            FIXED       N/A
-  Vector3 axis;
+  Eigen::Vector3d axis;
 
   unsigned int id;
 
@@ -196,7 +196,7 @@ public:
   ///   origin specifies the transform from Parent Link to Joint Frame
   std::string parent_link_name;
   /// transform from Parent Link frame to Joint frame
-  Pose  parent_to_joint_origin_transform;
+  QuatTrans<double>  parent_to_joint_origin_transform;
 
   /// Joint Dynamics
   JointDynamicsSharedPtr dynamics;
@@ -213,41 +213,22 @@ public:
   /// Option to Mimic another Joint
   JointMimicSharedPtr mimic;
 
-  /// derivative of quaternion w.r.t angle
-  Rotation joint_quaternion_derivative(double angle)
-  {
-    double q1 = axis.x * 0.5 * cos(angle * 0.5);
-    double q2 = axis.y * 0.5 * cos(angle * 0.5);
-    double q3 = axis.z * 0.5 * cos(angle * 0.5);
-    double q4 = - 0.5 * sin(angle * 0.5);
-    Rotation rot(q1, q2, q3, q4); 
-    return rot;
-  }
-
-  Pose transform(double angle){
-      auto& axis = this->axis;
-      auto& type = this->type;
-
+  QuatTrans<double> transform(double angle){
       if(type == REVOLUTE || type==CONTINUOUS){
-          Pose tf;
-          double q1 = axis.x * sin(angle * 0.5);
-          double q2 = axis.y * sin(angle * 0.5);
-          double q3 = axis.z * sin(angle * 0.5);
-          double q4 = cos(angle * 0.5);
-          Rotation rot(q1, q2, q3, q4); 
-          tf.rotation = rot;
-          return tf;
+        QuatTrans<double> tf;
+        tf.quat().coeffs().segment(0,3) = axis * sin(angle * 0.5);
+        tf.quat().w() = cos(angle * 0.5);
+        tf.trans().setZero();
+        return tf;
       }
       if(type == PRISMATIC){
-          Pose tf;
-          tf.position.x = axis.x * angle;
-          tf.position.y = axis.y * angle;
-          tf.position.z = axis.z * angle;
-          return tf;
+        QuatTrans<double> tf;
+        tf.quat().setIdentity();
+        tf.trans() = axis * angle;
+        return tf;
       }
       if(type == FIXED){
-        Pose tf;
-        return tf;
+        return QuatTrans<double>::Identity();
       }
       throw std::runtime_error("unsupported joint detected");
   }
@@ -260,7 +241,7 @@ public:
 
   void clear()
   {
-    this->axis.clear();
+    this->axis.setZero();
     this->child_link_name.clear();
     this->parent_link_name.clear();
     this->parent_to_joint_origin_transform.clear();
