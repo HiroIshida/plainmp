@@ -64,11 +64,11 @@ namespace ot = ompl::tools;
 
 // TODO: I wanted to pass and return eigen::matrix / vector, but
 // pybind fail to convert numpy to eigen in callback case
-using ConstFn = std::function<std::vector<double>(std::vector<double>)>;
-using ConstJacFn = std::function<std::vector<std::vector<double>>(std::vector<double>)>;
+using ConstFn = std::function<std::vector<float>(std::vector<float>)>;
+using ConstJacFn = std::function<std::vector<std::vector<float>>(std::vector<float>)>;
 
 template <typename T>
-std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si, std::optional<double> range)
+std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si, std::optional<float> range)
 {
   auto algo = std::make_shared<T>(si);
   if (range) {
@@ -78,7 +78,7 @@ std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si, std::optio
 }
 
 template <bool Constrained>
-std::vector<double> state_to_vec(const ob::State* state, size_t dim)
+std::vector<float> state_to_vec(const ob::State* state, size_t dim)
 {
   const ob::RealVectorStateSpace::StateType* rs;
   if constexpr (Constrained) {
@@ -88,14 +88,14 @@ std::vector<double> state_to_vec(const ob::State* state, size_t dim)
   } else {
     rs = state->as<ob::RealVectorStateSpace::StateType>();
   }
-  std::vector<double> vec(dim);
+  std::vector<float> vec(dim);
   for (size_t i = 0; i < dim; ++i) {
     vec[i] = rs->values[i];
   }
   return vec;
 };
 
-og::PathGeometric points_to_pathgeometric(const std::vector<std::vector<double>>& points,
+og::PathGeometric points_to_pathgeometric(const std::vector<std::vector<float>>& points,
                                           ob::SpaceInformationPtr si)
 {
   auto pg = og::PathGeometric(si);
@@ -118,7 +118,7 @@ class AllPassMotionValidator : public ob::MotionValidator
 
   bool checkMotion(const ob::State* s1,
                    const ob::State* s2,
-                   std::pair<ob::State*, double>& lastValid) const
+                   std::pair<ob::State*, float>& lastValid) const
   {
     return true;
   }
@@ -127,7 +127,7 @@ class AllPassMotionValidator : public ob::MotionValidator
 class BoxMotionValidator : public ob::MotionValidator
 {
  public:
-  BoxMotionValidator(const ob::SpaceInformationPtr& si, std::vector<double> width)
+  BoxMotionValidator(const ob::SpaceInformationPtr& si, std::vector<float> width)
       : ob::MotionValidator(si), width_(width)
   {
   }
@@ -138,13 +138,13 @@ class BoxMotionValidator : public ob::MotionValidator
     const auto rs2 = s2->as<ob::RealVectorStateSpace::StateType>();
 
     // find longest (relative) axis index
-    double diff_longest_axis;
-    double max_diff = -std::numeric_limits<double>::infinity();
+    float diff_longest_axis;
+    float max_diff = -std::numeric_limits<float>::infinity();
     size_t longest_idx = 0;
     for (size_t idx = 0; idx < si_->getStateDimension(); ++idx) {
-      const double check_width = width_[idx];
-      const double diff = rs2->values[idx] - rs1->values[idx];
-      const double abs_scaled_diff = std::abs(diff) / check_width;
+      const float check_width = width_[idx];
+      const float diff = rs2->values[idx] - rs1->values[idx];
+      const float abs_scaled_diff = std::abs(diff) / check_width;
       if (abs_scaled_diff > max_diff) {
         max_diff = abs_scaled_diff;
         longest_idx = idx;
@@ -159,9 +159,9 @@ class BoxMotionValidator : public ob::MotionValidator
     const auto s_test = si_->allocState()->as<ob::RealVectorStateSpace::StateType>();
 
     const auto space = si_->getStateSpace();
-    const double step_ratio = width_[longest_idx] / std::abs(diff_longest_axis);
+    const float step_ratio = width_[longest_idx] / std::abs(diff_longest_axis);
 
-    double travel_rate = 0.0;
+    float travel_rate = 0.0;
     while (travel_rate + step_ratio < 1.0) {
       travel_rate += step_ratio;
       space->interpolate(rs1, rs2, travel_rate, s_test);
@@ -174,19 +174,19 @@ class BoxMotionValidator : public ob::MotionValidator
 
   bool checkMotion(const ob::State* s1,
                    const ob::State* s2,
-                   std::pair<ob::State*, double>& lastValid) const
+                   std::pair<ob::State*, float>& lastValid) const
   {
     return checkMotion(s1, s2);
   }
 
  private:
-  std::vector<double> width_;
+  std::vector<float> width_;
 };
 
-std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
+std::optional<std::vector<float>> split_geodesic_with_box(const ob::State* s1,
                                                            const ob::State* s2,
                                                            const ob::SpaceInformation* si,
-                                                           const std::vector<double>& width)
+                                                           const std::vector<float>& width)
 {
   // returns list of states if all states are valid, otherwise return std::nulopt
 
@@ -202,7 +202,7 @@ std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
     const auto vec_right = state_to_vec<true>(s2, dim);
 
     for (size_t i = 0; i < dim; ++i) {
-      const double&& abs_diff_i = std::abs(vec_left[i] - vec_right[i]);
+      const float&& abs_diff_i = std::abs(vec_left[i] - vec_right[i]);
       if (abs_diff_i > width[i]) {
         return false;
       }
@@ -210,18 +210,18 @@ std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
     return true;
   };
 
-  std::stack<std::pair<double, double>> range_stack;
+  std::stack<std::pair<float, float>> range_stack;
   range_stack.push({0.0, 1.0});
 
-  std::unordered_map<double, ob::State*> fraction_to_state_table;
-  std::set<double> fraction_set;
+  std::unordered_map<float, ob::State*> fraction_to_state_table;
+  std::set<float> fraction_set;
 
   // adaptively divide the path
   while (!range_stack.empty()) {
     const auto range_pair = range_stack.top();
     range_stack.pop();
-    const double left = range_pair.first;
-    const double right = range_pair.second;
+    const float left = range_pair.first;
+    const float right = range_pair.second;
 
     fraction_set.insert(left);
     fraction_set.insert(right);
@@ -240,7 +240,7 @@ std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
     // interpolate state given fraction if not interpolate yet
     // note that as well as interpolation we check if the interpolated state is valid or not
     // and if not valid, returning false.
-    for (double fraction : std::array<double, 2>{left, right}) {
+    for (float fraction : std::array<float, 2>{left, right}) {
       const bool not_evaluated_yet =
           fraction_to_state_table.find(fraction) == fraction_to_state_table.end();
       if (not_evaluated_yet) {
@@ -261,13 +261,13 @@ std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
 
     const bool require_split = !is_state_pair_inside_box(s_left, s_right);
     if (require_split) {
-      const double middle = 0.5 * (left + right);
+      const float middle = 0.5 * (left + right);
       range_stack.push({left, middle});
       range_stack.push({middle, right});
     }
   }
 
-  std::vector<double> fractions(fraction_set.size());
+  std::vector<float> fractions(fraction_set.size());
   std::copy(fraction_set.begin(), fraction_set.end(), fractions.begin());
   return fractions;
 }
@@ -275,7 +275,7 @@ std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
 class GeodesicBoxMotionValidator : public ob::MotionValidator
 {
  public:
-  GeodesicBoxMotionValidator(const ob::SpaceInformationPtr& si, std::vector<double> width)
+  GeodesicBoxMotionValidator(const ob::SpaceInformationPtr& si, std::vector<float> width)
       : ob::MotionValidator(si), width_(width)
   {
   }
@@ -288,13 +288,13 @@ class GeodesicBoxMotionValidator : public ob::MotionValidator
 
   bool checkMotion(const ob::State* s1,
                    const ob::State* s2,
-                   std::pair<ob::State*, double>& lastValid) const
+                   std::pair<ob::State*, float>& lastValid) const
   {
     return checkMotion(s1, s2);
   }
 
  private:
-  std::vector<double> width_;
+  std::vector<float> width_;
 };
 
 class ConstraintWrap : public ob::Constraint
@@ -308,7 +308,7 @@ class ConstraintWrap : public ob::Constraint
   void function(const Eigen::Ref<const Eigen::VectorXd>& x,
                 Eigen::Ref<Eigen::VectorXd> out) const override
   {
-    std::vector<double> xvec(x.data(), x.data() + x.size());
+    std::vector<float> xvec(x.data(), x.data() + x.size());
     const auto yvec = f_(xvec);
     for (size_t i = 0; i < yvec.size(); ++i) {
       out[i] = yvec[i];
@@ -318,7 +318,7 @@ class ConstraintWrap : public ob::Constraint
   void jacobian(const Eigen::Ref<const Eigen::VectorXd>& x,
                 Eigen::Ref<Eigen::MatrixXd> out) const override
   {
-    std::vector<double> xvec(x.data(), x.data() + x.size());
+    std::vector<float> xvec(x.data(), x.data() + x.size());
     const auto yvecvec = jac_(xvec);
     for (size_t i = 0; i < yvecvec.size(); ++i) {
       for (size_t j = 0; j < yvecvec.front().size(); ++j) {
@@ -335,8 +335,8 @@ template <bool Constrained>
 struct CollisionAwareSpaceInformation {
   void resetCount() { this->is_valid_call_count_ = 0; }
 
-  static std::shared_ptr<ob::StateSpace> bound2space(const std::vector<double>& lb,
-                                                     const std::vector<double>& ub)
+  static std::shared_ptr<ob::StateSpace> bound2space(const std::vector<float>& lb,
+                                                     const std::vector<float>& ub)
   {
     const size_t dim = lb.size();
     auto bounds = ob::RealVectorBounds(dim);
@@ -362,16 +362,16 @@ struct CollisionAwareSpaceInformation {
   cst::IneqConstraintBase::Ptr ineq_cst_;
   size_t is_valid_call_count_;
   const size_t max_is_valid_call_;
-  std::vector<double> box_width_;
+  std::vector<float> box_width_;
 };
 
 struct UnconstrianedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInformation<false> {
   UnconstrianedCollisoinAwareSpaceInformation(
-      const std::vector<double>& lb,
-      const std::vector<double>& ub,
+      const std::vector<float>& lb,
+      const std::vector<float>& ub,
       cst::IneqConstraintBase::Ptr ineq_cst,
       size_t max_is_valid_call,
-      const std::vector<double>& box_width)
+      const std::vector<float>& box_width)
       : CollisionAwareSpaceInformation<false>{nullptr, ineq_cst, 0, max_is_valid_call, box_width}
   {
     const auto space = bound2space(lb, ub);
@@ -390,11 +390,11 @@ struct ConstrainedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInf
   ConstrainedCollisoinAwareSpaceInformation(
       const ConstFn& f_const,
       const ConstJacFn& jac_const,
-      const std::vector<double>& lb,
-      const std::vector<double>& ub,
+      const std::vector<float>& lb,
+      const std::vector<float>& ub,
       cst::IneqConstraintBase::Ptr ineq_cst,
       size_t max_is_valid_call,
-      const std::vector<double>& box_width,
+      const std::vector<float>& box_width,
       ConstStateType cs_type = ConstStateType::PROJECTION)
       : CollisionAwareSpaceInformation<true>{nullptr, ineq_cst, 0, max_is_valid_call, box_width}
   {
@@ -421,8 +421,8 @@ struct ConstrainedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInf
 
 template <bool Constrained>
 struct PlannerBase {
-  std::optional<std::vector<std::vector<double>>> solve(const std::vector<double>& start,
-                                                        const std::vector<double>& goal,
+  std::optional<std::vector<std::vector<float>>> solve(const std::vector<float>& start,
+                                                        const std::vector<float>& goal,
                                                         bool simplify)
   {
     setup_->clear();
@@ -466,7 +466,7 @@ struct PlannerBase {
     const size_t dim = start.size();
 
     // states
-    auto trajectory = std::vector<std::vector<double>>();
+    auto trajectory = std::vector<std::vector<float>>();
 
     if constexpr (Constrained) {
       trajectory.push_back(state_to_vec<Constrained>(states[0], dim));
@@ -494,7 +494,7 @@ struct PlannerBase {
     return trajectory;
   }
 
-  std::shared_ptr<ob::Planner> get_algorithm(const std::string& name, std::optional<double> range)
+  std::shared_ptr<ob::Planner> get_algorithm(const std::string& name, std::optional<float> range)
   {
     const auto space_info = csi_->si_;
     if (name.compare("BKPIECE1") == 0) {
@@ -525,13 +525,13 @@ struct PlannerBase {
 // struct ConstrainedPlanner : public PlannerBase<true> {
 //   ConstrainedPlanner(const ConstFn& f_const,
 //                      const ConstJacFn& jac_const,
-//                      const std::vector<double>& lb,
-//                      const std::vector<double>& ub,
-//                      const std::function<bool(std::vector<double>)>& is_valid,
+//                      const std::vector<float>& lb,
+//                      const std::vector<float>& ub,
+//                      const std::function<bool(std::vector<float>)>& is_valid,
 //                      size_t max_is_valid_call,
-//                      const std::vector<double>& box_width,
+//                      const std::vector<float>& box_width,
 //                      const std::string& algo_name,
-//                      std::optional<double> range,
+//                      std::optional<float> range,
 //                      ConstStateType cs_type = ConstStateType::PROJECTION)
 //       : PlannerBase<true>{nullptr, nullptr}
 //   {
@@ -546,11 +546,11 @@ struct PlannerBase {
 // };
 
 struct UnconstrainedPlannerBase : public PlannerBase<false> {
-  UnconstrainedPlannerBase(const std::vector<double>& lb,
-                           const std::vector<double>& ub,
+  UnconstrainedPlannerBase(const std::vector<float>& lb,
+                           const std::vector<float>& ub,
                            cst::IneqConstraintBase::Ptr ineq_cst,
                            size_t max_is_valid_call,
-                           const std::vector<double>& box_width)
+                           const std::vector<float>& box_width)
       : PlannerBase<false>{nullptr, nullptr}
   {
     csi_ = std::make_unique<UnconstrianedCollisoinAwareSpaceInformation>(
@@ -561,13 +561,13 @@ struct UnconstrainedPlannerBase : public PlannerBase<false> {
 };
 
 struct OMPLPlanner : public UnconstrainedPlannerBase {
-  OMPLPlanner(const std::vector<double>& lb,
-              const std::vector<double>& ub,
+  OMPLPlanner(const std::vector<float>& lb,
+              const std::vector<float>& ub,
               cst::IneqConstraintBase::Ptr ineq_cst,
               size_t max_is_valid_call,
-              const std::vector<double>& box_width,
+              const std::vector<float>& box_width,
               const std::string& algo_name,
-              std::optional<double> range)
+              std::optional<float> range)
       : UnconstrainedPlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
   {
     const auto algo = get_algorithm(algo_name, range);
@@ -583,23 +583,23 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
 //     db = std::make_shared<ot::LightningDB>(space);
 //   }
 // 
-//   void addExperience(const std::vector<std::vector<double>>& points)
+//   void addExperience(const std::vector<std::vector<float>>& points)
 //   {
 //     auto pg = points_to_pathgeometric(points, si);
-//     double insertion_time;
+//     float insertion_time;
 //     db->addPath(pg, insertion_time);
 //   }
 // 
-//   std::vector<std::vector<std::vector<double>>> getExperiencedPaths()
+//   std::vector<std::vector<std::vector<float>>> getExperiencedPaths()
 //   {
 //     const auto dim = si->getStateSpace()->getDimension();
 // 
-//     std::vector<std::vector<std::vector<double>>> paths;
+//     std::vector<std::vector<std::vector<float>>> paths;
 // 
 //     std::vector<ob::PlannerDataPtr> datas;
 //     db->getAllPlannerDatas(datas);
 //     for (const auto& data : datas) {
-//       std::vector<std::vector<double>> path;
+//       std::vector<std::vector<float>> path;
 //       for (std::size_t i = 0; i < data->numVertices(); ++i) {
 //         const auto vert = data->getVertex(i);
 //         path.push_back(state_to_vec<false>(vert.getState(), dim));
@@ -621,13 +621,13 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
 // 
 // struct LightningPlanner : public UnconstrainedPlannerBase {
 //   LightningPlanner(const LightningDBWrap& dbwrap,
-//                    const std::vector<double>& lb,
-//                    const std::vector<double>& ub,
-//                    const std::function<bool(std::vector<double>)>& is_valid,
+//                    const std::vector<float>& lb,
+//                    const std::vector<float>& ub,
+//                    const std::function<bool(std::vector<float>)>& is_valid,
 //                    size_t max_is_valid_call,
-//                    const std::vector<double>& box_width,
+//                    const std::vector<float>& box_width,
 //                    const std::string& algo_name,
-//                    std::optional<double> range)
+//                    std::optional<float> range)
 //       : UnconstrainedPlannerBase(lb, ub, is_valid, max_is_valid_call, box_width)
 //   {
 //     auto repair_planner = std::make_shared<og::LightningRetrieveRepair>(csi_->si_, dbwrap.db);
@@ -639,13 +639,13 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
 //   // a variant of lightning that does not use dabase. Rather, user must
 //   // give the trajectory before solve() explicitely as the heuristic.
 // 
-//   LightningRepairPlanner(const std::vector<double>& lb,
-//                          const std::vector<double>& ub,
-//                          const std::function<bool(std::vector<double>)>& is_valid,
+//   LightningRepairPlanner(const std::vector<float>& lb,
+//                          const std::vector<float>& ub,
+//                          const std::function<bool(std::vector<float>)>& is_valid,
 //                          size_t max_is_valid_call,
-//                          const std::vector<double>& box_width,
+//                          const std::vector<float>& box_width,
 //                          const std::string& algo_name,
-//                          std::optional<double> range)
+//                          std::optional<float> range)
 //       : UnconstrainedPlannerBase(lb, ub, is_valid, max_is_valid_call, box_width)
 //   {
 //     ot::LightningDBPtr db = nullptr;  // we dont use database
@@ -654,7 +654,7 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
 //     setup_->setPlanner(repair_planner);
 //   }
 // 
-//   void set_heuristic(const std::vector<std::vector<double>>& points)
+//   void set_heuristic(const std::vector<std::vector<float>>& points)
 //   {
 //     repair_planner_->trajectory_heuristic_ = points_to_pathgeometric(points, this->csi_->si_);
 //   }
@@ -664,18 +664,18 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
 // };
  
 struct ERTConnectPlanner : public UnconstrainedPlannerBase {
-  ERTConnectPlanner(const std::vector<double>& lb,
-                    const std::vector<double>& ub,
+  ERTConnectPlanner(const std::vector<float>& lb,
+                    const std::vector<float>& ub,
                     cst::IneqConstraintBase::Ptr ineq_cst,
                     size_t max_is_valid_call,
-                    const std::vector<double>& box_width)
+                    const std::vector<float>& box_width)
       : UnconstrainedPlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
   {
     auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
     setup_->setPlanner(ert_connect);
   }
 
-  void set_heuristic(const std::vector<std::vector<double>>& points)
+  void set_heuristic(const std::vector<std::vector<float>>& points)
   {
     auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
     const auto heuristic = geo_path.getStates();
@@ -683,9 +683,9 @@ struct ERTConnectPlanner : public UnconstrainedPlannerBase {
     ert_connect->setExperience(heuristic);
   }
 
-  void set_parameters(std::optional<double> omega_min,
-                      std::optional<double> omega_max,
-                      std::optional<double> eps)
+  void set_parameters(std::optional<float> omega_min,
+                      std::optional<float> omega_max,
+                      std::optional<float> eps)
   {
     const auto planner = setup_->getPlanner();
     const auto ert_connect = planner->as<og::ERTConnect>();

@@ -22,25 +22,25 @@ void bind_ompl(py::module &m)
   // py::class_<ConstrainedPlanner>(m, "_ConstrainedPlanner")
   //     .def(py::init<const ConstFn&,
   //                   const ConstJacFn&,
-  //                   std::vector<double>,
-  //                   std::vector<double>,
-  //                   std::function<bool(std::vector<double>)>,
+  //                   std::vector<float>,
+  //                   std::vector<float>,
+  //                   std::function<bool(std::vector<float>)>,
   //                   size_t,
-  //                   std::vector<double>,
+  //                   std::vector<float>,
   //                   std::string,
-  //                   std::optional<double>,
+  //                   std::optional<float>,
   //                   ConstStateType>())
   //     .def("reset_is_valid", &ConstrainedPlanner::resetIsValid)
   //     .def("solve", &ConstrainedPlanner::solve);
 
   py::class_<OMPLPlanner>(ompl_m, "OMPLPlanner", py::module_local())
-      .def(py::init<std::vector<double>&,
-                    std::vector<double>&,
+      .def(py::init<std::vector<float>&,
+                    std::vector<float>&,
                     cst::IneqConstraintBase::Ptr,
                     size_t,
-                    std::vector<double>,
+                    std::vector<float>,
                     std::string,
-                    std::optional<double>>())
+                    std::optional<float>>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("solve", &OMPLPlanner::solve);
 
@@ -54,34 +54,34 @@ void bind_ompl(py::module &m)
 
   // py::class_<LightningPlanner>(m, "_LightningPlanner")
   //     .def(py::init<LightningDBWrap,
-  //                   std::vector<double>,
-  //                   std::vector<double>,
-  //                   std::function<bool(std::vector<double>)>,
+  //                   std::vector<float>,
+  //                   std::vector<float>,
+  //                   std::function<bool(std::vector<float>)>,
   //                   size_t,
-  //                   std::vector<double>,
+  //                   std::vector<float>,
   //                   std::string,
-  //                   std::optional<double>>())
+  //                   std::optional<float>>())
   //     .def("reset_is_valid", &LightningPlanner::resetIsValid)
   //     .def("solve", &LightningPlanner::solve);
 
   // py::class_<LightningRepairPlanner>(m, "_LightningRepairPlanner")
-  //     .def(py::init<std::vector<double>,
-  //                   std::vector<double>,
-  //                   std::function<bool(std::vector<double>)>,
+  //     .def(py::init<std::vector<float>,
+  //                   std::vector<float>,
+  //                   std::function<bool(std::vector<float>)>,
   //                   size_t,
-  //                   std::vector<double>,
+  //                   std::vector<float>,
   //                   std::string,
-  //                   std::optional<double>>())
+  //                   std::optional<float>>())
   //     .def("reset_is_valid", &LightningRepairPlanner::resetIsValid)
   //     .def("solve", &LightningRepairPlanner::solve)
   //     .def("set_heuristic", &LightningRepairPlanner::set_heuristic);
 
   py::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner", py::module_local())
-      .def(py::init<std::vector<double>,
-                    std::vector<double>,
+      .def(py::init<std::vector<float>,
+                    std::vector<float>,
                     cst::IneqConstraintBase::Ptr,
                     size_t,
-                    std::vector<double>>())
+                    std::vector<float>>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("solve", &ERTConnectPlanner::solve)
       .def("set_parameters", &ERTConnectPlanner::set_parameters)

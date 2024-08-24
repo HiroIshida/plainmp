@@ -24,9 +24,9 @@ class ConstraintBase {
         control_joint_ids_(kin->get_joint_ids(control_joint_names)),
         with_base_(with_base) {}
 
-  void update_kintree(const std::vector<double>& q) {
+  void update_kintree(const std::vector<float>& q) {
     if (with_base_) {
-      std::vector<double> q_head(control_joint_ids_.size());
+      std::vector<float> q_head(control_joint_ids_.size());
       std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
                 q_head.begin());
       kin_->set_joint_angles(control_joint_ids_, q_head);
@@ -47,7 +47,7 @@ class ConstraintBase {
   }
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate(
-      const std::vector<double>& q) {
+      const std::vector<float>& q) {
     update_kintree(q);
     return evaluate_dirty();
   }
@@ -79,7 +79,7 @@ class IneqConstraintBase : public ConstraintBase {
  public:
   using Ptr = std::shared_ptr<IneqConstraintBase>;
   using ConstraintBase::ConstraintBase;
-  bool is_valid(const std::vector<double>& q) {
+  bool is_valid(const std::vector<float>& q) {
     update_kintree(q);
     return is_valid_dirty();
   }
@@ -103,7 +103,7 @@ class ConfigPointCst : public EqConstraintBase {
   }
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override {
     size_t dof = q_dim();
-    std::vector<double> q_now_joint_std =
+    std::vector<float> q_now_joint_std =
         kin_->get_joint_angles(control_joint_ids_);
 
     Eigen::VectorXd q_now(dof);
@@ -170,7 +170,7 @@ class RelativePoseCst : public EqConstraintBase {
                   bool with_base,
                   const std::string& link_name1,
                   const std::string& link_name2,
-                  const Eigen::Vector3d& relative_pose)
+                  const Eigen::Vector3f& relative_pose)
       : EqConstraintBase(kin, control_joint_names, with_base),
         link_id2_(kin_->get_link_ids({link_name2})[0]),
         relative_pose_(relative_pose) {
@@ -189,7 +189,7 @@ class RelativePoseCst : public EqConstraintBase {
  private:
   size_t link_id2_;
   size_t dummy_link_id_;
-  Eigen::Vector3d relative_pose_;
+  Eigen::Vector3f relative_pose_;
 };
 
 class FixedZAxisCst : public EqConstraintBase {
@@ -222,7 +222,7 @@ struct SphereGroup {
   std::vector<size_t> sphere_ids;
   Eigen::VectorXd radii;
   size_t group_sphere_id;
-  double group_radius;
+  float group_radius;
   bool ignore_collision;
 };
 
@@ -256,8 +256,8 @@ class SphereCollisionCst : public IneqConstraintBase {
     }
   }
   std::string get_name() const override { return "SphereCollisionCst"; }
-  std::vector<std::pair<Eigen::Vector3d, double>> get_group_spheres() const;
-  std::vector<std::pair<Eigen::Vector3d, double>> get_all_spheres() const;
+  std::vector<std::pair<Eigen::Vector3f, float>> get_group_spheres() const;
+  std::vector<std::pair<Eigen::Vector3f, float>> get_all_spheres() const;
 
  private:
   void set_all_sdfs();
@@ -267,12 +267,12 @@ class SphereCollisionCst : public IneqConstraintBase {
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user
   std::vector<SDFBase::Ptr> all_sdfs_cache_;
-  double cutoff_dist_ = 0.1;
+  float cutoff_dist_ = 0.1;
 };
 
 struct AppliedForceSpec {
   std::string link_name;
-  double force;  // currently only z-axis force (minus direction) is supported
+  float force;  // currently only z-axis force (minus direction) is supported
 };
 
 class ComInPolytopeCst : public IneqConstraintBase {
@@ -303,7 +303,7 @@ class ComInPolytopeCst : public IneqConstraintBase {
  private:
   BoxSDF::Ptr polytope_sdf_;
   std::vector<size_t> force_link_ids_;
-  std::vector<double> applied_force_values_;
+  std::vector<float> applied_force_values_;
 };
 
 };  // namespace cst

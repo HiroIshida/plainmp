@@ -816,7 +816,7 @@ public:
 	const std::string& ValueStr() const	{ return value; }				///< Return the value of this attribute.
 	#endif
 	int				IntValue() const;									///< Return the value of this attribute, converted to an integer.
-	double			DoubleValue() const;								///< Return the value of this attribute, converted to a double.
+	float			DoubleValue() const;								///< Return the value of this attribute, converted to a float.
 
 	// Get the tinyxml string representation
 	const TIXML_STRING& NameTStr() const { return name; }
@@ -832,13 +832,13 @@ public:
 	*/
 	int QueryIntValue( int* _value ) const;
 	/// QueryDoubleValue examines the value string. See QueryIntValue().
-	int QueryDoubleValue( double* _value ) const;
+	int QueryDoubleValue( float* _value ) const;
 
 	void SetName( const char* _name )	{ name = _name; }				///< Set the name of this attribute.
 	void SetValue( const char* _value )	{ value = _value; }				///< Set the value.
 
 	void SetIntValue( int _value );										///< Set the value from an integer.
-	void SetDoubleValue( double _value );								///< Set the value from a double.
+	void SetDoubleValue( float _value );								///< Set the value from a float.
 
     #ifdef TIXML_USE_STL
 	/// STL std::string form.
@@ -971,11 +971,11 @@ public:
 
 	/** Given an attribute name, Attribute() returns the value
 		for the attribute of that name, or null if none exists.
-		If the attribute exists and can be converted to an double,
-		the double value will be put in the return 'd', if 'd'
+		If the attribute exists and can be converted to an float,
+		the float value will be put in the return 'd', if 'd'
 		is non-null.
 	*/
-	const char* Attribute( const char* name, double* d ) const;
+	const char* Attribute( const char* name, float* d ) const;
 
 	/** QueryIntAttribute examines the attribute - it is an alternative to the
 		Attribute() method with richer error checking.
@@ -993,10 +993,10 @@ public:
 	*/
 	int QueryBoolAttribute( const char* name, bool* _value ) const;
 	/// QueryDoubleAttribute examines the attribute - see QueryIntAttribute().
-	int QueryDoubleAttribute( const char* name, double* _value ) const;
+	int QueryDoubleAttribute( const char* name, float* _value ) const;
 	/// QueryFloatAttribute examines the attribute - see QueryIntAttribute().
 	int QueryFloatAttribute( const char* name, float* _value ) const {
-		double d;
+		float d;
 		int result = QueryDoubleAttribute( name, &d );
 		if ( result == TIXML_SUCCESS ) {
 			*_value = (float)d;
@@ -1054,16 +1054,16 @@ public:
     #ifdef TIXML_USE_STL
 	const std::string* Attribute( const std::string& name ) const;
 	const std::string* Attribute( const std::string& name, int* i ) const;
-	const std::string* Attribute( const std::string& name, double* d ) const;
+	const std::string* Attribute( const std::string& name, float* d ) const;
 	int QueryIntAttribute( const std::string& name, int* _value ) const;
-	int QueryDoubleAttribute( const std::string& name, double* _value ) const;
+	int QueryDoubleAttribute( const std::string& name, float* _value ) const;
 
 	/// STL std::string form.
 	void SetAttribute( const std::string& name, const std::string& _value );
 	///< STL std::string form.
 	void SetAttribute( const std::string& name, int _value );
 	///< STL std::string form.
-	void SetDoubleAttribute( const std::string& name, double value );
+	void SetDoubleAttribute( const std::string& name, float value );
 	#endif
 
 	/** Sets an attribute of name to a given value. The attribute
@@ -1074,7 +1074,7 @@ public:
 	/** Sets an attribute of name to a given value. The attribute
 		will be created if it does not exist, or changed if it does.
 	*/
-	void SetDoubleAttribute( const char * name, double value );
+	void SetDoubleAttribute( const char * name, float value );
 
 	/** Deletes an attribute with the given name.
 	*/

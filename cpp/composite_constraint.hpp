@@ -27,12 +27,12 @@ class CompositeConstraintBase {
     }
   }
 
-  void update_kintree(const std::vector<double>& q) {
+  void update_kintree(const std::vector<float>& q) {
     constraints_.front()->update_kintree(q);
   }
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate(
-      const std::vector<double>& q) {
+      const std::vector<float>& q) {
     update_kintree(q);
 
     size_t dim = this->cst_dim();
@@ -83,7 +83,7 @@ class IneqCompositeCst
  public:
   using Ptr = std::shared_ptr<IneqCompositeCst>;
   using CompositeConstraintBase::CompositeConstraintBase;
-  bool is_valid(const std::vector<double>& q) {
+  bool is_valid(const std::vector<float>& q) {
     update_kintree(q);
     for (const auto& cst : constraints_) {
       if (!cst->is_valid_dirty())

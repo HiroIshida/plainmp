@@ -4,7 +4,7 @@
 
 namespace cst {
 
-using SMatrix = Eigen::SparseMatrix<double, Eigen::ColMajor>;
+using SMatrix = Eigen::SparseMatrix<float, Eigen::ColMajor>;
 
 class SequentialCst {
  public:

@@ -61,7 +61,7 @@ class Sphere : public Geometry
 {
 public:
   Sphere() { this->clear(); type = SPHERE; };
-  double radius;
+  float radius;
 
   void clear()
   {
@@ -85,8 +85,8 @@ class Cylinder : public Geometry
 {
 public:
   Cylinder() { this->clear(); type = CYLINDER; };
-  double length;
-  double radius;
+  float length;
+  float radius;
 
   void clear()
   {
@@ -132,13 +132,13 @@ class Inertial
 {
 public:
   Inertial() { this->clear(); };
-  QuatTrans<double> origin;
-  double mass;
-  double ixx,ixy,ixz,iyy,iyz,izz;
+  QuatTrans<float> origin;
+  float mass;
+  float ixx,ixy,ixz,iyy,iyz,izz;
 
   void clear()
   {
-    origin = QuatTrans<double>::Identity();
+    origin = QuatTrans<float>::Identity();
     mass = 0;
     ixx = ixy = ixz = iyy = iyz = izz = 0;
   };
@@ -148,7 +148,7 @@ class Visual
 {
 public:
   Visual() { this->clear(); };
-  QuatTrans<double> origin;
+  QuatTrans<float> origin;
   GeometrySharedPtr geometry;
 
   std::string material_name;
@@ -156,7 +156,7 @@ public:
 
   void clear()
   {
-    origin = QuatTrans<double>::Identity();
+    origin = QuatTrans<float>::Identity();
     material_name.clear();
     material.reset();
     geometry.reset();
@@ -170,12 +170,12 @@ class Collision
 {
 public:
   Collision() { this->clear(); };
-  QuatTrans<double> origin;
+  QuatTrans<float> origin;
   GeometrySharedPtr geometry;
 
   void clear()
   {
-    origin = QuatTrans<double>::Identity();
+    origin = QuatTrans<float>::Identity();
     geometry.reset();
     name.clear();
   };

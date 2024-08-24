@@ -18,8 +18,8 @@
 
 namespace tinyfk {
 
-using Bound = std::pair<double, double>;
-using ExpTransform = urdf::QuatTrans<double>;
+using Bound = std::pair<float, float>;
+using ExpTransform = urdf::QuatTrans<float>;
 // using Transform = urdf::Pose;
 using Vector3 = urdf::Vector3;
 using Rotation = urdf::Rotation;
@@ -55,12 +55,12 @@ public: // members
 
   std::vector<urdf::JointSharedPtr> joints_;
   std::unordered_map<std::string, int> joint_ids_;
-  std::vector<double> joint_angles_;
+  std::vector<float> joint_angles_;
   ExpTransform base_pose_;
 
   RelevancePredicateTable rptable_;
   int num_dof_;
-  double total_mass_;
+  float total_mass_;
 
   mutable SizedStack<size_t> link_id_stack_;
   mutable SizedStack<std::pair<urdf::LinkSharedPtr, ExpTransform>> transform_stack2_;
@@ -74,7 +74,7 @@ public: // functions
 
   void set_joint_angles(
       const std::vector<size_t> &joint_ids,
-      const std::vector<double> &joint_angles);
+      const std::vector<float> &joint_angles);
 
   inline ExpTransform get_base_pose() const {
     return base_pose_;
@@ -89,7 +89,7 @@ public: // functions
 
   void set_init_angles();
 
-  std::vector<double>
+  std::vector<float>
   get_joint_angles(const std::vector<size_t> &joint_ids) const;
 
   std::vector<size_t> get_joint_ids(std::vector<std::string> joint_names) const;
@@ -97,10 +97,10 @@ public: // functions
   std::vector<Bound>
   get_joint_position_limits(const std::vector<size_t> &joint_ids) const;
 
-  std::vector<double>
+  std::vector<float>
   get_joint_velocity_limits(const std::vector<size_t> &joint_ids) const;
 
-  std::vector<double>
+  std::vector<float>
   get_joint_effort_limits(const std::vector<size_t> &joint_ids) const;
 
   std::vector<std::string> get_joint_names() const {
@@ -130,20 +130,20 @@ public: // functions
                                RotationType rot_type = RotationType::IGNORE,
                                bool with_base = false);
 
-  Eigen::Vector3d get_com();
+  Eigen::Vector3f get_com();
 
   Eigen::MatrixXd get_com_jacobian(const std::vector<size_t> &joint_ids,
                                    bool with_base);
 
   Eigen::Matrix3d get_total_inertia_matrix();
 
-  void set_joint_angle(size_t joint_id, double angle) {
+  void set_joint_angle(size_t joint_id, float angle) {
     joint_angles_[joint_id] = angle;
   }
 
   urdf::LinkSharedPtr add_new_link(size_t parent_id,
-                                   const std::array<double, 3> &position,
-                                   const std::array<double, 3> &rpy,
+                                   const std::array<float, 3> &position,
+                                   const std::array<float, 3> &rpy,
                                    bool consider_rotation,
                                    std::optional<std::string> link_name = std::nullopt);
 

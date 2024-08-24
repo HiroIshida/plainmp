@@ -38,7 +38,7 @@ void bind_collision_constraints(py::module& m) {
       cst_m, "RelativePoseCst")
       .def(py::init<std::shared_ptr<tinyfk::KinematicModel>,
                     const std::vector<std::string>&, bool, const std::string&,
-                    const std::string&, const Eigen::Vector3d&>())
+                    const std::string&, const Eigen::Vector3f&>())
       .def("update_kintree", &RelativePoseCst::update_kintree)
       .def("evaluate", &RelativePoseCst::evaluate);
   py::class_<FixedZAxisCst, FixedZAxisCst::Ptr, EqConstraintBase>(
@@ -70,7 +70,7 @@ void bind_collision_constraints(py::module& m) {
       .def("get_all_spheres", &SphereCollisionCst::get_all_spheres);
 
   py::class_<AppliedForceSpec>(cst_m, "AppliedForceSpec")
-      .def(py::init<const std::string&, double>())
+      .def(py::init<const std::string&, float>())
       .def_readonly("link_name", &AppliedForceSpec::link_name)
       .def_readonly("force", &AppliedForceSpec::force);
 

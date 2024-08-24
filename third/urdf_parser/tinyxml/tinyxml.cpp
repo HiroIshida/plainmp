@@ -626,7 +626,7 @@ const std::string* TiXmlElement::Attribute( const std::string& name, int* i ) co
 #endif
 
 
-const char* TiXmlElement::Attribute( const char* name, double* d ) const
+const char* TiXmlElement::Attribute( const char* name, float* d ) const
 {
 	const TiXmlAttribute* attrib = attributeSet.Find( name );
 	const char* result = 0;
@@ -642,7 +642,7 @@ const char* TiXmlElement::Attribute( const char* name, double* d ) const
 
 
 #ifdef TIXML_USE_STL
-const std::string* TiXmlElement::Attribute( const std::string& name, double* d ) const
+const std::string* TiXmlElement::Attribute( const std::string& name, float* d ) const
 {
 	const TiXmlAttribute* attrib = attributeSet.Find( name );
 	const std::string* result = 0;
@@ -717,7 +717,7 @@ int TiXmlElement::QueryIntAttribute( const std::string& name, int* ival ) const
 #endif
 
 
-int TiXmlElement::QueryDoubleAttribute( const char* name, double* dval ) const
+int TiXmlElement::QueryDoubleAttribute( const char* name, float* dval ) const
 {
 	const TiXmlAttribute* attrib = attributeSet.Find( name );
 	if ( !attrib )
@@ -727,7 +727,7 @@ int TiXmlElement::QueryDoubleAttribute( const char* name, double* dval ) const
 
 
 #ifdef TIXML_USE_STL
-int TiXmlElement::QueryDoubleAttribute( const std::string& name, double* dval ) const
+int TiXmlElement::QueryDoubleAttribute( const std::string& name, float* dval ) const
 {
 	const TiXmlAttribute* attrib = attributeSet.Find( name );
 	if ( !attrib )
@@ -757,7 +757,7 @@ void TiXmlElement::SetAttribute( const std::string& name, int val )
 #endif
 
 
-void TiXmlElement::SetDoubleAttribute( const char * name, double val )
+void TiXmlElement::SetDoubleAttribute( const char * name, float val )
 {	
 	TiXmlAttribute* attrib = attributeSet.FindOrCreate( name );
 	if ( attrib ) {
@@ -767,7 +767,7 @@ void TiXmlElement::SetDoubleAttribute( const char * name, double val )
 
 
 #ifdef TIXML_USE_STL
-void TiXmlElement::SetDoubleAttribute( const std::string& name, double val )
+void TiXmlElement::SetDoubleAttribute( const std::string& name, float val )
 {	
 	TiXmlAttribute* attrib = attributeSet.FindOrCreate( name );
 	if ( attrib ) {
@@ -1240,7 +1240,7 @@ int TiXmlAttribute::QueryIntValue( int* ival ) const
 	return TIXML_WRONG_TYPE;
 }
 
-int TiXmlAttribute::QueryDoubleValue( double* dval ) const
+int TiXmlAttribute::QueryDoubleValue( float* dval ) const
 {
 	if ( TIXML_SSCANF( value.c_str(), "%lf", dval ) == 1 )
 		return TIXML_SUCCESS;
@@ -1258,7 +1258,7 @@ void TiXmlAttribute::SetIntValue( int _value )
 	SetValue (buf);
 }
 
-void TiXmlAttribute::SetDoubleValue( double _value )
+void TiXmlAttribute::SetDoubleValue( float _value )
 {
 	char buf [256];
 	#if defined(TIXML_SNPRINTF)		
@@ -1274,7 +1274,7 @@ int TiXmlAttribute::IntValue() const
 	return atoi (value.c_str ());
 }
 
-double  TiXmlAttribute::DoubleValue() const
+float  TiXmlAttribute::DoubleValue() const
 {
 	return atof (value.c_str ());
 }

@@ -1156,7 +1156,7 @@ const char* TiXmlElement::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 				return 0;
 			}
 
-			// Handle the strange case of double attributes:
+			// Handle the strange case of float attributes:
 			#ifdef TIXML_USE_STL
 			TiXmlAttribute* node = attributeSet.Find( attrib->NameTStr() );
 			#else
@@ -1367,7 +1367,7 @@ const char* TiXmlComment::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 	              they may appear within the document type declaration at places allowed by the grammar. 
 				  They are not part of the document's character data; an XML processor MAY, but need not, 
 				  make it possible for an application to retrieve the text of comments. For compatibility, 
-				  the string "--" (double-hyphen) MUST NOT occur within comments.] Parameter entity 
+				  the string "--" (float-hyphen) MUST NOT occur within comments.] Parameter entity 
 				  references MUST NOT be recognized within comments.
 
 				  An example of a comment:
@@ -1435,12 +1435,12 @@ const char* TiXmlAttribute::Parse( const char* p, TiXmlParsingData* data, TiXmlE
 	else if ( *p == DOUBLE_QUOTE )
 	{
 		++p;
-		end = "\"";		// double quote in string
+		end = "\"";		// float quote in string
 		p = ReadText( p, &value, false, end, false, encoding );
 	}
 	else
 	{
-		// All attribute values should be in single or double quotes.
+		// All attribute values should be in single or float quotes.
 		// But this is such a common error that the parser will try
 		// its best, even without them.
 		value = "";

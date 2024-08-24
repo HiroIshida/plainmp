@@ -53,8 +53,8 @@ class JointDynamics
 {
 public:
   JointDynamics() { this->clear(); };
-  double damping;
-  double friction;
+  float damping;
+  float friction;
 
   void clear()
   {
@@ -67,10 +67,10 @@ class JointLimits
 {
 public:
   JointLimits() { this->clear(); };
-  double lower;
-  double upper;
-  double effort;
-  double velocity;
+  float lower;
+  float upper;
+  float effort;
+  float velocity;
 
   void clear()
   {
@@ -119,10 +119,10 @@ public:
   ///
   /// Please see wiki for more details: http://www.ros.org/wiki/pr2_controller_manager/safety_limits
   /// 
-  double soft_upper_limit;
-  double soft_lower_limit;
-  double k_position;
-  double k_velocity;
+  float soft_upper_limit;
+  float soft_lower_limit;
+  float k_position;
+  float k_velocity;
 
   void clear()
   {
@@ -138,7 +138,7 @@ class JointCalibration
 {
 public:
   JointCalibration() { this->clear(); };
-  double reference_position;
+  float reference_position;
   DoubleSharedPtr rising, falling;
 
   void clear()
@@ -151,8 +151,8 @@ class JointMimic
 {
 public:
   JointMimic() { this->clear(); };
-  double offset;
-  double multiplier;
+  float offset;
+  float multiplier;
   std::string joint_name;
 
   void clear()
@@ -184,7 +184,7 @@ public:
   ///            FLOATING    N/A
   ///            PLANAR      plane normal axis
   ///            FIXED       N/A
-  Eigen::Vector3d axis;
+  Eigen::Vector3f axis;
 
   unsigned int id;
 
@@ -196,7 +196,7 @@ public:
   ///   origin specifies the transform from Parent Link to Joint Frame
   std::string parent_link_name;
   /// transform from Parent Link frame to Joint frame
-  QuatTrans<double>  parent_to_joint_origin_transform;
+  QuatTrans<float>  parent_to_joint_origin_transform;
 
   /// Joint Dynamics
   JointDynamicsSharedPtr dynamics;
@@ -213,22 +213,22 @@ public:
   /// Option to Mimic another Joint
   JointMimicSharedPtr mimic;
 
-  QuatTrans<double> transform(double angle){
+  QuatTrans<float> transform(float angle){
       if(type == REVOLUTE || type==CONTINUOUS){
-        QuatTrans<double> tf;
+        QuatTrans<float> tf;
         tf.quat().coeffs().segment(0,3) = axis * sin(angle * 0.5);
         tf.quat().w() = cos(angle * 0.5);
         tf.trans().setZero();
         return tf;
       }
       if(type == PRISMATIC){
-        QuatTrans<double> tf;
+        QuatTrans<float> tf;
         tf.quat().setIdentity();
         tf.trans() = axis * angle;
         return tf;
       }
       if(type == FIXED){
-        return QuatTrans<double>::Identity();
+        return QuatTrans<float>::Identity();
       }
       throw std::runtime_error("unsupported joint detected");
   }

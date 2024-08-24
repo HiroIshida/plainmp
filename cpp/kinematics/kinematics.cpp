@@ -6,10 +6,10 @@
 
 namespace tinyfk {
 
-Eigen::Vector3d rpy_derivative(const Eigen::Vector3d &rpy, const Eigen::Vector3d &axis) {
-  Eigen::Vector3d drpy_dt;
-  double a2 = -rpy.y();
-  double a3 = -rpy.z();
+Eigen::Vector3f rpy_derivative(const Eigen::Vector3f &rpy, const Eigen::Vector3f &axis) {
+  Eigen::Vector3f drpy_dt;
+  float a2 = -rpy.y();
+  float a3 = -rpy.z();
   drpy_dt.x() = cos(a3) / cos(a2) * axis.x ()- sin(a3) / cos(a2) * axis.y();
   drpy_dt.y() = sin(a3) * axis.x() + cos(a3) * axis.y();
   drpy_dt.z() = -cos(a3) * sin(a2) / cos(a2) * axis.x() +
@@ -17,11 +17,11 @@ Eigen::Vector3d rpy_derivative(const Eigen::Vector3d &rpy, const Eigen::Vector3d
   return drpy_dt;
 }
 
-Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector3d &omega) {
-  const double dxdt = 0.5 * (omega.z() * q.y() - omega.y() * q.z() + omega.x() * q.w());
-  const double dydt = 0.5 * (-omega.z() * q.x() + 0 * q.y() + omega.x() * q.z() + omega.y() * q.w());
-  const double dzdt = 0.5 * (omega.y() * q.x() - omega.x() * q.y() + 0 * q.z() + omega.z() * q.w());
-  const double dwdt = 0.5 * (-omega.x() * q.x() - omega.y() * q.y() - omega.z() * q.z() + 0 * q.w());
+Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector3f &omega) {
+  const float dxdt = 0.5 * (omega.z() * q.y() - omega.y() * q.z() + omega.x() * q.w());
+  const float dydt = 0.5 * (-omega.z() * q.x() + 0 * q.y() + omega.x() * q.z() + omega.y() * q.w());
+  const float dzdt = 0.5 * (omega.y() * q.x() - omega.x() * q.y() + 0 * q.z() + omega.z() * q.w());
+  const float dwdt = 0.5 * (-omega.x() * q.x() - omega.y() * q.y() - omega.z() * q.z() + 0 * q.w());
   // return Rotation(dxdt, dydt, dzdt, -dwdt); // TODO: why minus????
   std::cout << "you sure? the order?" << std::endl;
   return Eigen::Quaterniond(-dwdt, dxdt, dydt, dzdt);
@@ -134,7 +134,7 @@ KinematicModel::get_jacobian(size_t elink_id,
   auto &epos = tf_rlink_to_elink.trans();
   auto &erot = tf_rlink_to_elink.quat();
 
-  Eigen::Vector3d erpy;
+  Eigen::Vector3f erpy;
   Eigen::Quaterniond erot_inverse;
   if (rot_type == RotationType::RPY) {
     erpy = tf_rlink_to_elink.getRPY();
@@ -163,7 +163,7 @@ KinematicModel::get_jacobian(size_t elink_id,
 
       auto &crot = tf_rlink_to_clink.quat();
       auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
-      Eigen::Vector3d dpos;
+      Eigen::Vector3f dpos;
       if (type == urdf::Joint::PRISMATIC) {
         dpos = world_axis;
       } else { // revolute or continuous
@@ -192,7 +192,7 @@ KinematicModel::get_jacobian(size_t elink_id,
   }
 
   ExpTransform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
-  Eigen::Vector3d rpy_rlink_to_blink;
+  Eigen::Vector3f rpy_rlink_to_blink;
   if (with_base) {
     ExpTransform tf_rlink_to_blink;
     this->get_link_pose(this->root_link_id_, tf_rlink_to_blink);
@@ -211,7 +211,7 @@ KinematicModel::get_jacobian(size_t elink_id,
     // we resort to numerical method to base pose jacobian (just because I don't
     // have time)
     // TODO(HiroIshida): compute using analytical method.
-    constexpr double eps = 1e-7;
+    constexpr float eps = 1e-7;
     for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
       const size_t idx_col = dim_dof + 3 + rpy_idx;
 
@@ -238,9 +238,9 @@ KinematicModel::get_jacobian(size_t elink_id,
   return jacobian;
 }
 
-Eigen::Vector3d KinematicModel::get_com() {
-  Eigen::Vector3d com_average;
-  double mass_total = 0.0;
+Eigen::Vector3f KinematicModel::get_com() {
+  Eigen::Vector3f com_average;
+  float mass_total = 0.0;
   ExpTransform tf_base_to_com;
   for (const auto &link : com_dummy_links_) {
     mass_total += link->inertial->mass;
@@ -257,7 +257,7 @@ KinematicModel::get_com_jacobian(const std::vector<size_t> &joint_ids,
   constexpr size_t jac_rank = 3;
   const size_t dim_dof = joint_ids.size() + with_base * 6;
   Eigen::MatrixXd jac_average = Eigen::MatrixXd::Zero(jac_rank, dim_dof);
-  double mass_total = 0.0;
+  float mass_total = 0.0;
   for (const auto &com_link : com_dummy_links_) {
     mass_total += com_link->inertial->mass;
     auto jac = this->get_jacobian(com_link->id, joint_ids, RotationType::IGNORE,
@@ -268,47 +268,47 @@ KinematicModel::get_com_jacobian(const std::vector<size_t> &joint_ids,
   return jac_average;
 }
 
-Eigen::Matrix3d KinematicModel::get_total_inertia_matrix() {
+Eigen::Matrix3f KinematicModel::get_total_inertia_matrix() {
   auto com = this->get_com();
 
-  Eigen::Matrix3d Imat_total = Eigen::Matrix3d::Zero();
+  Eigen::Matrix3f Imat_total = Eigen::Matrix3f::Zero();
   throw std::runtime_error("Not implemented");
   // for (const auto &link : com_dummy_links_) {
   //   const auto inertial = link->inertial;
   //   if (inertial != nullptr) {
-  //     double mass = inertial->mass;
-  //     double ixx = inertial->ixx;
-  //     double iyy = inertial->iyy;
-  //     double izz = inertial->izz;
-  //     double ixy = inertial->ixy;
-  //     double ixz = inertial->ixz;
-  //     double iyz = inertial->iyz;
-  //     Eigen::Matrix3d Imat;
+  //     float mass = inertial->mass;
+  //     float ixx = inertial->ixx;
+  //     float iyy = inertial->iyy;
+  //     float izz = inertial->izz;
+  //     float ixy = inertial->ixy;
+  //     float ixz = inertial->ixz;
+  //     float iyz = inertial->iyz;
+  //     Eigen::Matrix3f Imat;
   //     Imat << ixx, ixy, ixz, ixy, iyy, iyz, ixz, iyz, izz;
   //     size_t link_id = link->id;
 
   //     ExpTransform tf_base_to_link;
   //     this->get_link_pose(link_id, tf_base_to_link);
   //     const auto &trans = tf_base_to_link.position;
-  //     Eigen::Vector3d vec;
+  //     Eigen::Vector3f vec;
   //     vec << trans.x - com.x, trans.y - com.y, trans.z - com.z;
   //     const auto &rot = tf_base_to_link.rotation;
-  //     double xy2 = 2 * (rot.x * rot.y);
-  //     double xz2 = 2 * (rot.x * rot.z);
-  //     double xw2 = 2 * (rot.x * rot.w);
-  //     double yz2 = 2 * (rot.y * rot.z);
-  //     double yw2 = 2 * (rot.y * rot.w);
-  //     double zw2 = 2 * (rot.z * rot.w);
-  //     double xx2 = 2 * (rot.x * rot.x);
-  //     double yy2 = 2 * (rot.y * rot.y);
-  //     double zz2 = 2 * (rot.z * rot.z);
+  //     float xy2 = 2 * (rot.x * rot.y);
+  //     float xz2 = 2 * (rot.x * rot.z);
+  //     float xw2 = 2 * (rot.x * rot.w);
+  //     float yz2 = 2 * (rot.y * rot.z);
+  //     float yw2 = 2 * (rot.y * rot.w);
+  //     float zw2 = 2 * (rot.z * rot.w);
+  //     float xx2 = 2 * (rot.x * rot.x);
+  //     float yy2 = 2 * (rot.y * rot.y);
+  //     float zz2 = 2 * (rot.z * rot.z);
 
-  //     Eigen::Matrix3d R;
+  //     Eigen::Matrix3f R;
   //     R << 1 - yy2 - zz2, xy2 - zw2, xz2 + yw2, xy2 + zw2, 1 - xx2 - zz2,
   //         yz2 - xw2, xz2 - yw2, yz2 + xw2, 1 - xx2 - yy2;
 
-  //     Eigen::Matrix3d trans_term =
-  //         mass * (vec.norm() * vec.norm() * Eigen::Matrix3d::Identity() -
+  //     Eigen::Matrix3f trans_term =
+  //         mass * (vec.norm() * vec.norm() * Eigen::Matrix3f::Identity() -
   //                 vec * vec.transpose());
   //     Imat_total += (R * Imat * R.transpose() + trans_term);
   //   }

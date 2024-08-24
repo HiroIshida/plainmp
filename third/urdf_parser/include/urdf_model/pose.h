@@ -52,13 +52,13 @@ namespace urdf{
 class Vector3
 {
 public:
-  Vector3(double _x,double _y, double _z) {this->x=_x;this->y=_y;this->z=_z;};
+  Vector3(float _x,float _y, float _z) {this->x=_x;this->y=_y;this->z=_z;};
   Vector3() {this->clear();};
-  double x;
-  double y;
-  double z;
+  float x;
+  float y;
+  float z;
 
-  double& operator[](size_t index) {
+  float& operator[](size_t index) {
     switch (index) {
       case 0: return x;
       case 1: return y;
@@ -72,14 +72,14 @@ public:
   {
     this->clear();
     std::vector<std::string> pieces;
-    std::vector<double> xyz;
+    std::vector<float> xyz;
     urdf::split_string( pieces, vector_str, " ");
     for (unsigned int i = 0; i < pieces.size(); ++i){
       if (pieces[i] != ""){
         try {
           xyz.push_back(strToDouble(pieces[i].c_str()));
         } catch(std::runtime_error &) {
-          throw ParseError("Unable to parse component [" + pieces[i] + "] to a double (while parsing a vector value)");
+          throw ParseError("Unable to parse component [" + pieces[i] + "] to a float (while parsing a vector value)");
         }
       }
     }
@@ -108,7 +108,7 @@ public:
     return Vector3(this->x-vec.x,this->y-vec.y,this->z-vec.z);
   };
 
-  Vector3 operator/(double deno) const
+  Vector3 operator/(float deno) const
   {
     return Vector3(this->x/deno,this->y/deno,this->z/deno);
   };
@@ -119,21 +119,21 @@ void cross_product(const Vector3& a, const Vector3& b, Vector3& out);
 class Rotation
 {
 public:
-  Rotation(double _x,double _y, double _z, double _w) {this->x=_x;this->y=_y;this->z=_z;this->w=_w;};
+  Rotation(float _x,float _y, float _z, float _w) {this->x=_x;this->y=_y;this->z=_z;this->w=_w;};
   Rotation() {this->clear();};
-  void getQuaternion(double &quat_x,double &quat_y,double &quat_z, double &quat_w) const
+  void getQuaternion(float &quat_x,float &quat_y,float &quat_z, float &quat_w) const
   {
     quat_x = this->x;
     quat_y = this->y;
     quat_z = this->z;
     quat_w = this->w;
   };
-  void getRPY(double &roll,double &pitch,double &yaw) const
+  void getRPY(float &roll,float &pitch,float &yaw) const
   {
-    double sqw;
-    double sqx;
-    double sqy;
-    double sqz;
+    float sqw;
+    float sqx;
+    float sqy;
+    float sqz;
 
     sqx = this->x * this->x;
     sqy = this->y * this->y;
@@ -141,8 +141,8 @@ public:
     sqw = this->w * this->w;
 
     // Cases derived from https://orbitalstation.wordpress.com/tag/quaternion/
-    double sarg = -2 * (this->x*this->z - this->w*this->y);
-    const double pi_2 = 1.57079632679489661923;
+    float sarg = -2 * (this->x*this->z - this->w*this->y);
+    const float pi_2 = 1.57079632679489661923;
     if (sarg <= -0.99999) {
       pitch = -pi_2;
       roll  = 0;
@@ -161,10 +161,10 @@ public:
 
   Vector3 getRPY() const
   {
-    double sqw;
-    double sqx;
-    double sqy;
-    double sqz;
+    float sqw;
+    float sqx;
+    float sqy;
+    float sqz;
 
     sqx = this->x * this->x;
     sqy = this->y * this->y;
@@ -172,10 +172,10 @@ public:
     sqw = this->w * this->w;
 
     // Cases derived from https://orbitalstation.wordpress.com/tag/quaternion/
-    double sarg = -2 * (this->x*this->z - this->w*this->y);
-    const double pi_2 = 1.57079632679489661923;
+    float sarg = -2 * (this->x*this->z - this->w*this->y);
+    const float pi_2 = 1.57079632679489661923;
 
-    double roll, pitch, yaw;
+    float roll, pitch, yaw;
     if (sarg <= -0.99999) {
       pitch = -pi_2;
       roll  = 0;
@@ -192,7 +192,7 @@ public:
     return Vector3(roll, pitch, yaw);
   };
 
-  void setFromQuaternion(double quat_x,double quat_y,double quat_z,double quat_w)
+  void setFromQuaternion(float quat_x,float quat_y,float quat_z,float quat_w)
   {
     this->x = quat_x;
     this->y = quat_y;
@@ -201,9 +201,9 @@ public:
     this->normalize();
     this->rot_matrix_dirty = true;
   };
-  void setFromRPY(double roll, double pitch, double yaw)
+  void setFromRPY(float roll, float pitch, float yaw)
   {
-    double phi, the, psi;
+    float phi, the, psi;
 
     phi = roll / 2.0;
     the = pitch / 2.0;
@@ -218,11 +218,11 @@ public:
     this->rot_matrix_dirty = true;
   };
 
-  double x,y,z,w;
+  float x,y,z,w;
 
   // these are used to cache the rotation matrix
   mutable bool rot_matrix_dirty;
-  mutable double rot_matrix[3][3];
+  mutable float rot_matrix[3][3];
 
   void init(const std::string &rotation_str)
   {
@@ -236,7 +236,7 @@ public:
 
   void normalize()
   {
-    double s = sqrt(this->x * this->x +
+    float s = sqrt(this->x * this->x +
                     this->y * this->y +
                     this->z * this->z +
                     this->w * this->w);
@@ -271,15 +271,15 @@ public:
   /// Rotate a vector using the quaternion
   Vector3 operator*(Vector3 vec) const
   {
-    double q_xx = this->x * this->x;
-    double q_yy = this->y * this->y;
-    double q_zz = this->z * this->z;
-    double q_xy = this->x * this->y;
-    double q_xz = this->x * this->z;
-    double q_xw = this->x * this->w;
-    double q_yz = this->y * this->z;
-    double q_yw = this->y * this->w;
-    double q_zw = this->z * this->w;
+    float q_xx = this->x * this->x;
+    float q_yy = this->y * this->y;
+    float q_zz = this->z * this->z;
+    float q_xy = this->x * this->y;
+    float q_xz = this->x * this->z;
+    float q_xw = this->x * this->w;
+    float q_yz = this->y * this->z;
+    float q_yw = this->y * this->w;
+    float q_zw = this->z * this->w;
 
     // fill rotation matrix
     if (this->rot_matrix_dirty)
@@ -304,7 +304,7 @@ public:
   {
     Rotation q;
 
-    double norm = this->w*this->w+this->x*this->x+this->y*this->y+this->z*this->z;
+    float norm = this->w*this->w+this->x*this->x+this->y*this->y+this->z*this->z;
 
     if (norm > 0.0)
     {
@@ -318,12 +318,12 @@ public:
   };
 
   Rotation inverse() const{
-    double norm = this->w*this->w+this->x*this->x+this->y*this->y+this->z*this->z;
+    float norm = this->w*this->w+this->x*this->x+this->y*this->y+this->z*this->z;
     return Rotation(-x/norm, -y/norm, -z/norm, w/norm);
   }
 
   void inverse_inplace(){
-    double norm = this->w*this->w+this->x*this->x+this->y*this->y+this->z*this->z;
+    float norm = this->w*this->w+this->x*this->x+this->y*this->y+this->z*this->z;
     this->w = this->w / norm;
     this->x = -this->x / norm;
     this->y = -this->y / norm;
@@ -357,8 +357,8 @@ public:
     return pose_out;
   }
 
-  QuatTrans<double> to_quattrans() const{
-    QuatTrans<double> qt;
+  QuatTrans<float> to_quattrans() const{
+    QuatTrans<float> qt;
     qt.quat().x() = rotation.x;
     qt.quat().y() = rotation.y;
     qt.quat().z() = rotation.z;

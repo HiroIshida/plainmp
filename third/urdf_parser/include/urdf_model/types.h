@@ -51,7 +51,7 @@ typedef std::weak_ptr<Class> Class##WeakPtr
 namespace urdf{
 
 // shared pointer used in joint.h
-typedef std::shared_ptr<double> DoubleSharedPtr;
+typedef std::shared_ptr<float> DoubleSharedPtr;
 
 URDF_TYPEDEF_CLASS_POINTER(Box);
 URDF_TYPEDEF_CLASS_POINTER(Collision);
@@ -128,7 +128,7 @@ struct QuatTrans {
 
       // Cases derived from https://orbitalstation.wordpress.com/tag/quat_ernion/
       auto sarg = -2 * (quat_.x() * quat_.z() - quat_.w() * quat_.y());
-      const double pi_2 = 1.57079632679489661923;
+      const float pi_2 = 1.57079632679489661923;
 
       Scalar roll, pitch, yaw;
       if (sarg <= -0.99999) {

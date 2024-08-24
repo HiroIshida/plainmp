@@ -30,7 +30,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   size_t N_link = lid; // starting from 0 and finally ++ increment, so it'S ok
 
   // compute total mass
-  double total_mass = 0.0;
+  float total_mass = 0.0;
   for (const auto &link : links) {
     if (link->inertial != nullptr) {
       total_mass += link->inertial->mass;
@@ -67,7 +67,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   }
 
   int num_dof = joint_ids.size();
-  std::vector<double> joint_angles(num_dof, 0.0);
+  std::vector<float> joint_angles(num_dof, 0.0);
 
   link_id_stack_ = SizedStack<size_t>(N_link);
   transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, ExpTransform>>(
@@ -115,7 +115,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
 }
 
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
-                                      const std::vector<double> &joint_angles) {
+                                      const std::vector<float> &joint_angles) {
   for (size_t i = 0; i < joint_ids.size(); i++) {
     auto joint_id = joint_ids[i];
     joint_angles_[joint_id] = joint_angles[i];
@@ -130,14 +130,14 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
 
 
 void KinematicModel::set_init_angles() {
-  std::vector<double> joint_angles(num_dof_, 0.0);
+  std::vector<float> joint_angles(num_dof_, 0.0);
   joint_angles_ = joint_angles;
   transform_cache_.clear();
 }
 
-std::vector<double>
+std::vector<float>
 KinematicModel::get_joint_angles(const std::vector<size_t> &joint_ids) const {
-  std::vector<double> angles(joint_ids.size());
+  std::vector<float> angles(joint_ids.size());
   for (size_t i = 0; i < joint_ids.size(); i++) {
     int idx = joint_ids[i];
     angles[i] = joint_angles_[idx];
@@ -166,8 +166,8 @@ std::vector<Bound> KinematicModel::get_joint_position_limits(
   for (size_t i = 0; i < n_joint; i++) {
     const auto &joint = joints_[joint_ids[i]];
     if (joint->type == urdf::Joint::CONTINUOUS) {
-      limits[i].first = -std::numeric_limits<double>::infinity();
-      limits[i].second = std::numeric_limits<double>::infinity();
+      limits[i].first = -std::numeric_limits<float>::infinity();
+      limits[i].second = std::numeric_limits<float>::infinity();
     } else {
       limits[i].first = joint->limits->lower;
       limits[i].second = joint->limits->upper;
@@ -176,10 +176,10 @@ std::vector<Bound> KinematicModel::get_joint_position_limits(
   return limits;
 }
 
-std::vector<double> KinematicModel::get_joint_velocity_limits(
+std::vector<float> KinematicModel::get_joint_velocity_limits(
     const std::vector<size_t> &joint_ids) const {
   const size_t n_joint = joint_ids.size();
-  std::vector<double> limits(n_joint);
+  std::vector<float> limits(n_joint);
   for (size_t i = 0; i < n_joint; i++) {
     const auto &joint = joints_[joint_ids[i]];
     limits[i] = joint->limits->velocity;
@@ -187,10 +187,10 @@ std::vector<double> KinematicModel::get_joint_velocity_limits(
   return limits;
 }
 
-std::vector<double> KinematicModel::get_joint_effort_limits(
+std::vector<float> KinematicModel::get_joint_effort_limits(
     const std::vector<size_t> &joint_ids) const {
   const size_t n_joint = joint_ids.size();
-  std::vector<double> limits(n_joint);
+  std::vector<float> limits(n_joint);
   for (size_t i = 0; i < n_joint; i++) {
     const auto &joint = joints_[joint_ids[i]];
     limits[i] = joint->limits->effort;
@@ -213,16 +213,16 @@ KinematicModel::get_link_ids(std::vector<std::string> link_names) const {
 }
 
 urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id,
-                                 const std::array<double, 3> &position,
-                                 const std::array<double, 3> &rpy,
+                                 const std::array<float, 3> &position,
+                                 const std::array<float, 3> &rpy,
                                  bool consider_rotation,
                                  std::optional<std::string> link_name){
   ExpTransform pose;
-  pose.trans()  = Eigen::Vector3d(position[0], position[1], position[2]);
+  pose.trans()  = Eigen::Vector3f(position[0], position[1], position[2]);
   // pose.rotation.setFromRPY(rpy[0], rpy[1], rpy[2]);
-  pose.quat() = Eigen::AngleAxisd(rpy[0], Eigen::Vector3d::UnitX()) *
-                           Eigen::AngleAxisd(rpy[1], Eigen::Vector3d::UnitY()) *
-                           Eigen::AngleAxisd(rpy[2], Eigen::Vector3d::UnitZ());
+  pose.quat() = Eigen::AngleAxisd(rpy[0], Eigen::Vector3f::UnitX()) *
+                           Eigen::AngleAxisd(rpy[1], Eigen::Vector3f::UnitY()) *
+                           Eigen::AngleAxisd(rpy[2], Eigen::Vector3f::UnitZ());
   return this->add_new_link(parent_id, pose, consider_rotation, link_name);
 }
 
@@ -232,7 +232,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const ExpTran
 
   if(link_name == std::nullopt) {
     // if link_name is not given, generate a unique name
-    std::hash<double> hasher;
+    std::hash<float> hasher;
     std::size_t hval = 0;
     hval ^= hasher(pose.trans()(0)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
     hval ^= hasher(pose.trans()(1)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);

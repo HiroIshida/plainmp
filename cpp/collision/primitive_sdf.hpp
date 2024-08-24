@@ -10,12 +10,12 @@
 
 namespace primitive_sdf {
 
-using Point = Eigen::Vector3d;
-using Points = Eigen::Matrix3Xd;
-using Values = Eigen::VectorXd;
+using Point = Eigen::Vector3f;
+using Points = Eigen::Matrix3Xf;
+using Values = Eigen::VectorXf;
 
 struct AABB {
-  bool is_outside(const Point& p, double radius) const {
+  bool is_outside(const Point& p, float radius) const {
     return (p.array() + radius < lb.array()).any() ||
            (p.array() - radius > ub.array()).any();
   }
@@ -25,7 +25,7 @@ struct AABB {
 
 class Pose {
  public:
-  Pose(const Eigen::Vector3d& position, const Eigen::Matrix3d& rotation)
+  Pose(const Eigen::Vector3f& position, const Eigen::Matrix3f& rotation)
       : position_(position), rot_(rotation), rot_inv_(rotation.inverse()) {}
 
   Points transform_points(const Points& p) const {
@@ -36,12 +36,12 @@ class Pose {
     return rot_inv_ * (p - position_);
   }
 
-  void set_position(const Eigen::Vector3d& position) { position_ = position; }
+  void set_position(const Eigen::Vector3f& position) { position_ = position; }
 
   Pose inverse() const { return Pose(-rot_ * position_, rot_inv_); }
 
  private:
-  Eigen::Vector3d position_;
+  Eigen::Vector3f position_;
   Eigen::Matrix3d rot_;
   Eigen::Matrix3d rot_inv_;
 };
@@ -51,8 +51,8 @@ class SDFBase {
   using Ptr = std::shared_ptr<SDFBase>;
   // for ease of binding to python, we name different functions
   virtual Values evaluate_batch(const Points& p) const = 0;
-  virtual double evaluate(const Point& p) const = 0;
-  virtual bool is_outside(const Point& p, double radius) const = 0;
+  virtual float evaluate(const Point& p) const = 0;
+  virtual bool is_outside(const Point& p, float radius) const = 0;
   virtual AABB get_aabb() const = 0;
 };
 
@@ -73,15 +73,15 @@ class UnionSDF : public SDFBase {
     return vals;
   }
 
-  double evaluate(const Point& p) const override {
-    double val = std::numeric_limits<double>::max();
+  float evaluate(const Point& p) const override {
+    float val = std::numeric_limits<float>::max();
     for (const auto& sdf : sdfs_) {
       val = std::min(val, sdf->evaluate(p));
     }
     return val;
   }
 
-  bool is_outside(const Point& p, double radius) const override {
+  bool is_outside(const Point& p, float radius) const override {
     if (aabb_.has_value() && aabb_->is_outside(p, radius)) {
       return true;
     }
@@ -94,8 +94,8 @@ class UnionSDF : public SDFBase {
   }
 
   AABB get_aabb() const override {
-    Point lb = Eigen::Vector3d::Constant(std::numeric_limits<double>::max());
-    Point ub = Eigen::Vector3d::Constant(-std::numeric_limits<double>::max());
+    Point lb = Eigen::Vector3f::Constant(std::numeric_limits<float>::max());
+    Point ub = Eigen::Vector3f::Constant(-std::numeric_limits<float>::max());
     for (const auto& sdf : sdfs_) {
       auto aabb = sdf->get_aabb();
       lb = lb.cwiseMin(aabb.lb);
@@ -117,23 +117,23 @@ class PrimitiveSDFBase : public SDFBase {
 class GroundSDF : public PrimitiveSDFBase {
  public:
   using Ptr = std::shared_ptr<GroundSDF>;
-  GroundSDF(double height) : height_(height) {}
+  GroundSDF(float height) : height_(height) {}
   Values evaluate_batch(const Points& p) const override {
     return p.row(2).array() + height_;
   }
-  double evaluate(const Point& p) const override { return p(2) + height_; }
-  bool is_outside(const Point& p, double radius) const override {
+  float evaluate(const Point& p) const override { return p(2) + height_; }
+  bool is_outside(const Point& p, float radius) const override {
     return p(2) + height_ > radius;
   }
   AABB get_aabb() const override {
-    return {{-std::numeric_limits<double>::max(),
-             -std::numeric_limits<double>::max(), height_},
-            {std::numeric_limits<double>::max(),
-             std::numeric_limits<double>::max(), height_}};
+    return {{-std::numeric_limits<float>::max(),
+             -std::numeric_limits<float>::max(), height_},
+            {std::numeric_limits<float>::max(),
+             std::numeric_limits<float>::max(), height_}};
   }
 
  private:
-  double height_;
+  float height_;
 };
 
 class ClosedPrimitiveSDFBase : public PrimitiveSDFBase {
@@ -146,12 +146,12 @@ class ClosedPrimitiveSDFBase : public PrimitiveSDFBase {
     return evaluate_in_local_frame(p_local);
   }
 
-  double evaluate(const Point& p) const override {
+  float evaluate(const Point& p) const override {
     auto p_local = tf_.transform_point(p);
     return evaluate_in_local_frame(p_local);
   }
 
-  bool is_outside(const Point& p, double radius) const override {
+  bool is_outside(const Point& p, float radius) const override {
     auto p_local = tf_.transform_point(p);
     return is_outside_in_local_frame(p_local, radius);
   }
@@ -169,8 +169,8 @@ class ClosedPrimitiveSDFBase : public PrimitiveSDFBase {
 
  protected:
   virtual Values evaluate_in_local_frame(const Points& p) const = 0;
-  virtual double evaluate_in_local_frame(const Point& p) const = 0;
-  virtual bool is_outside_in_local_frame(const Point& p, double radius) const {
+  virtual float evaluate_in_local_frame(const Point& p) const = 0;
+  virtual bool is_outside_in_local_frame(const Point& p, float radius) const {
     return evaluate_in_local_frame(p) > radius;
   }  // maybe override this for performance
      //
@@ -180,9 +180,9 @@ class ClosedPrimitiveSDFBase : public PrimitiveSDFBase {
 class BoxSDF : public ClosedPrimitiveSDFBase {
  public:
   using Ptr = std::shared_ptr<BoxSDF>;
-  Eigen::Vector3d width_;
+  Eigen::Vector3f width_;
 
-  BoxSDF(const Eigen::Vector3d& width, const Pose& tf)
+  BoxSDF(const Eigen::Vector3f& width, const Pose& tf)
       : ClosedPrimitiveSDFBase(tf), width_(width) {}
 
  private:
@@ -195,7 +195,7 @@ class BoxSDF : public ClosedPrimitiveSDFBase {
     return vals;
   }
 
-  double evaluate_in_local_frame(const Point& p) const override {
+  float evaluate_in_local_frame(const Point& p) const override {
     auto&& half_width = width_ * 0.5;
     auto d = p.cwiseAbs() - half_width;
     auto outside_distance = (d.cwiseMax(0.0)).norm();
@@ -206,21 +206,21 @@ class BoxSDF : public ClosedPrimitiveSDFBase {
   Eigen::Matrix3Xd get_local_aabb_vertices() const {
     Eigen::Matrix3Xd vertices(3, 8);
     vertices.col(0) =
-        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
+        Eigen::Vector3f(-width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
     vertices.col(1) =
-        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
+        Eigen::Vector3f(width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
     vertices.col(2) =
-        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
+        Eigen::Vector3f(-width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
     vertices.col(3) =
-        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
+        Eigen::Vector3f(width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
     vertices.col(4) =
-        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
+        Eigen::Vector3f(-width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
     vertices.col(5) =
-        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
+        Eigen::Vector3f(width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
     vertices.col(6) =
-        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
+        Eigen::Vector3f(-width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
     vertices.col(7) =
-        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
+        Eigen::Vector3f(width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
     return vertices;
   };
 };
@@ -228,9 +228,9 @@ class BoxSDF : public ClosedPrimitiveSDFBase {
 class CylinderSDF : public ClosedPrimitiveSDFBase {
  public:
   using Ptr = std::shared_ptr<CylinderSDF>;
-  double radius_;
-  double height_;
-  CylinderSDF(double radius, double height, const Pose& tf)
+  float radius_;
+  float height_;
+  CylinderSDF(float radius, float height, const Pose& tf)
       : ClosedPrimitiveSDFBase(tf), radius_(radius), height_(height) {}
 
  private:
@@ -248,8 +248,8 @@ class CylinderSDF : public ClosedPrimitiveSDFBase {
     return vals;
   }
 
-  double evaluate_in_local_frame(const Point& p) const override {
-    double d = p.topRows(2).norm();
+  float evaluate_in_local_frame(const Point& p) const override {
+    float d = p.topRows(2).norm();
     Eigen::Vector2d p_projected(d, p(2));
 
     auto&& half_width = Eigen::Vector2d(radius_, height_ * 0.5);
@@ -261,14 +261,14 @@ class CylinderSDF : public ClosedPrimitiveSDFBase {
 
   Eigen::Matrix3Xd get_local_aabb_vertices() const {
     Eigen::Matrix3Xd vertices(3, 8);
-    vertices.col(0) = Eigen::Vector3d(-radius_, -radius_, -height_ * 0.5);
-    vertices.col(1) = Eigen::Vector3d(radius_, -radius_, -height_ * 0.5);
-    vertices.col(2) = Eigen::Vector3d(-radius_, radius_, -height_ * 0.5);
-    vertices.col(3) = Eigen::Vector3d(radius_, radius_, -height_ * 0.5);
-    vertices.col(4) = Eigen::Vector3d(-radius_, -radius_, height_ * 0.5);
-    vertices.col(5) = Eigen::Vector3d(radius_, -radius_, height_ * 0.5);
-    vertices.col(6) = Eigen::Vector3d(-radius_, radius_, height_ * 0.5);
-    vertices.col(7) = Eigen::Vector3d(radius_, radius_, height_ * 0.5);
+    vertices.col(0) = Eigen::Vector3f(-radius_, -radius_, -height_ * 0.5);
+    vertices.col(1) = Eigen::Vector3f(radius_, -radius_, -height_ * 0.5);
+    vertices.col(2) = Eigen::Vector3f(-radius_, radius_, -height_ * 0.5);
+    vertices.col(3) = Eigen::Vector3f(radius_, radius_, -height_ * 0.5);
+    vertices.col(4) = Eigen::Vector3f(-radius_, -radius_, height_ * 0.5);
+    vertices.col(5) = Eigen::Vector3f(radius_, -radius_, height_ * 0.5);
+    vertices.col(6) = Eigen::Vector3f(-radius_, radius_, height_ * 0.5);
+    vertices.col(7) = Eigen::Vector3f(radius_, radius_, height_ * 0.5);
     return vertices;
   }
 };
@@ -276,9 +276,9 @@ class CylinderSDF : public ClosedPrimitiveSDFBase {
 class SphereSDF : public ClosedPrimitiveSDFBase {
  public:
   using Ptr = std::shared_ptr<SphereSDF>;
-  double radius_;
+  float radius_;
 
-  SphereSDF(double radius, const Pose& tf)
+  SphereSDF(float radius, const Pose& tf)
       : ClosedPrimitiveSDFBase(tf), radius_(radius) {}
 
  private:
@@ -286,20 +286,20 @@ class SphereSDF : public ClosedPrimitiveSDFBase {
     return (p.colwise().norm().array() - radius_);
   }
 
-  double evaluate_in_local_frame(const Point& p) const override {
+  float evaluate_in_local_frame(const Point& p) const override {
     return (p.norm() - radius_);
   }
 
   Eigen::Matrix3Xd get_local_aabb_vertices() const {
     Eigen::Matrix3Xd vertices(3, 8);
-    vertices.col(0) = Eigen::Vector3d(-radius_, -radius_, -radius_);
-    vertices.col(1) = Eigen::Vector3d(radius_, -radius_, -radius_);
-    vertices.col(2) = Eigen::Vector3d(-radius_, radius_, -radius_);
-    vertices.col(3) = Eigen::Vector3d(radius_, radius_, -radius_);
-    vertices.col(4) = Eigen::Vector3d(-radius_, -radius_, radius_);
-    vertices.col(5) = Eigen::Vector3d(radius_, -radius_, radius_);
-    vertices.col(6) = Eigen::Vector3d(-radius_, radius_, radius_);
-    vertices.col(7) = Eigen::Vector3d(radius_, radius_, radius_);
+    vertices.col(0) = Eigen::Vector3f(-radius_, -radius_, -radius_);
+    vertices.col(1) = Eigen::Vector3f(radius_, -radius_, -radius_);
+    vertices.col(2) = Eigen::Vector3f(-radius_, radius_, -radius_);
+    vertices.col(3) = Eigen::Vector3f(radius_, radius_, -radius_);
+    vertices.col(4) = Eigen::Vector3f(-radius_, -radius_, radius_);
+    vertices.col(5) = Eigen::Vector3f(radius_, -radius_, radius_);
+    vertices.col(6) = Eigen::Vector3f(-radius_, radius_, radius_);
+    vertices.col(7) = Eigen::Vector3f(radius_, radius_, radius_);
     return vertices;
   }
 };

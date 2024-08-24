@@ -46,7 +46,7 @@
 namespace urdf{
 
 bool parsePose(Pose &pose, TiXmlElement* xml);
-bool parsePose(QuatTrans<double>& pose, TiXmlElement* xml);
+bool parsePose(QuatTrans<float>& pose, TiXmlElement* xml);
 
 bool parseJointDynamics(JointDynamics &jd, TiXmlElement* config)
 {
@@ -254,7 +254,7 @@ bool parseJointCalibration(JointCalibration &jc, TiXmlElement* config)
   else
   {
     try {
-      jc.rising.reset(new double(strToDouble(rising_position_str)));
+      jc.rising.reset(new float(strToDouble(rising_position_str)));
     } catch(std::runtime_error &) {
       //CONSOLE_BRIDGE_logError("rising value (%s) is not a valid float", rising_position_str);
       return false;
@@ -271,7 +271,7 @@ bool parseJointCalibration(JointCalibration &jc, TiXmlElement* config)
   else
   {
     try {
-      jc.falling.reset(new double(strToDouble(falling_position_str)));
+      jc.falling.reset(new float(strToDouble(falling_position_str)));
     } catch(std::runtime_error &) {
       //CONSOLE_BRIDGE_logError("falling value (%s) is not a valid float", falling_position_str);
       return false;
@@ -429,7 +429,7 @@ bool parseJoint(Joint &joint, TiXmlElement* config)
     TiXmlElement *axis_xml = config->FirstChildElement("axis");
     if (!axis_xml){
       //CONSOLE_BRIDGE_logDebug("urdfdom: no axis elemement for Joint link [%s], defaulting to (1,0,0) axis", joint.name.c_str());
-      joint.axis = Eigen::Vector3d::Zero();
+      joint.axis = Eigen::Vector3f::Zero();
     }
     else{
       if (axis_xml->Attribute("xyz")){

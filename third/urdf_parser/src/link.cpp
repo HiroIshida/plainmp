@@ -51,7 +51,7 @@
 namespace urdf{
 
 bool parsePose(Pose &pose, TiXmlElement* xml);
-bool parsePose(QuatTrans<double>& pose, TiXmlElement* xml);
+bool parsePose(QuatTrans<float>& pose, TiXmlElement* xml);
 
 bool parseMaterial(Material &material, TiXmlElement *config, bool only_name_is_ok)
 {
@@ -308,7 +308,7 @@ bool parseInertial(Inertial &i, TiXmlElement *config)
     return false;
   }
 
-  std::vector<std::pair<std::string, double>> attrs{
+  std::vector<std::pair<std::string, float>> attrs{
       std::make_pair("ixx", 0.0),
       std::make_pair("ixy", 0.0),
       std::make_pair("ixz", 0.0),
@@ -331,7 +331,7 @@ bool parseInertial(Inertial &i, TiXmlElement *config)
       attr.second = strToDouble(inertia_xml->Attribute(attr.first.c_str()));
     } catch(std::runtime_error &) {
       std::stringstream stm;
-      stm << "Inertial: inertia element " << attr.first << " is not a valid double";
+      stm << "Inertial: inertia element " << attr.first << " is not a valid float";
       //CONSOLE_BRIDGE_logError(stm.str().c_str());
       return false;
     }

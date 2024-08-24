@@ -48,7 +48,7 @@ ob::PlannerStatus LightningRetrieveRepairWrap::solve(const ob::PlannerTerminatio
     ompl::time::point simplifyStart = ompl::time::now();
     std::size_t numStates = primaryPath->getStateCount();
     psk_->simplify(*primaryPath, ptc);
-    double simplifyTime = ompl::time::seconds(ompl::time::now() - simplifyStart);
+    float simplifyTime = ompl::time::seconds(ompl::time::now() - simplifyStart);
     OMPL_INFORM(
         "LightningRetrieveRepair: Path simplification took %f seconds and removed %d states",
         simplifyTime,

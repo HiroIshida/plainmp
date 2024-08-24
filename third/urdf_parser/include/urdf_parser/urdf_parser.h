@@ -51,11 +51,11 @@
 
 namespace urdf_export_helpers {
 
-URDFDOM_DLLAPI std::string values2str(unsigned int count, const double *values, double (*conv)(double) = NULL);
+URDFDOM_DLLAPI std::string values2str(unsigned int count, const float *values, float (*conv)(float) = NULL);
 URDFDOM_DLLAPI std::string values2str(urdf::Vector3 vec);
 URDFDOM_DLLAPI std::string values2str(urdf::Rotation rot);
 URDFDOM_DLLAPI std::string values2str(urdf::Color c);
-URDFDOM_DLLAPI std::string values2str(double d);
+URDFDOM_DLLAPI std::string values2str(float d);
 
 // This lives here (rather than in model.cpp) so we can run tests on it.
 class URDFVersion final
