@@ -19,6 +19,7 @@
 namespace tinyfk {
 
 using Bound = std::pair<double, double>;
+using ExpTransform = urdf::QuatTrans<double>;
 using Transform = urdf::Pose;
 using Vector3 = urdf::Vector3;
 using Rotation = urdf::Rotation;
@@ -55,16 +56,16 @@ public: // members
   std::vector<urdf::JointSharedPtr> joints_;
   std::unordered_map<std::string, int> joint_ids_;
   std::vector<double> joint_angles_;
-  Transform base_pose_;
+  ExpTransform base_pose_;
 
   RelevancePredicateTable rptable_;
   int num_dof_;
   double total_mass_;
 
   mutable SizedStack<size_t> link_id_stack_;
-  mutable SizedStack<std::pair<urdf::LinkSharedPtr, Transform>> transform_stack2_;
-  mutable SizedCache<Transform> transform_cache_;
-  mutable std::vector<Transform> tf_plink_to_hlink_cache_;
+  mutable SizedStack<std::pair<urdf::LinkSharedPtr, ExpTransform>> transform_stack2_;
+  mutable SizedCache<ExpTransform> transform_cache_;
+  mutable std::vector<ExpTransform> tf_plink_to_hlink_cache_;
 
 public: // functions
   KinematicModel(const std::string &xml_string);
@@ -75,8 +76,28 @@ public: // functions
       const std::vector<size_t> &joint_ids,
       const std::vector<double> &joint_angles);
 
+  Transform get_base_pose() const {
+    Transform pose;
+    pose.position.x = base_pose_.trans().x();
+    pose.position.y = base_pose_.trans().y();
+    pose.position.z = base_pose_.trans().z();
+    pose.rotation.x = base_pose_.quat().x();
+    pose.rotation.y = base_pose_.quat().y();
+    pose.rotation.z = base_pose_.quat().z();
+    pose.rotation.w = base_pose_.quat().w();
+    return pose;
+  }
+
   void set_base_pose(const Transform& pose) {
-    base_pose_ = pose;
+    ExpTransform pose_exp;
+    pose_exp.trans().x() = pose.position.x;
+    pose_exp.trans().y() = pose.position.y;
+    pose_exp.trans().z() = pose.position.z;
+    pose_exp.quat().x() = pose.rotation.x;
+    pose_exp.quat().y() = pose.rotation.y;
+    pose_exp.quat().z() = pose.rotation.z;
+    pose_exp.quat().w() = pose.rotation.w;
+    base_pose_ = pose_exp;
     this->clear_cache();
   }
 
@@ -125,7 +146,7 @@ public: // functions
                                RotationType rot_type = RotationType::IGNORE,
                                bool with_base = false);
 
-  Vector3 get_com();
+  Eigen::Vector3d get_com();
 
   Eigen::MatrixXd get_com_jacobian(const std::vector<size_t> &joint_ids,
                                    bool with_base);
@@ -142,13 +163,13 @@ public: // functions
                                    bool consider_rotation,
                                    std::optional<std::string> link_name = std::nullopt);
 
-  urdf::LinkSharedPtr add_new_link(size_t parent_id, const Transform &pose,
+  urdf::LinkSharedPtr add_new_link(size_t parent_id, const ExpTransform &pose,
                                    bool consider_rotation,
                                    std::optional<std::string> link_name = std::nullopt);
 
 private:
   void get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_root_to_ef) const;
-  void get_link_pose_inner(size_t link_id, Transform &out_tf_root_to_ef) const;
+  void get_link_pose_inner(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
   void update_rptable();
 };
 
