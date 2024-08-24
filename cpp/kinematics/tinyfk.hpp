@@ -137,7 +137,7 @@ public: // functions
     return link_names;
   }
 
-  void get_link_pose(size_t link_id, Transform &out_tf_root_to_ef) const;
+  void get_link_pose(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
 
   void update_tree();
 
@@ -168,7 +168,7 @@ public: // functions
                                    std::optional<std::string> link_name = std::nullopt);
 
 private:
-  void get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_root_to_ef) const;
+  void get_link_pose_cache_not_found(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
   void get_link_pose_inner(size_t link_id, ExpTransform &out_tf_root_to_ef) const;
   void update_rptable();
 };
