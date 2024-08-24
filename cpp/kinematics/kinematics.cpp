@@ -26,7 +26,7 @@ Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector
 }
 
 void KinematicModel::get_link_pose(size_t link_id,
-                                   ExpTransform &out_tf_rlink_to_elink) const {
+                                   Transform &out_tf_rlink_to_elink) const {
   if(transform_cache_.is_cached(link_id)) {
     out_tf_rlink_to_elink = transform_cache_.data_[link_id];
     return;
@@ -34,7 +34,7 @@ void KinematicModel::get_link_pose(size_t link_id,
   this->get_link_pose_cache_not_found(link_id, out_tf_rlink_to_elink);
 }
 
-void KinematicModel::get_link_pose_cache_not_found(size_t link_id, ExpTransform &out_tf_rlink_to_elink) const
+void KinematicModel::get_link_pose_cache_not_found(size_t link_id, Transform &out_tf_rlink_to_elink) const
 {
   if(links_[link_id]->consider_rotation) {
     this->get_link_pose_inner(link_id, out_tf_rlink_to_elink);
@@ -42,7 +42,7 @@ void KinematicModel::get_link_pose_cache_not_found(size_t link_id, ExpTransform 
     auto hlink = links_[link_id];
     auto plink = hlink->getParent();
     auto pjoint = hlink->parent_joint;
-    ExpTransform tf_rlink_to_plink;
+    Transform tf_rlink_to_plink;
     if(transform_cache_.is_cached(plink->id)) {
       tf_rlink_to_plink = transform_cache_.data_[plink->id];
     } else {
@@ -57,10 +57,10 @@ void KinematicModel::get_link_pose_cache_not_found(size_t link_id, ExpTransform 
 }
 
 void KinematicModel::get_link_pose_inner(
-    size_t link_id, ExpTransform &out_tf_rlink_to_elink) const {
+    size_t link_id, Transform &out_tf_rlink_to_elink) const {
   urdf::LinkSharedPtr hlink = links_[link_id];
 
-  ExpTransform tf_rlink_to_blink = base_pose_;
+  Transform tf_rlink_to_blink = base_pose_;
 
   link_id_stack_.reset();
   while (true) {
@@ -80,12 +80,12 @@ void KinematicModel::get_link_pose_inner(
     hlink = plink;
   }
 
-  ExpTransform tf_rlink_to_plink = std::move(tf_rlink_to_blink);
+  Transform tf_rlink_to_plink = std::move(tf_rlink_to_blink);
   while(!link_id_stack_.empty()) {
     size_t hid = link_id_stack_.top();
     link_id_stack_.pop();
     auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[hid];
-    ExpTransform tf_rlink_to_hlink = tf_rlink_to_plink * tf_plink_to_hlink;
+    Transform tf_rlink_to_hlink = tf_rlink_to_plink * tf_plink_to_hlink;
     transform_cache_.set_cache(hid, tf_rlink_to_hlink);
     tf_rlink_to_plink = std::move(tf_rlink_to_hlink);
   }
@@ -127,7 +127,7 @@ KinematicModel::get_jacobian(size_t elink_id,
   const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
 
   // compute values shared through the loop
-  ExpTransform tf_rlink_to_elink;
+  Transform tf_rlink_to_elink;
   this->get_link_pose(elink_id, tf_rlink_to_elink);
   auto &epos = tf_rlink_to_elink.trans();
   auto &erot = tf_rlink_to_elink.quat();
@@ -156,7 +156,7 @@ KinematicModel::get_jacobian(size_t elink_id,
           hjoint->getChildLink(); // rotation of clink and hlink is same. so
                                   // clink is ok.
 
-      ExpTransform tf_rlink_to_clink;
+      Transform tf_rlink_to_clink;
       this->get_link_pose(clink->id, tf_rlink_to_clink);
 
       auto &crot = tf_rlink_to_clink.quat();
@@ -187,10 +187,10 @@ KinematicModel::get_jacobian(size_t elink_id,
     }
   }
 
-  ExpTransform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
+  Transform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
   Eigen::Vector3d rpy_rlink_to_blink;
   if (with_base) {
-    ExpTransform tf_rlink_to_blink;
+    Transform tf_rlink_to_blink;
     this->get_link_pose(this->root_link_id_, tf_rlink_to_blink);
     tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
     rpy_rlink_to_blink = tf_rlink_to_blink.getRPY();
@@ -214,9 +214,9 @@ KinematicModel::get_jacobian(size_t elink_id,
       auto rpy_tweaked = rpy_rlink_to_blink;
       rpy_tweaked[rpy_idx] += eps;
 
-      ExpTransform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
+      Transform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
       tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
-      ExpTransform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
+      Transform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
       auto pose_out = tf_rlink_to_elink_tweaked;
 
       const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
@@ -237,7 +237,7 @@ KinematicModel::get_jacobian(size_t elink_id,
 Eigen::Vector3d KinematicModel::get_com() {
   Eigen::Vector3d com_average = Eigen::Vector3d::Zero();
   double mass_total = 0.0;
-  ExpTransform tf_base_to_com;
+  Transform tf_base_to_com;
   for (const auto &link : com_dummy_links_) {
     mass_total += link->inertial->mass;
     this->get_link_pose(link->id, tf_base_to_com);

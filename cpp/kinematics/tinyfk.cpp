@@ -70,10 +70,10 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   std::vector<double> joint_angles(num_dof, 0.0);
 
   link_id_stack_ = SizedStack<size_t>(N_link);
-  transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, ExpTransform>>(
+  transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, Transform>>(
       N_link); // for batch update
-  transform_cache_ = SizedCache<ExpTransform>(N_link);
-  tf_plink_to_hlink_cache_ = std::vector<ExpTransform>(N_link);
+  transform_cache_ = SizedCache<Transform>(N_link);
+  tf_plink_to_hlink_cache_ = std::vector<Transform>(N_link);
   for(size_t hid = 0; hid < N_link; hid++) {
     auto pjoint = links[hid]->parent_joint;
     if(pjoint != nullptr) {
@@ -99,19 +99,19 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
       if (link->inertial == nullptr) {
         continue;
       }
-      ExpTransform new_link_pose;
+      Transform new_link_pose;
       new_link_pose.trans() = link->inertial->origin.trans();
       const auto new_link = this->add_new_link(link->id, new_link_pose, false);
       // set new link's inertial as the same as the parent
       // except its origin is zero
       new_link->inertial = link->inertial;
-      new_link->inertial->origin = ExpTransform::Identity();
+      new_link->inertial->origin = Transform::Identity();
       com_dummy_links.push_back(new_link);
     }
     this->com_dummy_links_ = com_dummy_links;
   }
 
-  this->set_base_pose(ExpTransform::Identity());
+  this->set_base_pose(Transform::Identity());
 }
 
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
@@ -217,7 +217,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id,
                                  const std::array<double, 3> &rpy,
                                  bool consider_rotation,
                                  std::optional<std::string> link_name){
-  ExpTransform pose;
+  Transform pose;
   pose.trans()  = Eigen::Vector3d(position[0], position[1], position[2]);
   // pose.rotation.setFromRPY(rpy[0], rpy[1], rpy[2]);
   pose.quat() = Eigen::AngleAxisd(rpy[0], Eigen::Vector3d::UnitX()) *
@@ -226,7 +226,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id,
   return this->add_new_link(parent_id, pose, consider_rotation, link_name);
 }
 
-urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const ExpTransform &pose,
+urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const Transform &pose,
                                  bool consider_rotation,
                                  std::optional<std::string> link_name) {
 

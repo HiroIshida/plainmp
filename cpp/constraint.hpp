@@ -30,7 +30,7 @@ class ConstraintBase {
       std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
                 q_head.begin());
       kin_->set_joint_angles(control_joint_ids_, q_head);
-      tinyfk::ExpTransform pose;
+      tinyfk::Transform pose;
       size_t head = control_joint_ids_.size();
       pose.trans().x() = q[head];
       pose.trans().y() = q[head + 1];
@@ -175,7 +175,7 @@ class RelativePoseCst : public EqConstraintBase {
         link_id2_(kin_->get_link_ids({link_name2})[0]),
         relative_pose_(relative_pose) {
     // TODO: because name is hard-coded, we cannot create two RelativePoseCst...
-    auto pose = tinyfk::ExpTransform::Identity();
+    auto pose = tinyfk::Transform::Identity();
     pose.trans() = relative_pose;
     size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
     auto new_link = kin_->add_new_link(link_id1_, pose, true);
