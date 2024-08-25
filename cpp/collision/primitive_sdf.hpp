@@ -14,8 +14,7 @@ using Point = Eigen::Vector3d;
 using Points = Eigen::Matrix3Xd;
 using Values = Eigen::VectorXd;
 
-class Pose {
- public:
+struct Pose {
   Pose(const Eigen::Vector3d& position, const Eigen::Matrix3d& rotation)
       : position_(position), rot_(rotation), rot_inv_(rotation.inverse()) {}
 
@@ -31,7 +30,6 @@ class Pose {
 
   Pose inverse() const { return Pose(-rot_ * position_, rot_inv_); }
 
- private:
   Eigen::Vector3d position_;
   Eigen::Matrix3d rot_;
   Eigen::Matrix3d rot_inv_;
@@ -40,14 +38,20 @@ class Pose {
 class SDFBase {
  public:
   using Ptr = std::shared_ptr<SDFBase>;
-  // for ease of binding to python, we name different functions
-  virtual Values evaluate_batch(const Points& p) const = 0;
+  virtual Values evaluate_batch(const Points& p) const 
+  {
+    // naive implementation. please override this function if you have a better implementation
+    Values vals(p.cols());
+    for (int i = 0; i < p.cols(); i++) {
+      vals(i) = evaluate(p.col(i));
+    }
+    return vals;
+  }
   virtual double evaluate(const Point& p) const = 0;
   virtual bool is_outside(const Point& p, double radius) const = 0;
 };
 
-class UnionSDF : public SDFBase {
- public:
+struct UnionSDF : public SDFBase {
   using Ptr = std::shared_ptr<UnionSDF>;
   UnionSDF(std::vector<SDFBase::Ptr> sdfs, bool create_bvh) : sdfs_(sdfs) {
       if(create_bvh){
@@ -79,18 +83,16 @@ class UnionSDF : public SDFBase {
     }
     return true;
   }
-
  private:
   std::vector<std::shared_ptr<SDFBase>> sdfs_;
 };
 
-class PrimitiveSDFBase : public SDFBase {
+struct PrimitiveSDFBase : public SDFBase {
  public:
   using Ptr = std::shared_ptr<PrimitiveSDFBase>;
 };
 
-class GroundSDF : public PrimitiveSDFBase {
- public:
+struct GroundSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<GroundSDF>;
   GroundSDF(double height) : height_(height) {}
   Values evaluate_batch(const Points& p) const override {
@@ -100,119 +102,82 @@ class GroundSDF : public PrimitiveSDFBase {
   bool is_outside(const Point& p, double radius) const override {
     return p(2) + height_ > radius;
   }
-
- private:
   double height_;
 };
 
-class ClosedPrimitiveSDFBase : public PrimitiveSDFBase {
- public:
-  using Ptr = std::shared_ptr<ClosedPrimitiveSDFBase>;
-  ClosedPrimitiveSDFBase(const Pose& tf) : tf_(tf) {}
-
-  Values evaluate_batch(const Points& p) const override {
-    auto p_local = tf_.transform_points(p);
-    return evaluate_in_local_frame(p_local);
-  }
-
-  double evaluate(const Point& p) const override {
-    auto p_local = tf_.transform_point(p);
-    return evaluate_in_local_frame(p_local);
-  }
-
-  bool is_outside(const Point& p, double radius) const override {
-    auto p_local = tf_.transform_point(p);
-    return is_outside_in_local_frame(p_local, radius);
-  }
-
-  Pose tf_;
-
- protected:
-  virtual Values evaluate_in_local_frame(const Points& p) const = 0;
-  virtual double evaluate_in_local_frame(const Point& p) const = 0;
-  virtual bool is_outside_in_local_frame(const Point& p, double radius) const {
-    return evaluate_in_local_frame(p) > radius;
-  }  // maybe override this for performance
-};
-
-class BoxSDF : public ClosedPrimitiveSDFBase {
- public:
+struct BoxSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<BoxSDF>;
+  BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
+      : width_(width), half_width_(0.5 * width), pose_(pose) {}
+  double evaluate(const Point& p) const override {
+      throw std::runtime_error("Not implemented yet");
+      return 0;
+  }
+  bool is_outside(const Point& p, double radius) const override {
+      // axis aligned case (TODO: create new type to do this)
+      // auto abs_relative_point = (p - pose_.position_).cwiseAbs();
+      // if(abs_relative_point.x() > half_width_(0) + radius){
+      //     return true;
+      // }
+      // if(abs_relative_point.y() > half_width_(1) + radius){
+      //     return true;
+      // }
+      // if(abs_relative_point.z() > half_width_(2) + radius){
+      //     return true;
+      // }
+      // return false;
+      auto p_from_center = p - pose_.position_;
+      double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
+      if(xdot_abs > half_width_(0) + radius){
+          return true;
+      }
+      double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
+      if(ydot_abs > half_width_(1) + radius){
+          return true;
+      }
+      double zdot_abs = abs(p_from_center.dot(pose_.rot_.col(2)));
+      return zdot_abs > half_width_(2) + radius;
+  }
   Eigen::Vector3d width_;
-
-  BoxSDF(const Eigen::Vector3d& width, const Pose& tf)
-      : ClosedPrimitiveSDFBase(tf), width_(width) {}
-
- private:
-  Values evaluate_in_local_frame(const Points& p) const override {
-    auto&& half_width = width_ * 0.5;
-    auto d = p.cwiseAbs().colwise() - half_width;
-    auto outside_distance = (d.cwiseMax(0.0)).colwise().norm();
-    auto inside_distance = d.cwiseMin(0.0).colwise().maxCoeff();
-    Values vals = outside_distance + inside_distance;
-    return vals;
-  }
-
-  double evaluate_in_local_frame(const Point& p) const override {
-    auto&& half_width = width_ * 0.5;
-    auto d = p.cwiseAbs() - half_width;
-    auto outside_distance = (d.cwiseMax(0.0)).norm();
-    auto inside_distance = d.cwiseMin(0.0).maxCoeff();
-    return outside_distance + inside_distance;
-  }
+  Eigen::Vector3d half_width_;
+  Pose pose_;
 };
 
-class CylinderSDF : public ClosedPrimitiveSDFBase {
- public:
+struct CylinderSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<CylinderSDF>;
-  double radius_;
+  CylinderSDF(double radius, double height, const Pose& pose)
+      : r_cylinder_(radius), rsq_cylinder_(radius * radius), height_(height), half_height_(0.5 * height), pose_(pose) {}
+  double evaluate(const Point& p) const override {
+      throw std::runtime_error("Not implemented yet");
+      return 0;
+  }
+  bool is_outside(const Point& p, double radius) const override {
+      auto p_from_center = p - pose_.position_;
+
+      // collision with top and bottom
+      double zdot_abs = abs(p_from_center.dot(pose_.rot_.col(2)));
+      if(zdot_abs > half_height_ + radius){
+          return true;
+      }
+
+      // collision with side
+      double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
+      double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
+      double dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
+
+      // Note: this for solerly for avoiding sqrt operation
+      // dist_sq > (r_cylinder_ + radius)^2
+      //         = (r_cylinder_^2 + 2 * r_cylinder_ * radius + radius^2)
+      // now we compute 2 * r_cylinder_ * radius + radius^2 as ...
+      double remain = radius * (2 * r_cylinder_ + radius);
+      return dist_sq > rsq_cylinder_ + remain;
+  }
+  double r_cylinder_;
+  double rsq_cylinder_;
   double height_;
-  CylinderSDF(double radius, double height, const Pose& tf)
-      : ClosedPrimitiveSDFBase(tf), radius_(radius), height_(height) {}
-
- private:
-  Values evaluate_in_local_frame(const Points& p) const override {
-    Eigen::VectorXd&& d = p.topRows(2).colwise().norm();
-    Eigen::Matrix2Xd p_projected(2, d.size());
-    p_projected.row(0) = d;
-    p_projected.row(1) = p.row(2);
-
-    auto&& half_width = Eigen::Vector2d(radius_, height_ * 0.5);
-    auto d_2d = p_projected.cwiseAbs().colwise() - half_width;
-    auto outside_distance = (d_2d.cwiseMax(0.0)).colwise().norm();
-    auto inside_distance = d_2d.cwiseMin(0.0).colwise().maxCoeff();
-    Values vals = outside_distance + inside_distance;
-    return vals;
-  }
-
-  double evaluate_in_local_frame(const Point& p) const override {
-    double d = p.topRows(2).norm();
-    Eigen::Vector2d p_projected(d, p(2));
-
-    auto&& half_width = Eigen::Vector2d(radius_, height_ * 0.5);
-    auto d_2d = p_projected.cwiseAbs() - half_width;
-    auto outside_distance = (d_2d.cwiseMax(0.0)).norm();
-    auto inside_distance = d_2d.cwiseMin(0.0).maxCoeff();
-    return outside_distance + inside_distance;
-  }
+  double half_height_;
+  Pose pose_;
 };
 
-class SphereSDF : public ClosedPrimitiveSDFBase {
- public:
-  using Ptr = std::shared_ptr<SphereSDF>;
-  double radius_;
-
-  SphereSDF(double radius, const Pose& tf)
-      : ClosedPrimitiveSDFBase(tf), radius_(radius) {}
-
- private:
-  Values evaluate_in_local_frame(const Eigen::Matrix3Xd& p) const override {
-    return (p.colwise().norm().array() - radius_);
-  }
-
-  double evaluate_in_local_frame(const Point& p) const override {
-    return (p.norm() - radius_);
-  }
-};
 
 }  // namespace primitive_sdf
