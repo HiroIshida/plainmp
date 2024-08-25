@@ -44,11 +44,11 @@ void bind_primitive_sdf(py::module& m) {
       .def("evaluate_batch", &CylinderSDF::evaluate_batch)
       .def("evaluate", &CylinderSDF::evaluate)
       .def("is_outside", &CylinderSDF::is_outside);
-  // py::class_<SphereSDF, SphereSDF::Ptr, PrimitiveSDFBase>(
-  //     m_psdf, "SphereSDF", py::module_local())
-  //     .def(py::init<double, const Pose&>())
-  //     .def("evaluate_batch", &SphereSDF::evaluate_batch)
-  //     .def("evaluate", &SphereSDF::evaluate)
-  //     .def("is_outside", &SphereSDF::is_outside);
+  py::class_<SphereSDF, SphereSDF::Ptr, PrimitiveSDFBase>(m_psdf, "SphereSDF",
+                                                          py::module_local())
+      .def(py::init<double, const Pose&>())
+      .def("evaluate_batch", &SphereSDF::evaluate_batch)
+      .def("evaluate", &SphereSDF::evaluate)
+      .def("is_outside", &SphereSDF::is_outside);
 }
 }  // namespace primitive_sdf

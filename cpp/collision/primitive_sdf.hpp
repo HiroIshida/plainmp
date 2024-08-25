@@ -257,4 +257,29 @@ struct CylinderSDF : public PrimitiveSDFBase {
   Pose pose_;
 };
 
+struct SphereSDF : public PrimitiveSDFBase {
+  using Ptr = std::shared_ptr<SphereSDF>;
+  SphereSDF(double radius, const Pose& pose)
+      : r_sphere_(radius), rsq_sphere_(radius * radius), pose_(pose) {}
+
+  double evaluate(const Point& p) const override {
+    auto p_from_center = p - pose_.position_;
+    double dist = p_from_center.norm() - r_sphere_;
+    return dist;
+  }
+
+  bool is_outside(const Point& p, double radius) const override {
+    if (radius < 1e-6) {
+      return (p - pose_.position_).squaredNorm() > rsq_sphere_;
+    }
+    return (p - pose_.position_).squaredNorm() >
+           (r_sphere_ + radius) * (r_sphere_ + radius);
+  }
+
+ private:
+  double r_sphere_;
+  double rsq_sphere_;
+  Pose pose_;
+};
+
 }  // namespace primitive_sdf
