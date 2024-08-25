@@ -33,7 +33,7 @@ void bind_primitive_sdf(py::module& m) {
       .def("evaluate", &GroundSDF::evaluate)
       .def("is_outside", &GroundSDF::is_outside);
   py::class_<BoxSDF, BoxSDF::Ptr, PrimitiveSDFBase>(m_psdf, "BoxSDF",
-                                                          py::module_local())
+                                                    py::module_local())
       .def(py::init<const Eigen::Vector3d&, const Pose&>())
       .def("evaluate_batch", &BoxSDF::evaluate_batch)
       .def("evaluate", &BoxSDF::evaluate)

@@ -38,9 +38,9 @@ struct Pose {
 class SDFBase {
  public:
   using Ptr = std::shared_ptr<SDFBase>;
-  virtual Values evaluate_batch(const Points& p) const 
-  {
-    // naive implementation. please override this function if you have a better implementation
+  virtual Values evaluate_batch(const Points& p) const {
+    // naive implementation. please override this function if you have a better
+    // implementation
     Values vals(p.cols());
     for (int i = 0; i < p.cols(); i++) {
       vals(i) = evaluate(p.col(i));
@@ -54,9 +54,9 @@ class SDFBase {
 struct UnionSDF : public SDFBase {
   using Ptr = std::shared_ptr<UnionSDF>;
   UnionSDF(std::vector<SDFBase::Ptr> sdfs, bool create_bvh) : sdfs_(sdfs) {
-      if(create_bvh){
-          throw std::runtime_error("Not implemented yet");
-      }
+    if (create_bvh) {
+      throw std::runtime_error("Not implemented yet");
+    }
   }
 
   Values evaluate_batch(const Points& p) const override {
@@ -83,6 +83,7 @@ struct UnionSDF : public SDFBase {
     }
     return true;
   }
+
  private:
   std::vector<std::shared_ptr<SDFBase>> sdfs_;
 };
@@ -111,56 +112,64 @@ struct BoxSDF : public PrimitiveSDFBase {
   BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
       : width_(width), half_width_(0.5 * width), pose_(pose) {}
   double evaluate(const Point& p) const override {
-      throw std::runtime_error("Not implemented yet");
-      return 0;
+    throw std::runtime_error("Not implemented yet");
+    return 0;
   }
   bool is_outside(const Point& p, double radius) const override {
-      // TODO: create axis-aligned bounding box case?
-      auto p_from_center = p - pose_.position_;
-      double x_signed_dist = abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
-      if(x_signed_dist > radius){
-         return true;
-      }
-      double y_signed_dist = abs(p_from_center.dot(pose_.rot_.col(1))) - half_width_(1);
-      if(y_signed_dist > radius){
-          return true;
-      }
-      double z_signed_dist = abs(p_from_center.dot(pose_.rot_.col(2))) - half_width_(2);
-      if(z_signed_dist > radius){
-          return true;
-      }
+    // TODO: create axis-aligned bounding box case?
+    auto p_from_center = p - pose_.position_;
+    double x_signed_dist =
+        abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
+    if (x_signed_dist > radius) {
+      return true;
+    }
+    double y_signed_dist =
+        abs(p_from_center.dot(pose_.rot_.col(1))) - half_width_(1);
+    if (y_signed_dist > radius) {
+      return true;
+    }
+    double z_signed_dist =
+        abs(p_from_center.dot(pose_.rot_.col(2))) - half_width_(2);
+    if (z_signed_dist > radius) {
+      return true;
+    }
 
-      if(radius < 1e-6){
-          return false;
-      } 
-
-      // (literally) edge case, which araises only when radius is considered
-      if (x_signed_dist < 0 && y_signed_dist < 0 && z_signed_dist < 0) {
-          // mostly fall into this case
-          return false;
-      }
-      if(x_signed_dist > 0 && y_signed_dist < 0 && z_signed_dist < 0){
-          return false;
-      }
-      if(x_signed_dist < 0 && y_signed_dist > 0 && z_signed_dist < 0){
-          return false;
-      }
-      if(x_signed_dist < 0 && y_signed_dist < 0 && z_signed_dist > 0){
-          return false;
-      }
-      if(x_signed_dist > 0 && y_signed_dist > 0 && z_signed_dist < 0){
-          return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist > radius * radius;
-      }
-      if(x_signed_dist > 0 && y_signed_dist < 0 && z_signed_dist > 0){
-          return x_signed_dist * x_signed_dist + z_signed_dist * z_signed_dist > radius * radius;
-      }
-      if(x_signed_dist < 0 && y_signed_dist > 0 && z_signed_dist > 0){
-          return y_signed_dist * y_signed_dist + z_signed_dist * z_signed_dist > radius * radius;
-      }
-      if(x_signed_dist > 0 && y_signed_dist > 0 && z_signed_dist > 0){
-          return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist + z_signed_dist * z_signed_dist > radius * radius;
-      }
+    if (radius < 1e-6) {
       return false;
+    }
+
+    // (literally) edge case, which araises only when radius is considered
+    if (x_signed_dist < 0 && y_signed_dist < 0 && z_signed_dist < 0) {
+      // mostly fall into this case
+      return false;
+    }
+    if (x_signed_dist > 0 && y_signed_dist < 0 && z_signed_dist < 0) {
+      return false;
+    }
+    if (x_signed_dist < 0 && y_signed_dist > 0 && z_signed_dist < 0) {
+      return false;
+    }
+    if (x_signed_dist < 0 && y_signed_dist < 0 && z_signed_dist > 0) {
+      return false;
+    }
+    if (x_signed_dist > 0 && y_signed_dist > 0 && z_signed_dist < 0) {
+      return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist >
+             radius * radius;
+    }
+    if (x_signed_dist > 0 && y_signed_dist < 0 && z_signed_dist > 0) {
+      return x_signed_dist * x_signed_dist + z_signed_dist * z_signed_dist >
+             radius * radius;
+    }
+    if (x_signed_dist < 0 && y_signed_dist > 0 && z_signed_dist > 0) {
+      return y_signed_dist * y_signed_dist + z_signed_dist * z_signed_dist >
+             radius * radius;
+    }
+    if (x_signed_dist > 0 && y_signed_dist > 0 && z_signed_dist > 0) {
+      return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist +
+                 z_signed_dist * z_signed_dist >
+             radius * radius;
+    }
+    return false;
   }
   Eigen::Vector3d width_;
   Eigen::Vector3d half_width_;
@@ -170,31 +179,35 @@ struct BoxSDF : public PrimitiveSDFBase {
 struct CylinderSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<CylinderSDF>;
   CylinderSDF(double radius, double height, const Pose& pose)
-      : r_cylinder_(radius), rsq_cylinder_(radius * radius), height_(height), half_height_(0.5 * height), pose_(pose) {}
+      : r_cylinder_(radius),
+        rsq_cylinder_(radius * radius),
+        height_(height),
+        half_height_(0.5 * height),
+        pose_(pose) {}
   double evaluate(const Point& p) const override {
-      throw std::runtime_error("Not implemented yet");
-      return 0;
+    throw std::runtime_error("Not implemented yet");
+    return 0;
   }
   bool is_outside(const Point& p, double radius) const override {
-      auto p_from_center = p - pose_.position_;
+    auto p_from_center = p - pose_.position_;
 
-      // collision with top and bottom
-      double zdot_abs = abs(p_from_center.dot(pose_.rot_.col(2)));
-      if(zdot_abs > half_height_ + radius){
-          return true;
-      }
+    // collision with top and bottom
+    double zdot_abs = abs(p_from_center.dot(pose_.rot_.col(2)));
+    if (zdot_abs > half_height_ + radius) {
+      return true;
+    }
 
-      // collision with side
-      double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
-      double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
-      double dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
+    // collision with side
+    double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
+    double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
+    double dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
 
-      // Note: this for solerly for avoiding sqrt operation
-      // dist_sq > (r_cylinder_ + radius)^2
-      //         = (r_cylinder_^2 + 2 * r_cylinder_ * radius + radius^2)
-      // now we compute 2 * r_cylinder_ * radius + radius^2 as ...
-      double remain = radius * (2 * r_cylinder_ + radius);
-      return dist_sq > rsq_cylinder_ + remain;
+    // Note: this for solerly for avoiding sqrt operation
+    // dist_sq > (r_cylinder_ + radius)^2
+    //         = (r_cylinder_^2 + 2 * r_cylinder_ * radius + radius^2)
+    // now we compute 2 * r_cylinder_ * radius + radius^2 as ...
+    double remain = radius * (2 * r_cylinder_ + radius);
+    return dist_sq > rsq_cylinder_ + remain;
   }
   double r_cylinder_;
   double rsq_cylinder_;
@@ -202,6 +215,5 @@ struct CylinderSDF : public PrimitiveSDFBase {
   double half_height_;
   Pose pose_;
 };
-
 
 }  // namespace primitive_sdf
