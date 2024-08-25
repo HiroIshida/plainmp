@@ -2,10 +2,34 @@ import time
 
 import numpy as np
 import pytest
-from skrobot.coordinates import Coordinates
+from skrobot.coordinates import Coordinates, rpy_matrix
 from skrobot.sdf import BoxSDF, CylinderSDF, SignedDistanceFunction, SphereSDF, UnionSDF
 
 import plainmp.psdf as psdf
+from plainmp.utils import sksdf_to_cppsdf
+
+
+@pytest.mark.parametrize("sksdf", [BoxSDF([0.5, 0.3, 0.6]), CylinderSDF(0.7, 0.2), SphereSDF(0.5)])
+def test_consistency_with_skrobot(sksdf):
+    for _ in range(100):
+        trans = np.random.randn(3) * 0.5
+        yaw, pitch, roll = np.random.randn(3)
+        co = Coordinates(trans, rot=rpy_matrix(yaw, pitch, roll))
+        sksdf.newcoords(co)
+        sdf = sksdf_to_cppsdf(sksdf)
+
+        if np.random.rand() < 0.5:
+            r = 0.0
+        else:
+            r = np.random.uniform(0, 0.3)
+        points = np.random.randn(1000, 3)
+        sk_outside = sksdf(points) > r
+        inside = np.array([sdf.is_outside(p, r) for p in points])
+        assert np.all(sk_outside == inside)
+
+        values = sksdf(points)
+        cpp_values = sdf.evaluate_batch(points.transpose())
+        assert np.allclose(values, cpp_values)
 
 
 def convert(sksdf: SignedDistanceFunction, create_bvh: bool = False) -> psdf.SDFBase:
