@@ -195,24 +195,29 @@ struct CylinderSDF : public PrimitiveSDFBase {
   }
   bool is_outside(const Point& p, double radius) const override {
     auto p_from_center = p - pose_.position_;
-
-    // collision with top and bottom
-    double zdot_abs = abs(p_from_center.dot(pose_.rot_.col(2)));
-    if (zdot_abs > half_height_ + radius) {
+    auto z_signed_dist =
+        abs(p_from_center.dot(pose_.rot_.col(2))) - half_height_;
+    if (z_signed_dist > radius) {
       return true;
     }
-
-    // collision with side
     double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
     double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
     double dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
+    if (radius < 1e-6) {
+      return dist_sq > rsq_cylinder_;
+    }
 
-    // Note: this for solerly for avoiding sqrt operation
-    // dist_sq > (r_cylinder_ + radius)^2
-    //         = (r_cylinder_^2 + 2 * r_cylinder_ * radius + radius^2)
-    // now we compute 2 * r_cylinder_ * radius + radius^2 as ...
-    double remain = radius * (2 * r_cylinder_ + radius);
-    return dist_sq > rsq_cylinder_ + remain;
+    if (dist_sq > (r_cylinder_ + radius) * (r_cylinder_ + radius)) {
+      return true;
+    }
+    bool h_out = z_signed_dist > 0;
+    bool r_out = dist_sq > rsq_cylinder_;
+    if (h_out && r_out) {
+      double r_signed_dist = sqrt(dist_sq) - r_cylinder_;
+      return z_signed_dist * z_signed_dist + r_signed_dist * r_signed_dist >
+             radius * radius;
+    }
+    return false;
   }
   double r_cylinder_;
   double rsq_cylinder_;
