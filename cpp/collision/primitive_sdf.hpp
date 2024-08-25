@@ -106,6 +106,7 @@ struct GroundSDF : public PrimitiveSDFBase {
 };
 
 struct BoxSDF : public PrimitiveSDFBase {
+  // should implement
   using Ptr = std::shared_ptr<BoxSDF>;
   BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
       : width_(width), half_width_(0.5 * width), pose_(pose) {}
@@ -114,29 +115,52 @@ struct BoxSDF : public PrimitiveSDFBase {
       return 0;
   }
   bool is_outside(const Point& p, double radius) const override {
-      // axis aligned case (TODO: create new type to do this)
-      // auto abs_relative_point = (p - pose_.position_).cwiseAbs();
-      // if(abs_relative_point.x() > half_width_(0) + radius){
-      //     return true;
-      // }
-      // if(abs_relative_point.y() > half_width_(1) + radius){
-      //     return true;
-      // }
-      // if(abs_relative_point.z() > half_width_(2) + radius){
-      //     return true;
-      // }
-      // return false;
+      // TODO: create axis-aligned bounding box case?
       auto p_from_center = p - pose_.position_;
-      double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
-      if(xdot_abs > half_width_(0) + radius){
+      double x_signed_dist = abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
+      if(x_signed_dist > radius){
+         return true;
+      }
+      double y_signed_dist = abs(p_from_center.dot(pose_.rot_.col(1))) - half_width_(1);
+      if(y_signed_dist > radius){
           return true;
       }
-      double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
-      if(ydot_abs > half_width_(1) + radius){
+      double z_signed_dist = abs(p_from_center.dot(pose_.rot_.col(2))) - half_width_(2);
+      if(z_signed_dist > radius){
           return true;
       }
-      double zdot_abs = abs(p_from_center.dot(pose_.rot_.col(2)));
-      return zdot_abs > half_width_(2) + radius;
+
+      if(radius < 1e-6){
+          return false;
+      } 
+
+      // (literally) edge case, which araises only when radius is considered
+      if (x_signed_dist < 0 && y_signed_dist < 0 && z_signed_dist < 0) {
+          // mostly fall into this case
+          return false;
+      }
+      if(x_signed_dist > 0 && y_signed_dist < 0 && z_signed_dist < 0){
+          return false;
+      }
+      if(x_signed_dist < 0 && y_signed_dist > 0 && z_signed_dist < 0){
+          return false;
+      }
+      if(x_signed_dist < 0 && y_signed_dist < 0 && z_signed_dist > 0){
+          return false;
+      }
+      if(x_signed_dist > 0 && y_signed_dist > 0 && z_signed_dist < 0){
+          return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist > radius * radius;
+      }
+      if(x_signed_dist > 0 && y_signed_dist < 0 && z_signed_dist > 0){
+          return x_signed_dist * x_signed_dist + z_signed_dist * z_signed_dist > radius * radius;
+      }
+      if(x_signed_dist < 0 && y_signed_dist > 0 && z_signed_dist > 0){
+          return y_signed_dist * y_signed_dist + z_signed_dist * z_signed_dist > radius * radius;
+      }
+      if(x_signed_dist > 0 && y_signed_dist > 0 && z_signed_dist > 0){
+          return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist + z_signed_dist * z_signed_dist > radius * radius;
+      }
+      return false;
   }
   Eigen::Vector3d width_;
   Eigen::Vector3d half_width_;
