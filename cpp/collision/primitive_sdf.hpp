@@ -104,6 +104,8 @@ struct GroundSDF : public PrimitiveSDFBase {
   bool is_outside(const Point& p, double radius) const override {
     return p(2) + height_ > radius;
   }
+
+ private:
   double height_;
 };
 
@@ -112,6 +114,14 @@ struct BoxSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<BoxSDF>;
   BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
       : width_(width), half_width_(0.5 * width), pose_(pose) {}
+
+  void set_width(const Eigen::Vector3d& width) {
+    width_ = width;
+    half_width_ = 0.5 * width;
+  }
+
+  const Eigen::Vector3d& get_width() const { return width_; }
+
   double evaluate(const Point& p) const override {
     Eigen::Vector3d sdists =
         (pose_.rot_inv_ * (p - pose_.position_)).array().abs() -
@@ -121,6 +131,7 @@ struct BoxSDF : public PrimitiveSDFBase {
     double inside_distance = (sdists.cwiseMin(0.0)).maxCoeff();
     return outside_distance + inside_distance;
   }
+
   bool is_outside(const Point& p, double radius) const override {
     // NOTE: you may think that the following code is more efficient than the
     // current implementation. However, the current implementation is way
@@ -181,6 +192,8 @@ struct BoxSDF : public PrimitiveSDFBase {
     return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist >
            radius * radius;
   }
+
+ private:
   Eigen::Vector3d width_;
   Eigen::Vector3d half_width_;
   Pose pose_;
@@ -235,6 +248,8 @@ struct CylinderSDF : public PrimitiveSDFBase {
     }
     return false;
   }
+
+ private:
   double r_cylinder_;
   double rsq_cylinder_;
   double height_;

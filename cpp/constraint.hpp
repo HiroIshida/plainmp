@@ -285,7 +285,10 @@ class ComInPolytopeCst : public IneqConstraintBase {
                    const std::vector<AppliedForceSpec> applied_forces)
       : IneqConstraintBase(kin, control_joint_names, with_base),
         polytope_sdf_(polytope_sdf) {
-    polytope_sdf_->width_[2] = 1000;  // adhoc to represent infinite height
+    auto w = polytope_sdf_->get_width();
+    w[2] = 1000;  // adhoc to represent infinite height
+    polytope_sdf_->set_width(w);
+
     auto force_link_names = std::vector<std::string>();
     for (auto& force : applied_forces) {
       force_link_names.push_back(force.link_name);
