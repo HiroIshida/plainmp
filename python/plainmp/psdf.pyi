@@ -2,10 +2,6 @@ from typing import Any, List
 
 import numpy as np
 
-class AABB:
-    lb: np.ndarray
-    ub: np.ndarray
-
 class Pose:
     def __init__(self, translation: np.ndarray, rotation: np.ndarray) -> None: ...
 
@@ -26,10 +22,18 @@ class SDFBase:
             The signed distances at the given points.
         """
         ...
-    def get_aabb(self) -> AABB: ...
+    def is_outside(self, point: np.ndarray, radius: float) -> bool:
+        """Check if the point is outside the SDF.
+        Args:
+            point: The (3,) point to check.
+            radius: The radius of the point.
+        Returns:
+            True if the point is outside the SDF, False otherwise.
+        """
+        ...
 
 class UnionSDF(SDFBase):
-    def __init__(self, sdf_list: List[SDFBase], create_bvh: bool) -> None: ...
+    def __init__(self, sdf_list: List[SDFBase]) -> None: ...
 
 class PrimitiveSDFBase(SDFBase): ...
 

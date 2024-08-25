@@ -4,7 +4,7 @@ import numpy as np
 from skrobot.coordinates import Coordinates
 from skrobot.coordinates.math import rpy_matrix
 from skrobot.model.robot_model import RobotModel
-from skrobot.sdf import BoxSDF, CylinderSDF, UnionSDF
+from skrobot.sdf import BoxSDF, CylinderSDF, SphereSDF, UnionSDF
 
 import plainmp.psdf as psdf
 
@@ -16,6 +16,9 @@ def sksdf_to_cppsdf(sksdf, create_bvh: bool = False) -> psdf.SDFBase:
     elif isinstance(sksdf, CylinderSDF):
         pose = psdf.Pose(sksdf.worldpos(), sksdf.worldrot())
         sdf = psdf.CylinderSDF(sksdf._radius, sksdf._height, pose)
+    elif isinstance(sksdf, SphereSDF):
+        pose = psdf.Pose(sksdf.worldpos(), sksdf.worldrot())
+        sdf = psdf.SphereSDF(sksdf._radius, pose)
     elif isinstance(sksdf, UnionSDF):
         for s in sksdf.sdf_list:
             if not isinstance(s, (BoxSDF, CylinderSDF)):
