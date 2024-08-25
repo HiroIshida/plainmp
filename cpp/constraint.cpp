@@ -395,10 +395,20 @@ SphereCollisionCst::get_all_spheres() const {
 void SphereCollisionCst::set_all_sdfs() {
   all_sdfs_cache_.clear();
   if (fixed_sdf_ != nullptr) {
-    all_sdfs_cache_.push_back(fixed_sdf_);
+    set_all_sdfs_inner(fixed_sdf_);
   }
   if (sdf_ != nullptr) {
-    all_sdfs_cache_.push_back(sdf_);
+    set_all_sdfs_inner(sdf_);
+  }
+}
+
+void SphereCollisionCst::set_all_sdfs_inner(SDFBase::Ptr sdf) {
+  if (sdf->get_type() == SDFType::UNION) {
+    for (auto& sub_sdf : std::static_pointer_cast<UnionSDF>(sdf)->sdfs_) {
+      set_all_sdfs_inner(sub_sdf);
+    }
+  } else {
+    all_sdfs_cache_.push_back(sdf);
   }
 }
 

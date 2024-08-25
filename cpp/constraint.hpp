@@ -248,7 +248,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   bool check_self_collision();
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
 
-  size_t cst_dim() const {
+  size_t cst_dim() const override {
     if (selcol_group_id_pairs_.size() == 0) {
       return 1;
     } else {
@@ -261,6 +261,7 @@ class SphereCollisionCst : public IneqConstraintBase {
 
  private:
   void set_all_sdfs();
+  void set_all_sdfs_inner(SDFBase::Ptr sdf);
 
   std::vector<SphereGroup> sphere_groups_;
   std::vector<std::pair<size_t, size_t>> selcol_group_id_pairs_;

@@ -36,9 +36,12 @@ struct Pose {
   Eigen::Matrix3d rot_inv_;
 };
 
+enum SDFType { UNION, BOX, CYLINDER, SPHERE, GROUND };
+
 class SDFBase {
  public:
   using Ptr = std::shared_ptr<SDFBase>;
+  virtual SDFType get_type() const = 0;
   virtual Values evaluate_batch(const Points& p) const {
     // naive implementation. please override this function if you have a better
     // implementation
@@ -54,6 +57,7 @@ class SDFBase {
 
 struct UnionSDF : public SDFBase {
   using Ptr = std::shared_ptr<UnionSDF>;
+  SDFType get_type() const override { return SDFType::UNION; }
   UnionSDF(std::vector<SDFBase::Ptr> sdfs, bool create_bvh) : sdfs_(sdfs) {
     if (create_bvh) {
       throw std::runtime_error("Not implemented yet");
@@ -85,7 +89,6 @@ struct UnionSDF : public SDFBase {
     return true;
   }
 
- private:
   std::vector<std::shared_ptr<SDFBase>> sdfs_;
 };
 
@@ -96,6 +99,7 @@ struct PrimitiveSDFBase : public SDFBase {
 
 struct GroundSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<GroundSDF>;
+  SDFType get_type() const override { return SDFType::GROUND; }
   GroundSDF(double height) : height_(height) {}
   Values evaluate_batch(const Points& p) const override {
     return p.row(2).array() + height_;
@@ -112,6 +116,7 @@ struct GroundSDF : public PrimitiveSDFBase {
 struct BoxSDF : public PrimitiveSDFBase {
   // should implement
   using Ptr = std::shared_ptr<BoxSDF>;
+  SDFType get_type() const override { return SDFType::BOX; }
   BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
       : width_(width), half_width_(0.5 * width), pose_(pose) {}
 
@@ -201,6 +206,7 @@ struct BoxSDF : public PrimitiveSDFBase {
 
 struct CylinderSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<CylinderSDF>;
+  SDFType get_type() const override { return SDFType::CYLINDER; }
   CylinderSDF(double radius, double height, const Pose& pose)
       : r_cylinder_(radius),
         rsq_cylinder_(radius * radius),
@@ -259,6 +265,7 @@ struct CylinderSDF : public PrimitiveSDFBase {
 
 struct SphereSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<SphereSDF>;
+  SDFType get_type() const override { return SDFType::SPHERE; }
   SphereSDF(double radius, const Pose& pose)
       : r_sphere_(radius), rsq_sphere_(radius * radius), pose_(pose) {}
 
