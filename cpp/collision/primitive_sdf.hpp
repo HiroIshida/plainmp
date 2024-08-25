@@ -113,8 +113,13 @@ struct BoxSDF : public PrimitiveSDFBase {
   BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
       : width_(width), half_width_(0.5 * width), pose_(pose) {}
   double evaluate(const Point& p) const override {
-    throw std::runtime_error("Not implemented yet");
-    return 0;
+    Eigen::Vector3d sdists =
+        (pose_.rot_inv_ * (p - pose_.position_)).array().abs() -
+        half_width_.array();
+    Eigen::Vector3d m = sdists.array().max(0.0);
+    double outside_distance = m.norm();
+    double inside_distance = (sdists.cwiseMin(0.0)).maxCoeff();
+    return outside_distance + inside_distance;
   }
   bool is_outside(const Point& p, double radius) const override {
     // NOTE: you may think that the following code is more efficient than the
@@ -189,10 +194,21 @@ struct CylinderSDF : public PrimitiveSDFBase {
         height_(height),
         half_height_(0.5 * height),
         pose_(pose) {}
+
   double evaluate(const Point& p) const override {
-    throw std::runtime_error("Not implemented yet");
-    return 0;
+    auto p_from_center = p - pose_.position_;
+    auto z_signed_dist =
+        abs(p_from_center.dot(pose_.rot_.col(2))) - half_height_;
+    double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
+    double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
+    double r_signed_dist =
+        sqrt(xdot_abs * xdot_abs + ydot_abs * ydot_abs) - r_cylinder_;
+    Eigen::Vector2d d_2d(r_signed_dist, z_signed_dist);
+    auto outside_distance = (d_2d.cwiseMax(0.0)).norm();
+    auto inside_distance = d_2d.cwiseMin(0.0).maxCoeff();
+    return outside_distance + inside_distance;
   }
+
   bool is_outside(const Point& p, double radius) const override {
     auto p_from_center = p - pose_.position_;
     auto z_signed_dist =
