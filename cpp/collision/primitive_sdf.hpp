@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -116,6 +117,19 @@ struct BoxSDF : public PrimitiveSDFBase {
     return 0;
   }
   bool is_outside(const Point& p, double radius) const override {
+    // NOTE: you may think that the following code is more efficient than the
+    // current implementation. However, the current implementation is way
+    // faster than this code.
+    /* >>>>>>>
+    auto p_local = pose_.rot_.transpose() * (p - pose_.position_);
+    Eigen::Vector3d q = p_local.cwiseAbs() - half_width_;
+    if (q.maxCoeff() < -radius) {
+      return false;  // Completely inside
+    }
+    double outside_distance = q.cwiseMax(0.0).norm();
+    return outside_distance > radius;
+    <<<<<<< */
+
     // TODO: create axis-aligned bounding box case?
     auto p_from_center = p - pose_.position_;
     double x_signed_dist =
@@ -139,37 +153,28 @@ struct BoxSDF : public PrimitiveSDFBase {
     }
 
     // (literally) edge case, which araises only when radius is considered
-    if (x_signed_dist < 0 && y_signed_dist < 0 && z_signed_dist < 0) {
-      // mostly fall into this case
+    bool is_x_out = x_signed_dist > 0;
+    bool is_y_out = y_signed_dist > 0;
+    bool is_z_out = z_signed_dist > 0;
+    std::uint8_t out_count = is_x_out + is_y_out + is_z_out;
+    if (out_count < 2) {
       return false;
     }
-    if (x_signed_dist > 0 && y_signed_dist < 0 && z_signed_dist < 0) {
-      return false;
-    }
-    if (x_signed_dist < 0 && y_signed_dist > 0 && z_signed_dist < 0) {
-      return false;
-    }
-    if (x_signed_dist < 0 && y_signed_dist < 0 && z_signed_dist > 0) {
-      return false;
-    }
-    if (x_signed_dist > 0 && y_signed_dist > 0 && z_signed_dist < 0) {
-      return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist >
-             radius * radius;
-    }
-    if (x_signed_dist > 0 && y_signed_dist < 0 && z_signed_dist > 0) {
-      return x_signed_dist * x_signed_dist + z_signed_dist * z_signed_dist >
-             radius * radius;
-    }
-    if (x_signed_dist < 0 && y_signed_dist > 0 && z_signed_dist > 0) {
-      return y_signed_dist * y_signed_dist + z_signed_dist * z_signed_dist >
-             radius * radius;
-    }
-    if (x_signed_dist > 0 && y_signed_dist > 0 && z_signed_dist > 0) {
+    if (out_count == 3) {
       return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist +
                  z_signed_dist * z_signed_dist >
              radius * radius;
     }
-    return false;
+    if (!is_x_out) {
+      return y_signed_dist * y_signed_dist + z_signed_dist * z_signed_dist >
+             radius * radius;
+    }
+    if (!is_y_out) {
+      return x_signed_dist * x_signed_dist + z_signed_dist * z_signed_dist >
+             radius * radius;
+    }
+    return x_signed_dist * x_signed_dist + y_signed_dist * y_signed_dist >
+           radius * radius;
   }
   Eigen::Vector3d width_;
   Eigen::Vector3d half_width_;
