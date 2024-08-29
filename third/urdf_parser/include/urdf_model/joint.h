@@ -216,13 +216,13 @@ public:
   QuatTrans<double> transform(double angle){
       if(type == REVOLUTE || type==CONTINUOUS){
         QuatTrans<double> tf;
-        tf.set_quat(axis, angle);
+        tf.set_rot(axis, angle);
         tf.set_trans_identity();
         return tf;
       }
       if(type == PRISMATIC){
         QuatTrans<double> tf;
-        tf.set_quat_identity();
+        tf.set_rot_identity();
         tf.set_trans(axis * angle);
         return tf;
       }

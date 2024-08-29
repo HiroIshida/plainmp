@@ -45,7 +45,8 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
   const auto& pose_dummy = kin_->get_link_pose(dummy_link_id_);
   const auto& pose2 = kin_->get_link_pose(link_id2_);
   vals.head(3) = pose_dummy.get_trans() - pose2.get_trans();
-  vals.segment(3, 4) = pose_dummy.get_quat().coeffs() - pose2.get_quat().coeffs();
+  vals.segment(3, 4) =
+      pose_dummy.get_quat().coeffs() - pose2.get_quat().coeffs();
   jac = kin_->get_jacobian(dummy_link_id_, control_joint_ids_,
                            tinyfk::RotationType::XYZW, with_base_) -
         kin_->get_jacobian(link_id2_, control_joint_ids_,
@@ -223,7 +224,8 @@ bool SphereCollisionCst::check_self_collision() {
       for (size_t j = 0; j < group2.sphere_ids.size(); j++) {
         const auto& sphere1 = kin_->get_link_pose(group1.sphere_ids[i]);
         const auto& sphere2 = kin_->get_link_pose(group2.sphere_ids[j]);
-        double sqdist = (sphere1.get_trans() - sphere2.get_trans()).squaredNorm();
+        double sqdist =
+            (sphere1.get_trans() - sphere2.get_trans()).squaredNorm();
         double r_sum = group1.radii[i] + group2.radii[j];
         if (sqdist < r_sum * r_sum) {
           return false;
@@ -329,8 +331,9 @@ SphereCollisionCst::evaluate_dirty() {
         for (size_t j = 0; j < group2.sphere_ids.size(); j++) {
           const auto& group1_center = kin_->get_link_pose(group1.sphere_ids[i]);
           const auto& group2_center = kin_->get_link_pose(group2.sphere_ids[j]);
-          double dist = (group1_center.get_trans() - group2_center.get_trans()).norm() -
-                        (group1.radii[i] + group2.radii[j]);
+          double dist =
+              (group1_center.get_trans() - group2_center.get_trans()).norm() -
+              (group1.radii[i] + group2.radii[j]);
           if (dist < dist_min) {
             dist_min = dist;
             min_pairs = {group_id_pair.first, i, group_id_pair.second, j};

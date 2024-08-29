@@ -40,7 +40,7 @@ void KinematicModel::build_cache_until(size_t link_id) const
     Transform& tf_rlink_to_plink = transform_cache_.data_[plink->id];
 
     if(!rotmat_cache_.is_cached(plink->id)) {
-      rotmat_cache_.set_cache(plink->id, tf_rlink_to_plink.get_quat().toRotationMatrix());
+      rotmat_cache_.set_cache(plink->id, tf_rlink_to_plink.get_rotmat());
     }
 
     Eigen::Vector3d&& pos = tf_rlink_to_plink.get_trans() + rotmat_cache_.data_[plink->id] * pjoint->parent_to_joint_origin_transform.get_trans();
@@ -114,7 +114,7 @@ KinematicModel::get_jacobian(size_t elink_id,
 
       const auto& tf_rlink_to_clink = get_link_pose(clink->id);
 
-      auto &crot = tf_rlink_to_clink.get_quat();
+      auto crot = tf_rlink_to_clink.get_rotmat();
       auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
       Eigen::Vector3d dpos;
       if (type == urdf::Joint::PRISMATIC) {
@@ -169,7 +169,7 @@ KinematicModel::get_jacobian(size_t elink_id,
       rpy_tweaked[rpy_idx] += eps;
 
       Transform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
-      tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
+      tf_rlink_to_blink_tweaked.set_rot_from_rpy(rpy_tweaked);
       Transform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
       auto pose_out = tf_rlink_to_elink_tweaked;
 

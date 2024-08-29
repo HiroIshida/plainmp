@@ -220,7 +220,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id,
                                  std::optional<std::string> link_name){
   Transform pose;
   pose.set_trans(position[0], position[1], position[2]);
-  pose.setQuaternionFromRPY(rpy[0], rpy[1], rpy[2]);
+  pose.set_rot_from_rpy(rpy[0], rpy[1], rpy[2]);
   return this->add_new_link(parent_id, pose, consider_rotation, link_name);
 }
 
@@ -232,8 +232,8 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const Transfo
     // if link_name is not given, generate a unique name
     std::hash<double> hasher;
     std::size_t hval = 0;
-    auto& trans = pose.get_trans();
-    auto& quat = pose.get_quat();
+    auto trans = pose.get_trans();
+    auto quat = pose.get_quat();
     hval ^= hasher(trans(0)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
     hval ^= hasher(trans(1)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
     hval ^= hasher(trans(2)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);

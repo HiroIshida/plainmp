@@ -94,12 +94,9 @@ struct QuatTrans {
     Eigen::Quaternion<Scalar> quat_;
     Eigen::Matrix<Scalar, 3, 1> trans_;
 
-    // acceessor
-    inline Eigen::Quaternion<Scalar>& get_quat() { return quat_; }
-    inline Eigen::Matrix<Scalar, 3, 1>& get_trans() { return trans_; }
-    // const accessor
-    inline const Eigen::Quaternion<Scalar>& get_quat() const { return quat_; }
-    inline const Eigen::Matrix<Scalar, 3, 1>& get_trans() const { return trans_; }
+    inline Eigen::Quaternion<Scalar> get_quat() const { return quat_; }
+    inline Eigen::Matrix<Scalar, 3, 1> get_trans() const { return trans_; }
+    inline Eigen::Matrix<Scalar, 3, 3> get_rotmat() const { return quat_.toRotationMatrix(); }
 
     inline Scalar get_trans_x() const { return trans_.x(); }
     inline Scalar get_trans_y() const { return trans_.y(); }
@@ -116,17 +113,17 @@ struct QuatTrans {
     inline void set_trans_y(Scalar y){ trans_.y() = y; }
     inline void set_trans_z(Scalar z){ trans_.z() = z; }
     inline void set_trans_identity(){ trans_.setZero(); }
-    inline void set_quat(const Scalar x, const Scalar y, const Scalar z, const Scalar w){ 
+    inline void set_rot(const Scalar x, const Scalar y, const Scalar z, const Scalar w){ 
         quat_ = Eigen::Quaternion<Scalar>(w, x, y, z);
     }
-    inline void set_quat(const Eigen::Vector3d axis, Scalar angle){ 
+    inline void set_rot(const Eigen::Vector3d axis, Scalar angle){ 
         auto tmp = axis * sin(angle * 0.5);
         quat_.x() = tmp.x();
         quat_.y() = tmp.y();
         quat_.z() = tmp.z();
         quat_.w() = cos(angle * 0.5);
     }
-    inline void set_quat_identity(){ quat_ = Eigen::Quaternion<Scalar>::Identity(); }
+    inline void set_rot_identity(){ quat_ = Eigen::Quaternion<Scalar>::Identity(); }
 
     static QuatTrans<Scalar> Identity() {
         QuatTrans<Scalar> qt;
@@ -174,7 +171,7 @@ struct QuatTrans {
       return {roll, pitch, yaw};
     }
 
-    void setQuaternionFromRPY(const Eigen::Vector3d& rpy) {
+    void set_rot_from_rpy(const Eigen::Vector3d& rpy) {
         auto phi = rpy[0] / 2.0;
         auto the = rpy[1] / 2.0;
         auto psi = rpy[2] / 2.0;
@@ -184,8 +181,8 @@ struct QuatTrans {
         quat_.w() = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
     }
 
-    void setQuaternionFromRPY(Scalar roll, Scalar pitch, Scalar yaw) {
-        setQuaternionFromRPY(Eigen::Matrix<Scalar, 3, 1>(roll, pitch, yaw));
+    void set_rot_from_rpy(Scalar roll, Scalar pitch, Scalar yaw) {
+        set_rot_from_rpy(Eigen::Matrix<Scalar, 3, 1>(roll, pitch, yaw));
     }
 
     static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3f& xyz, const Eigen::Vector3f& rpy) {

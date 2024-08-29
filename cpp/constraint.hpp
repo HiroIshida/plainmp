@@ -33,7 +33,7 @@ class ConstraintBase {
       tinyfk::Transform pose;
       size_t head = control_joint_ids_.size();
       pose.set_trans(q[head], q[head + 1], q[head + 2]);
-      pose.setQuaternionFromRPY(q[head + 3], q[head + 4], q[head + 5]);
+      pose.set_rot_from_rpy(q[head + 3], q[head + 4], q[head + 5]);
       kin_->set_base_pose(pose);
     } else {
       kin_->set_joint_angles(control_joint_ids_, q);
