@@ -38,12 +38,7 @@ void KinematicModel::build_cache_until(size_t link_id) const
       build_cache_until_inner(plink->id);
     }
     Transform& tf_rlink_to_plink = transform_cache_.data_[plink->id];
-
-    if(!rotmat_cache_.is_cached(plink->id)) {
-      rotmat_cache_.set_cache(plink->id, tf_rlink_to_plink.get_rotmat());
-    }
-
-    Eigen::Vector3d&& pos = tf_rlink_to_plink.get_trans() + rotmat_cache_.data_[plink->id] * pjoint->parent_to_joint_origin_transform.get_trans();
+    Eigen::Vector3d&& pos = tf_rlink_to_plink.get_trans() + tf_rlink_to_plink.get_rotmat() * pjoint->parent_to_joint_origin_transform.get_trans();
     // HACK: we want to update the only position part
     // thus, we commented out the private: and directly access the data
     transform_cache_.cache_predicate_vector_[link_id] = true;
