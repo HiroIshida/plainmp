@@ -95,11 +95,38 @@ struct QuatTrans {
     Eigen::Matrix<Scalar, 3, 1> trans_;
 
     // acceessor
-    inline Eigen::Quaternion<Scalar>& quat() { return quat_; }
-    inline Eigen::Matrix<Scalar, 3, 1>& trans() { return trans_; }
+    inline Eigen::Quaternion<Scalar>& get_quat() { return quat_; }
+    inline Eigen::Matrix<Scalar, 3, 1>& get_trans() { return trans_; }
     // const accessor
-    inline const Eigen::Quaternion<Scalar>& quat() const { return quat_; }
-    inline const Eigen::Matrix<Scalar, 3, 1>& trans() const { return trans_; }
+    inline const Eigen::Quaternion<Scalar>& get_quat() const { return quat_; }
+    inline const Eigen::Matrix<Scalar, 3, 1>& get_trans() const { return trans_; }
+
+    inline Scalar get_trans_x() const { return trans_.x(); }
+    inline Scalar get_trans_y() const { return trans_.y(); }
+    inline Scalar get_trans_z() const { return trans_.z(); }
+
+    // setter
+    inline void set_trans(const Eigen::Matrix<Scalar, 3, 1>& trans){ 
+        trans_ = trans;
+    }
+    inline void set_trans(Scalar x, Scalar y, Scalar z){
+        trans_ = Eigen::Matrix<Scalar, 3, 1>(x, y, z);
+    }
+    inline void set_trans_x(Scalar x){ trans_.x() = x; }
+    inline void set_trans_y(Scalar y){ trans_.y() = y; }
+    inline void set_trans_z(Scalar z){ trans_.z() = z; }
+    inline void set_trans_identity(){ trans_.setZero(); }
+    inline void set_quat(const Scalar x, const Scalar y, const Scalar z, const Scalar w){ 
+        quat_ = Eigen::Quaternion<Scalar>(w, x, y, z);
+    }
+    inline void set_quat(const Eigen::Vector3d axis, Scalar angle){ 
+        auto tmp = axis * sin(angle * 0.5);
+        quat_.x() = tmp.x();
+        quat_.y() = tmp.y();
+        quat_.z() = tmp.z();
+        quat_.w() = cos(angle * 0.5);
+    }
+    inline void set_quat_identity(){ quat_ = Eigen::Quaternion<Scalar>::Identity(); }
 
     static QuatTrans<Scalar> Identity() {
         QuatTrans<Scalar> qt;

@@ -40,14 +40,14 @@ void KinematicModel::build_cache_until(size_t link_id) const
     Transform& tf_rlink_to_plink = transform_cache_.data_[plink->id];
 
     if(!rotmat_cache_.is_cached(plink->id)) {
-      rotmat_cache_.set_cache(plink->id, tf_rlink_to_plink.quat().toRotationMatrix());
+      rotmat_cache_.set_cache(plink->id, tf_rlink_to_plink.get_quat().toRotationMatrix());
     }
 
-    Eigen::Vector3d&& pos = tf_rlink_to_plink.trans() + rotmat_cache_.data_[plink->id] * pjoint->parent_to_joint_origin_transform.trans();
+    Eigen::Vector3d&& pos = tf_rlink_to_plink.get_trans() + rotmat_cache_.data_[plink->id] * pjoint->parent_to_joint_origin_transform.get_trans();
     // HACK: we want to update the only position part
     // thus, we commented out the private: and directly access the data
     transform_cache_.cache_predicate_vector_[link_id] = true;
-    transform_cache_.data_[link_id].trans() = std::move(pos);
+    transform_cache_.data_[link_id].set_trans(pos);
   }
 }
 
@@ -85,8 +85,8 @@ KinematicModel::get_jacobian(size_t elink_id,
   const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
 
   const auto& tf_rlink_to_elink = get_link_pose(elink_id);
-  auto &epos = tf_rlink_to_elink.trans();
-  auto &erot = tf_rlink_to_elink.quat();
+  auto epos = tf_rlink_to_elink.get_trans();
+  auto erot = tf_rlink_to_elink.get_quat();
 
   Eigen::Vector3d erpy;
   Eigen::Quaterniond erot_inverse;
@@ -114,13 +114,13 @@ KinematicModel::get_jacobian(size_t elink_id,
 
       const auto& tf_rlink_to_clink = get_link_pose(clink->id);
 
-      auto &crot = tf_rlink_to_clink.quat();
+      auto &crot = tf_rlink_to_clink.get_quat();
       auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
       Eigen::Vector3d dpos;
       if (type == urdf::Joint::PRISMATIC) {
         dpos = world_axis;
       } else { // revolute or continuous
-        auto &cpos = tf_rlink_to_clink.trans();
+        auto cpos = tf_rlink_to_clink.get_trans();
         auto vec_clink_to_elink = epos - cpos;
         dpos = world_axis.cross(vec_clink_to_elink);
       }
@@ -173,7 +173,7 @@ KinematicModel::get_jacobian(size_t elink_id,
       Transform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
       auto pose_out = tf_rlink_to_elink_tweaked;
 
-      const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
+      const auto pos_diff = pose_out.get_trans() - tf_rlink_to_elink.get_trans();
       jacobian.block<3, 1>(0, idx_col) = pos_diff / eps;
       if (rot_type == RotationType::RPY) {
         auto erpy_tweaked = pose_out.getRPY();
@@ -181,7 +181,7 @@ KinematicModel::get_jacobian(size_t elink_id,
       }
       if (rot_type == RotationType::XYZW) {
         // jacobian.block<4, 1>(3, idx_col) = (pose_out.q.coeffs() - erot).toEigen() / eps;
-        jacobian.block<4, 1>(3, idx_col) = (pose_out.quat().coeffs() - erot.coeffs()) / eps;
+        jacobian.block<4, 1>(3, idx_col) = (pose_out.get_quat().coeffs() - erot.coeffs()) / eps;
       }
     }
   }
@@ -194,7 +194,7 @@ Eigen::Vector3d KinematicModel::get_com() {
   for (const auto &link : com_dummy_links_) {
     mass_total += link->inertial->mass;
     const auto& tf_base_to_com = get_link_pose(link->id);
-    com_average += link->inertial->mass * tf_base_to_com.trans();
+    com_average += link->inertial->mass * tf_base_to_com.get_trans();
   }
   com_average /= mass_total;
   return com_average;

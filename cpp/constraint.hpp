@@ -32,9 +32,7 @@ class ConstraintBase {
       kin_->set_joint_angles(control_joint_ids_, q_head);
       tinyfk::Transform pose;
       size_t head = control_joint_ids_.size();
-      pose.trans().x() = q[head];
-      pose.trans().y() = q[head + 1];
-      pose.trans().z() = q[head + 2];
+      pose.set_trans(q[head], q[head + 1], q[head + 2]);
       pose.setQuaternionFromRPY(q[head + 3], q[head + 4], q[head + 5]);
       kin_->set_base_pose(pose);
     } else {
@@ -113,9 +111,10 @@ class ConfigPointCst : public EqConstraintBase {
     if (with_base_) {
       size_t head = control_joint_ids_.size();
       auto base_pose = kin_->get_base_pose();
-      q_now(head) = base_pose.trans().x();
-      q_now(head + 1) = base_pose.trans().y();
-      q_now(head + 2) = base_pose.trans().z();
+      auto trans = base_pose.get_trans();
+      q_now(head) = trans.x();
+      q_now(head + 1) = trans.y();
+      q_now(head + 2) = trans.z();
       auto base_rpy = base_pose.getRPY();
       q_now(head + 3) = base_rpy.x();
       q_now(head + 4) = base_rpy.y();
@@ -176,7 +175,7 @@ class RelativePoseCst : public EqConstraintBase {
         relative_pose_(relative_pose) {
     // TODO: because name is hard-coded, we cannot create two RelativePoseCst...
     auto pose = tinyfk::Transform::Identity();
-    pose.trans() = relative_pose;
+    pose.set_trans(relative_pose);
     size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
     auto new_link = kin_->add_new_link(link_id1_, pose, true);
     dummy_link_id_ = new_link->id;
