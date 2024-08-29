@@ -51,7 +51,7 @@
 namespace urdf{
 
 bool parsePose(Pose &pose, TiXmlElement* xml);
-bool parsePose(QuatTrans<double>& pose, TiXmlElement* xml);
+bool parsePose(_Transform<double>& pose, TiXmlElement* xml);
 
 bool parseMaterial(Material &material, TiXmlElement *config, bool only_name_is_ok)
 {

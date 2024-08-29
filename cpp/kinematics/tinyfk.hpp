@@ -19,7 +19,7 @@
 namespace tinyfk {
 
 using Bound = std::pair<double, double>;
-using Transform = urdf::QuatTrans<double>;
+using Transform = urdf::_Transform<double>;
 using Vector3 = urdf::Vector3;
 using Rotation = urdf::Rotation;
 

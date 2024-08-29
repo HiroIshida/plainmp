@@ -125,7 +125,7 @@ bool parsePose(Pose &pose, TiXmlElement* xml)
   return true;
 }
 
-bool parsePose(QuatTrans<double>& pose, TiXmlElement* xml) {
+bool parsePose(_Transform<double>& pose, TiXmlElement* xml) {
   Pose tmp;
   if(!parsePose(tmp, xml)) {
     return false;

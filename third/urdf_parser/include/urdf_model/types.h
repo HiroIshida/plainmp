@@ -208,6 +208,9 @@ struct QuatTrans {
     }
 };
 
+template<typename T> 
+using _Transform = QuatTrans<T>;
+
 }
 
 #endif

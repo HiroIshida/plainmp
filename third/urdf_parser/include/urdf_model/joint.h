@@ -196,7 +196,7 @@ public:
   ///   origin specifies the transform from Parent Link to Joint Frame
   std::string parent_link_name;
   /// transform from Parent Link frame to Joint frame
-  QuatTrans<double>  parent_to_joint_origin_transform;
+  _Transform<double>  parent_to_joint_origin_transform;
 
   /// Joint Dynamics
   JointDynamicsSharedPtr dynamics;
@@ -213,21 +213,21 @@ public:
   /// Option to Mimic another Joint
   JointMimicSharedPtr mimic;
 
-  QuatTrans<double> transform(double angle){
+  _Transform<double> transform(double angle){
       if(type == REVOLUTE || type==CONTINUOUS){
-        QuatTrans<double> tf;
+        _Transform<double> tf;
         tf.set_rot(axis, angle);
         tf.set_trans_identity();
         return tf;
       }
       if(type == PRISMATIC){
-        QuatTrans<double> tf;
+        _Transform<double> tf;
         tf.set_rot_identity();
         tf.set_trans(axis * angle);
         return tf;
       }
       if(type == FIXED){
-        return QuatTrans<double>::Identity();
+        return _Transform<double>::Identity();
       }
       throw std::runtime_error("unsupported joint detected");
   }

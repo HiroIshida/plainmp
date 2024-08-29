@@ -46,7 +46,7 @@
 namespace urdf{
 
 bool parsePose(Pose &pose, TiXmlElement* xml);
-bool parsePose(QuatTrans<double>& pose, TiXmlElement* xml);
+bool parsePose(_Transform<double>& pose, TiXmlElement* xml);
 
 bool parseJointDynamics(JointDynamics &jd, TiXmlElement* config)
 {

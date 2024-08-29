@@ -357,8 +357,8 @@ public:
     return pose_out;
   }
 
-  QuatTrans<double> to_quattrans() const{
-    QuatTrans<double> qt;
+  _Transform<double> to_quattrans() const{
+    _Transform<double> qt;
     qt.set_rot(rotation.x, rotation.y, rotation.z, rotation.w);
     qt.set_trans(position.x, position.y, position.z);
     return qt;
