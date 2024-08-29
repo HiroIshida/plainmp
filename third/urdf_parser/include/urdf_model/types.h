@@ -208,8 +208,146 @@ struct QuatTrans {
     }
 };
 
+template<typename Scalar>
+class HomTransform {
+private:
+    Eigen::Matrix<Scalar, 4, 4> matrix_;
+
+public:
+    HomTransform() : matrix_(Eigen::Matrix<Scalar, 4, 4>::Identity()) {}
+
+    inline Eigen::Matrix<Scalar, 3, 3> get_rotmat() const { 
+        return matrix_.template topLeftCorner<3, 3>();
+    }
+
+    inline Eigen::Quaternion<Scalar> get_quat() const { 
+        return Eigen::Quaternion<Scalar>(get_rotmat());
+    }
+    
+    inline Eigen::Matrix<Scalar, 3, 1> get_trans() const { 
+        return matrix_.template topRightCorner<3, 1>();
+    }
+
+    inline Scalar get_trans_x() const { return matrix_(0, 3); }
+    inline Scalar get_trans_y() const { return matrix_(1, 3); }
+    inline Scalar get_trans_z() const { return matrix_(2, 3); }
+
+    // Setter methods
+    inline void set_trans(const Eigen::Matrix<Scalar, 3, 1>& trans) {
+        matrix_.template topRightCorner<3, 1>() = trans;
+    }
+    
+    inline void set_trans(Scalar x, Scalar y, Scalar z) {
+        matrix_(0, 3) = x;
+        matrix_(1, 3) = y;
+        matrix_(2, 3) = z;
+    }
+
+    inline void set_trans_x(Scalar x) { matrix_(0, 3) = x; }
+    inline void set_trans_y(Scalar y) { matrix_(1, 3) = y; }
+    inline void set_trans_z(Scalar z) { matrix_(2, 3) = z; }
+    
+    inline void set_trans_identity() { 
+        matrix_.template topRightCorner<3, 1>().setZero();
+    }
+
+    inline void set_rot(const Scalar x, const Scalar y, const Scalar z, const Scalar w) {
+        Eigen::Quaternion<Scalar> q(w, x, y, z);
+        matrix_.template topLeftCorner<3, 3>() = q.toRotationMatrix();
+    }
+
+    inline void set_rot(const Eigen::Vector3d axis, Scalar angle) {
+        Eigen::AngleAxis<Scalar> aa(angle, axis.normalized());
+        matrix_.template topLeftCorner<3, 3>() = aa.toRotationMatrix();
+    }
+
+    inline void set_rot_identity() {
+        matrix_.template topLeftCorner<3, 3>() = Eigen::Matrix<Scalar, 3, 3>::Identity();
+    }
+
+    static HomTransform<Scalar> Identity() {
+        return HomTransform<Scalar>();
+    }
+
+    void clear() {
+        matrix_ = Eigen::Matrix<Scalar, 4, 4>::Identity();
+    }
+
+    inline HomTransform<Scalar> operator*(const HomTransform<Scalar>& other) const {
+        HomTransform<Scalar> result;
+        result.matrix_ = matrix_ * other.matrix_;
+        return result;
+    }
+
+    HomTransform<Scalar> getInverse() const {
+        HomTransform<Scalar> inv;
+        Eigen::Matrix<Scalar, 3, 3> R = get_rotmat();
+        Eigen::Matrix<Scalar, 3, 1> t = get_trans();
+        inv.matrix_.template topLeftCorner<3, 3>() = R.transpose();
+        inv.matrix_.template topRightCorner<3, 1>() = -R.transpose() * t;
+        return inv;
+    }
+
+    Eigen::Vector3d getRPY() const {
+        return rotationMatrixToRPY(get_rotmat());
+    }
+
+    void set_rot_from_rpy(const Eigen::Vector3d& rpy) {
+        matrix_.template topLeftCorner<3, 3>() = rpyToRotationMatrix(rpy);
+    }
+
+    void set_rot_from_rpy(Scalar roll, Scalar pitch, Scalar yaw) {
+        set_rot_from_rpy(Eigen::Matrix<Scalar, 3, 1>(roll, pitch, yaw));
+    }
+
+    static HomTransform<Scalar> fromXYZRPY(const Eigen::Vector3f& xyz, const Eigen::Vector3f& rpy) {
+        HomTransform<Scalar> result;
+        result.set_trans(xyz);
+        result.set_rot_from_rpy(rpy);
+        return result;
+    }
+
+    static HomTransform<Scalar> fromXYZRPY(Scalar x, Scalar y, Scalar z, Scalar roll, Scalar pitch, Scalar yaw) {
+        return fromXYZRPY(Eigen::Vector3f(x, y, z), Eigen::Vector3f(roll, pitch, yaw));
+    }
+
+    static HomTransform<Scalar> fromXYZ(const Eigen::Vector3d& xyz) {
+        HomTransform<Scalar> result;
+        result.set_trans(xyz);
+        return result;
+    }
+
+    static HomTransform<Scalar> fromXYZ(Scalar x, Scalar y, Scalar z) {
+        return fromXYZ(Eigen::Vector3d(x, y, z));
+    }
+
+private:
+    static Eigen::Matrix<Scalar, 3, 3> rpyToRotationMatrix(const Eigen::Vector3d& rpy) {
+        Scalar roll = rpy[0], pitch = rpy[1], yaw = rpy[2];
+        Eigen::AngleAxis<Scalar> rollAngle(roll, Eigen::Vector3d::UnitX());
+        Eigen::AngleAxis<Scalar> pitchAngle(pitch, Eigen::Vector3d::UnitY());
+        Eigen::AngleAxis<Scalar> yawAngle(yaw, Eigen::Vector3d::UnitZ());
+        return (yawAngle * pitchAngle * rollAngle).toRotationMatrix();
+    }
+
+    static Eigen::Vector3d rotationMatrixToRPY(const Eigen::Matrix<Scalar, 3, 3>& R) {
+        Scalar pitch = std::atan2(-R(2,0), std::sqrt(R(2,1)*R(2,1) + R(2,2)*R(2,2)));
+        Scalar yaw, roll;
+
+        if (std::abs(pitch) == M_PI/2) {
+            yaw = 0;
+            roll = std::atan2(R(0,1), R(1,1));
+        } else {
+            yaw = std::atan2(R(1,0), R(0,0));
+            roll = std::atan2(R(2,1), R(2,2));
+        }
+
+        return Eigen::Vector3d(roll, pitch, yaw);
+    }
+};
+
 template<typename T> 
-using _Transform = QuatTrans<T>;
+using _Transform = HomTransform<T>;
 
 }
 
