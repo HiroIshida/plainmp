@@ -215,14 +215,12 @@ public:
 
   _Transform<double> transform(double angle){
       if(type == REVOLUTE || type==CONTINUOUS){
-        _Transform<double> tf;
+        auto tf = _Transform<double>::Identity();
         tf.set_rot(axis, angle);
-        tf.set_trans_identity();
         return tf;
       }
       if(type == PRISMATIC){
-        _Transform<double> tf;
-        tf.set_rot_identity();
+        auto tf = _Transform<double>::Identity();
         tf.set_trans(axis * angle);
         return tf;
       }

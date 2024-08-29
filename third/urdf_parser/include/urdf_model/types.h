@@ -257,8 +257,26 @@ public:
     }
 
     inline void set_rot(const Eigen::Vector3d axis, Scalar angle) {
-        Eigen::AngleAxis<Scalar> aa(angle, axis.normalized());
-        matrix_.template topLeftCorner<3, 3>() = aa.toRotationMatrix();
+        // assume that axis is normalized
+        if(axis(2) == 1) {
+            // set_rot_zaxis(angle);
+            matrix_(0, 0) = cos(angle);
+            matrix_(0, 1) = -sin(angle);
+            matrix_(1, 0) = sin(angle);
+            matrix_(1, 1) = cos(angle);
+        } else if(axis(1) == 1) {
+            matrix_(0, 0) = cos(angle);
+            matrix_(0, 2) = sin(angle);
+            matrix_(2, 0) = -sin(angle);
+            matrix_(2, 2) = cos(angle);
+        } else if(axis(0) == 1) {
+            matrix_(1, 1) = cos(angle);
+            matrix_(1, 2) = -sin(angle);
+            matrix_(2, 1) = sin(angle);
+            matrix_(2, 2) = cos(angle);
+        } else {
+            throw std::runtime_error("unsupported axis detected");
+        }
     }
 
     inline void set_rot_identity() {
@@ -273,6 +291,7 @@ public:
         matrix_ = Eigen::Matrix<Scalar, 4, 4>::Identity();
     }
 
+    __attribute__((noinline)) 
     inline HomTransform<Scalar> operator*(const HomTransform<Scalar>& other) const {
         HomTransform<Scalar> result;
         result.matrix_ = matrix_ * other.matrix_;
