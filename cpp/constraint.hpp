@@ -237,6 +237,12 @@ struct SphereGroup {
   Eigen::Matrix3Xd sphere_positions_cache;
   bool is_sphere_positions_dirty;
 
+  inline void clear_cache() {
+    is_rot_mat_dirty = true;
+    is_group_sphere_position_dirty = true;
+    is_sphere_positions_dirty = true;
+  }
+
   inline void create_group_sphere_position_cache_if_necessary(
       std::shared_ptr<tinyfk::KinematicModel> kin) {
     if (!is_group_sphere_position_dirty) {
@@ -283,7 +289,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   void update_kintree(const std::vector<double>& q) override {
     IneqConstraintBase::update_kintree(q);
     for (auto& group : sphere_groups_) {
-      group.is_sphere_positions_dirty = true;
+      group.clear_cache();
     }
   }
 
