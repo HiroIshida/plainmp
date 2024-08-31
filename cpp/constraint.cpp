@@ -170,7 +170,7 @@ bool SphereCollisionCst::check_ext_collision() {
     if (group.ignore_collision) {
       continue;
     }
-    if(group.is_group_sphere_position_dirty){
+    if (group.is_group_sphere_position_dirty) {
       group.create_group_sphere_position_cache(kin_);
     }
     bool broad_collision = false;
@@ -186,7 +186,7 @@ bool SphereCollisionCst::check_ext_collision() {
     }
 
     for (auto& sdf : all_sdfs_cache_) {
-      if(group.is_sphere_positions_dirty){
+      if (group.is_sphere_positions_dirty) {
         group.create_sphere_position_cache(kin_);
       }
       for (size_t i = 0; i < group.radii.size(); i++) {
@@ -204,10 +204,10 @@ bool SphereCollisionCst::check_self_collision() {
   for (auto& group_id_pair : selcol_group_id_pairs_) {
     auto& group1 = sphere_groups_[group_id_pair.first];
     auto& group2 = sphere_groups_[group_id_pair.second];
-    if(group1.is_group_sphere_position_dirty){
+    if (group1.is_group_sphere_position_dirty) {
       group1.create_group_sphere_position_cache(kin_);
     }
-    if(group2.is_group_sphere_position_dirty){
+    if (group2.is_group_sphere_position_dirty) {
       group2.create_group_sphere_position_cache(kin_);
     }
 
@@ -219,10 +219,10 @@ bool SphereCollisionCst::check_self_collision() {
       continue;
     }
 
-    if(group1.is_sphere_positions_dirty){
+    if (group1.is_sphere_positions_dirty) {
       group1.create_sphere_position_cache(kin_);
     }
-    if(group2.is_sphere_positions_dirty){
+    if (group2.is_sphere_positions_dirty) {
       group2.create_sphere_position_cache(kin_);
     }
 
