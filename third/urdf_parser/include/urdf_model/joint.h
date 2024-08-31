@@ -236,6 +236,9 @@ public:
     // check if the origin has rotation
     auto rotmat = this->parent_to_joint_origin_transform.quat().toRotationMatrix();
     this->is_origin_with_rotation = !rotmat.isApprox(Eigen::Matrix3d::Identity());
+    if(is_origin_with_rotation){
+      throw std::runtime_error("currently, origin with rotation is not supported");
+    }
   };
 
 private:
