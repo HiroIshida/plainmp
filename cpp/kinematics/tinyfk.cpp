@@ -28,6 +28,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
     lid++;
   }
   size_t N_link = lid; // starting from 0 and finally ++ increment, so it'S ok
+  root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
 
   // compute total mass
   double total_mass = 0.0;
@@ -37,33 +38,41 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
     }
   }
 
-  // construct joints and joint_ids, and numbering joint id
-  std::vector<urdf::JointSharedPtr> joints;
-  std::unordered_map<std::string, int> joint_ids;
-  int jid = 0;
-  for (auto &map_pair : robot_urdf_interface->joints_) {
-    std::string jname = map_pair.first;
-    urdf::JointSharedPtr joint = map_pair.second;
-    size_t jtype = joint->type;
-
-    if (jtype == urdf::Joint::REVOLUTE || jtype == urdf::Joint::CONTINUOUS ||
-        jtype == urdf::Joint::PRISMATIC) {
-      joints.push_back(joint);
-      joint_ids[jname] = jid;
-      joint->id = jid;
-      jid++;
-    } else if (jtype == urdf::Joint::FIXED) {
-    } else {
-      throw std::invalid_argument("unsuported joint type is detected");
-    }
-  }
-
   // set joint->_child_link.
-  for (urdf::JointSharedPtr joint : joints) {
+  for(const auto& pair : robot_urdf_interface->joints_) {
+    urdf::JointSharedPtr joint = pair.second;
     std::string clink_name = joint->child_link_name;
     int clink_id = link_ids[clink_name];
     urdf::LinkSharedPtr clink = links[clink_id];
     joint->setChildLink(clink);
+  }
+
+  // allign joint ids
+  std::vector<urdf::JointSharedPtr> joints;
+  std::unordered_map<std::string, int> joint_ids;
+  auto root_link = links[root_link_id_];
+  std::stack<urdf::JointSharedPtr> joint_stack;
+  for (auto &joint : root_link->child_joints) {
+    joint_stack.push(joint);
+  }
+  size_t joint_counter = 0;
+  while (!joint_stack.empty()) {
+    // assign joint ids in the order of DFS
+    auto joint = joint_stack.top();
+    joint_stack.pop();
+    auto jtype = joint->type;
+    if (jtype == urdf::Joint::REVOLUTE || jtype == urdf::Joint::CONTINUOUS ||
+        jtype == urdf::Joint::PRISMATIC) {
+      joint->id = joint_counter;
+      joints.push_back(joint);
+      joint_ids[joint->name] = joint_counter;
+      joint_counter++;
+    }
+    if(joint->getChildLink() != nullptr) {
+      for (auto &child_joint : joint->getChildLink()->child_joints) {
+        joint_stack.push(child_joint);
+      }
+    }
   }
 
   int num_dof = joint_ids.size();
@@ -81,7 +90,6 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
     }
   }
 
-  root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
   links_ = links;
   link_ids_ = link_ids;
   joints_ = joints;
