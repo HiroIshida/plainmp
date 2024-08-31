@@ -19,13 +19,18 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   std::vector<urdf::LinkSharedPtr> links;
   std::unordered_map<std::string, int> link_ids;
   int lid = 0;
-  for (const auto &map_pair : robot_urdf_interface->links_) {
-    std::string name = map_pair.first;
-    urdf::LinkSharedPtr link = map_pair.second;
-    link_ids[name] = lid;
+  std::stack<urdf::LinkSharedPtr> link_stack;
+  link_stack.push(robot_urdf_interface->root_link_);
+  while (!link_stack.empty()) {
+    auto link = link_stack.top();
+    link_stack.pop();
+    link_ids[link->name] = lid;
     link->id = lid;
     links.push_back(link);
     lid++;
+    for (auto &child_link : link->child_links) {
+      link_stack.push(child_link);
+    }
   }
   size_t N_link = lid; // starting from 0 and finally ++ increment, so it'S ok
   root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
@@ -129,7 +134,6 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
     joint_angles_[joint_id] = joint_angles[i];
     auto joint = joints_[joint_id];
     auto& tf_plink_to_pjoint = joint->parent_to_joint_origin_transform;
-
     auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[joint->getChildLink()->id];
     if(joint->type != urdf::Joint::PRISMATIC) { [[likely]]
       double s, c;
