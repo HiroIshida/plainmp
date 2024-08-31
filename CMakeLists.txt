@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS_INIT} -fPIC")
 
 find_package(Eigen3 REQUIRED)
 ADD_DEFINITIONS(-DEIGEN_NO_DEBUG)
+ADD_DEFINITIONS(-DEIGEN_DONT_VECTORIZE)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 add_subdirectory("third/urdf_parser")
