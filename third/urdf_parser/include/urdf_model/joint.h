@@ -213,26 +213,6 @@ public:
   /// Option to Mimic another Joint
   JointMimicSharedPtr mimic;
 
-  QuatTrans<double> transform(double angle){
-      if(type == REVOLUTE || type==CONTINUOUS){
-        QuatTrans<double> tf;
-        tf.quat().coeffs().segment(0,3) = axis * sin(angle * 0.5);
-        tf.quat().w() = cos(angle * 0.5);
-        tf.trans().setZero();
-        return tf;
-      }
-      if(type == PRISMATIC){
-        QuatTrans<double> tf;
-        tf.quat().setIdentity();
-        tf.trans() = axis * angle;
-        return tf;
-      }
-      if(type == FIXED){
-        return QuatTrans<double>::Identity();
-      }
-      throw std::runtime_error("unsupported joint detected");
-  }
-
   void setChildLink(const LinkSharedPtr &child)
   { child_link_ = child; }
 
