@@ -173,26 +173,18 @@ bool SphereCollisionCst::check_ext_collision() {
     if (group.is_group_sphere_position_dirty) {
       group.create_group_sphere_position_cache(kin_);
     }
-    bool broad_collision = false;
+
     for (auto& sdf : all_sdfs_cache_) {
       if (!sdf->is_outside(group.group_sphere_position_cache,
                            group.group_radius)) {
-        broad_collision = true;
-        break;
-      }
-    }
-    if (!broad_collision) {
-      continue;
-    }
-
-    for (auto& sdf : all_sdfs_cache_) {
-      if (group.is_sphere_positions_dirty) {
-        group.create_sphere_position_cache(kin_);
-      }
-      for (size_t i = 0; i < group.radii.size(); i++) {
-        if (!sdf->is_outside(group.sphere_positions_cache.col(i),
-                             group.radii[i])) {
-          return false;
+        if (group.is_sphere_positions_dirty) {
+          group.create_sphere_position_cache(kin_);
+        }
+        for (size_t i = 0; i < group.radii.size(); i++) {
+          if (!sdf->is_outside(group.sphere_positions_cache.col(i),
+                               group.radii[i])) {
+            return false;
+          }
         }
       }
     }
