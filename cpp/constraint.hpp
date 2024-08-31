@@ -24,7 +24,7 @@ class ConstraintBase {
         control_joint_ids_(kin->get_joint_ids(control_joint_names)),
         with_base_(with_base) {}
 
-  void update_kintree(const std::vector<double>& q) {
+  virtual void update_kintree(const std::vector<double>& q) {
     if (with_base_) {
       std::vector<double> q_head(control_joint_ids_.size());
       std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
@@ -219,11 +219,54 @@ struct SphereAttachmentSpec {
 
 struct SphereGroup {
   std::string parent_link_name;
-  std::vector<size_t> sphere_ids;
+  size_t parent_link_id;
   Eigen::VectorXd radii;
-  size_t group_sphere_id;
   double group_radius;
   bool ignore_collision;
+  Eigen::Matrix3Xd sphere_relative_positions;
+  Eigen::Vector3d group_sphere_relative_position;
+  // rot mat cache
+  Eigen::Matrix3d rot_mat_cache;
+  bool is_rot_mat_dirty;
+
+  // group sphere position
+  Eigen::Vector3d group_sphere_position_cache;
+  bool is_group_sphere_position_dirty;
+
+  // sphere positions cache
+  Eigen::Matrix3Xd sphere_positions_cache;
+  bool is_sphere_positions_dirty;
+
+  inline void clear_cache() {
+    is_rot_mat_dirty = true;
+    is_group_sphere_position_dirty = true;
+    is_sphere_positions_dirty = true;
+  }
+
+  void create_group_sphere_position_cache(
+      std::shared_ptr<tinyfk::KinematicModel> kin) {
+    auto plink_pose = kin->get_link_pose(parent_link_id);
+    if (is_rot_mat_dirty) {
+      rot_mat_cache = plink_pose.quat().toRotationMatrix();
+      this->is_rot_mat_dirty = false;
+    }
+    this->group_sphere_position_cache =
+        rot_mat_cache * group_sphere_relative_position + plink_pose.trans();
+    this->is_group_sphere_position_dirty = false;
+  }
+
+  void create_sphere_position_cache(
+      std::shared_ptr<tinyfk::KinematicModel> kin) {
+    auto plink_pose = kin->get_link_pose(parent_link_id);
+    if (is_rot_mat_dirty) {
+      rot_mat_cache = plink_pose.quat().toRotationMatrix();
+      this->is_rot_mat_dirty = false;
+    }
+    this->sphere_positions_cache =
+        (rot_mat_cache * sphere_relative_positions).colwise() +
+        plink_pose.trans();
+    this->is_sphere_positions_dirty = false;
+  }
 };
 
 class SphereCollisionCst : public IneqConstraintBase {
@@ -236,6 +279,13 @@ class SphereCollisionCst : public IneqConstraintBase {
       const std::vector<SphereAttachmentSpec>& sphere_specs,
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
       std::optional<SDFBase::Ptr> fixed_sdf);
+
+  void update_kintree(const std::vector<double>& q) override {
+    IneqConstraintBase::update_kintree(q);
+    for (auto& group : sphere_groups_) {
+      group.clear_cache();
+    }
+  }
 
   void set_sdf(const SDFBase::Ptr& sdf) {
     sdf_ = sdf;

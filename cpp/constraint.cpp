@@ -112,24 +112,12 @@ SphereCollisionCst::SphereCollisionCst(
       fixed_sdf_(fixed_sdf == std::nullopt ? nullptr : *fixed_sdf) {
   for (size_t i = 0; i < sphere_specs.size(); i++) {
     auto& spec = sphere_specs[i];
-
     auto parent_id = kin_->get_link_ids({spec.parent_link_name})[0];
     Eigen::Vector3d group_center = {0.0, 0.0, 0.0};
-    std::vector<size_t> sphere_ids;
     for (size_t j = 0; j < spec.relative_positions.cols(); j++) {
-      Eigen::Vector3d relpos = spec.relative_positions.col(j);
-
-      auto new_link =
-          kin_->add_new_link(parent_id, {relpos.x(), relpos.y(), relpos.z()},
-                             {0.0, 0.0, 0.0}, false);
-      sphere_ids.push_back(new_link->id);
-      group_center += relpos;
+      group_center += spec.relative_positions.col(j);
     }
     group_center /= spec.relative_positions.cols();
-
-    auto group_sphere_link = kin_->add_new_link(
-        parent_id, {group_center.x(), group_center.y(), group_center.z()},
-        {0.0, 0.0, 0.0}, false);
 
     double max_dist = 0.0;
     for (size_t j = 0; j < spec.relative_positions.cols(); j++) {
@@ -140,9 +128,12 @@ SphereCollisionCst::SphereCollisionCst(
       }
     }
     double group_radius = max_dist;
-    sphere_groups_.push_back({spec.parent_link_name, sphere_ids, spec.radii,
-                              group_sphere_link->id, group_radius,
-                              spec.ignore_collision});
+    Eigen::Matrix3Xd sphere_position_cache(3, spec.radii.size());
+    sphere_groups_.push_back(
+        {spec.parent_link_name, parent_id, spec.radii, group_radius,
+         spec.ignore_collision, spec.relative_positions, group_center,
+         Eigen::Matrix3d::Zero(), true, Eigen::Vector3d::Zero(), true,
+         sphere_position_cache, true});
   }
 
   for (const auto& pair : selcol_group_pairs) {
@@ -179,11 +170,13 @@ bool SphereCollisionCst::check_ext_collision() {
     if (group.ignore_collision) {
       continue;
     }
-
-    const auto& group_center = kin_->get_link_pose(group.group_sphere_id);
+    if (group.is_group_sphere_position_dirty) {
+      group.create_group_sphere_position_cache(kin_);
+    }
     bool broad_collision = false;
     for (auto& sdf : all_sdfs_cache_) {
-      if (!sdf->is_outside(group_center.trans(), group.group_radius)) {
+      if (!sdf->is_outside(group.group_sphere_position_cache,
+                           group.group_radius)) {
         broad_collision = true;
         break;
       }
@@ -193,9 +186,12 @@ bool SphereCollisionCst::check_ext_collision() {
     }
 
     for (auto& sdf : all_sdfs_cache_) {
-      for (size_t i = 0; i < group.sphere_ids.size(); i++) {
-        const auto& center = kin_->get_link_pose(group.sphere_ids[i]);
-        if (!sdf->is_outside(center.trans(), group.radii[i])) {
+      if (group.is_sphere_positions_dirty) {
+        group.create_sphere_position_cache(kin_);
+      }
+      for (size_t i = 0; i < group.radii.size(); i++) {
+        if (!sdf->is_outside(group.sphere_positions_cache.col(i),
+                             group.radii[i])) {
           return false;
         }
       }
@@ -208,22 +204,34 @@ bool SphereCollisionCst::check_self_collision() {
   for (auto& group_id_pair : selcol_group_id_pairs_) {
     auto& group1 = sphere_groups_[group_id_pair.first];
     auto& group2 = sphere_groups_[group_id_pair.second];
+    if (group1.is_group_sphere_position_dirty) {
+      group1.create_group_sphere_position_cache(kin_);
+    }
+    if (group2.is_group_sphere_position_dirty) {
+      group2.create_group_sphere_position_cache(kin_);
+    }
 
-    const auto& group1_center = kin_->get_link_pose(group1.group_sphere_id);
-    const auto& group2_center = kin_->get_link_pose(group2.group_sphere_id);
-    double outer_sqdist =
-        (group1_center.trans() - group2_center.trans()).squaredNorm();
+    double outer_sqdist = (group1.group_sphere_position_cache -
+                           group2.group_sphere_position_cache)
+                              .squaredNorm();
     double outer_r_sum = group1.group_radius + group2.group_radius;
     if (outer_sqdist > outer_r_sum * outer_r_sum) {
       continue;
     }
 
+    if (group1.is_sphere_positions_dirty) {
+      group1.create_sphere_position_cache(kin_);
+    }
+    if (group2.is_sphere_positions_dirty) {
+      group2.create_sphere_position_cache(kin_);
+    }
+
     // check if the inner volumes are colliding
-    for (size_t i = 0; i < group1.sphere_ids.size(); i++) {
-      for (size_t j = 0; j < group2.sphere_ids.size(); j++) {
-        const auto& sphere1 = kin_->get_link_pose(group1.sphere_ids[i]);
-        const auto& sphere2 = kin_->get_link_pose(group2.sphere_ids[j]);
-        double sqdist = (sphere1.trans() - sphere2.trans()).squaredNorm();
+    for (size_t i = 0; i < group1.radii.size(); i++) {
+      for (size_t j = 0; j < group2.radii.size(); j++) {
+        double sqdist = (group1.sphere_positions_cache.col(i) -
+                         group2.sphere_positions_cache.col(j))
+                            .squaredNorm();
         double r_sum = group1.radii[i] + group2.radii[j];
         if (sqdist < r_sum * r_sum) {
           return false;
@@ -254,27 +262,27 @@ SphereCollisionCst::evaluate_dirty() {
       }
 
       // filter out groups that are not colliding with margin of cutoff
-      const auto& group_center = kin_->get_link_pose(group.group_sphere_id);
-      bool broad_collision = false;
-      for (auto& sdf : all_sdfs_cache_) {
-        if (!sdf->is_outside(group_center.trans(),
-                             group.group_radius + cutoff_dist_)) {
-          broad_collision = true;
-          break;
-        }
+      if (group.is_group_sphere_position_dirty) {
+        group.create_group_sphere_position_cache(kin_);
       }
-      if (broad_collision) {
-        // compute min_val_other
-        for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
-          auto& sdf = all_sdfs_cache_[j];
-          for (size_t k = 0; k < group.sphere_ids.size(); k++) {
-            const auto& sphere = kin_->get_link_pose(group.sphere_ids[k]);
-            double val = sdf->evaluate(sphere.trans()) - group.radii[k];
-            if (val < min_val_other) {
-              min_val_other = val;
-              min_group_idx = i;
-              min_sdf_idx = j;
-              min_sphere_idx = k;
+      for (auto& sdf : all_sdfs_cache_) {
+        if (!sdf->is_outside(group.group_sphere_position_cache,
+                             group.group_radius + cutoff_dist_)) {
+          // if broad collision is detected
+          if (group.is_sphere_positions_dirty) {
+            group.create_sphere_position_cache(kin_);
+          }
+          for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
+            auto& sdf = all_sdfs_cache_[j];
+            for (size_t k = 0; k < group.radii.size(); k++) {
+              auto sphere_center = group.sphere_positions_cache.col(k);
+              double val = sdf->evaluate(sphere_center) - group.radii[k];
+              if (val < min_val_other) {
+                min_val_other = val;
+                min_group_idx = i;
+                min_sdf_idx = j;
+                min_sphere_idx = k;
+              }
             }
           }
         }
@@ -285,21 +293,23 @@ SphereCollisionCst::evaluate_dirty() {
       // cutoff case
       grad_in_cspace_other.setConstant(0.);
     } else {
-      size_t min_sphere_id =
-          sphere_groups_[*min_group_idx].sphere_ids[*min_sphere_idx];
-      const auto& min_sphere = kin_->get_link_pose(min_sphere_id);
+      // HACK: we already know that the sphere position cache is
+      // already created
+      const auto& min_sphere_trans =
+          sphere_groups_[*min_group_idx].sphere_positions_cache.col(
+              *min_sphere_idx);
       double r = sphere_groups_[*min_group_idx].radii[*min_sphere_idx];
       Eigen::Vector3d grad;
       for (size_t i = 0; i < 3; i++) {
-        Eigen::Vector3d perturbed_center = min_sphere.trans();
+        Eigen::Vector3d perturbed_center = min_sphere_trans;
         perturbed_center[i] += 1e-6;
         double val =
             all_sdfs_cache_[*min_sdf_idx]->evaluate(perturbed_center) - r;
         grad[i] = (val - min_val_other) / 1e-6;
       }
-      auto sphere_jac =
-          kin_->get_jacobian(min_sphere_id, control_joint_ids_,
-                             tinyfk::RotationType::IGNORE, with_base_);
+      auto&& sphere_jac = kin_->get_attached_point_jacobian(
+          sphere_groups_[*min_group_idx].parent_link_id, min_sphere_trans,
+          control_joint_ids_, with_base_);
       grad_in_cspace_other = sphere_jac.transpose() * grad;
     }
   }
@@ -316,20 +326,35 @@ SphereCollisionCst::evaluate_dirty() {
       auto& group1 = sphere_groups_[group_id_pair.first];
       auto& group2 = sphere_groups_[group_id_pair.second];
 
-      const auto& group1_center = kin_->get_link_pose(group1.group_sphere_id);
-      const auto& group2_center = kin_->get_link_pose(group2.group_sphere_id);
-      double outer_sqdist =
-          (group1_center.trans() - group2_center.trans()).squaredNorm();
+      if (group1.is_group_sphere_position_dirty) {
+        group1.create_group_sphere_position_cache(kin_);
+      }
+      if (group2.is_group_sphere_position_dirty) {
+        group2.create_group_sphere_position_cache(kin_);
+      }
+
+      double outer_sqdist = (group1.group_sphere_position_cache -
+                             group2.group_sphere_position_cache)
+                                .squaredNorm();
       double outer_r_sum_with_margin =
           group1.group_radius + group2.group_radius + cutoff_dist_;
       if (outer_sqdist > outer_r_sum_with_margin * outer_r_sum_with_margin) {
         continue;
       }
-      for (size_t i = 0; i < group1.sphere_ids.size(); i++) {
-        for (size_t j = 0; j < group2.sphere_ids.size(); j++) {
-          const auto& group1_center = kin_->get_link_pose(group1.sphere_ids[i]);
-          const auto& group2_center = kin_->get_link_pose(group2.sphere_ids[j]);
-          double dist = (group1_center.trans() - group2_center.trans()).norm() -
+
+      // narrow phase
+      if (group1.is_sphere_positions_dirty) {
+        group1.create_sphere_position_cache(kin_);
+      }
+      if (group2.is_sphere_positions_dirty) {
+        group2.create_sphere_position_cache(kin_);
+      }
+
+      for (size_t i = 0; i < group1.radii.size(); i++) {
+        for (size_t j = 0; j < group2.radii.size(); j++) {
+          const auto& sphere1_center = group1.sphere_positions_cache.col(i);
+          const auto& sphere2_center = group2.sphere_positions_cache.col(j);
+          double dist = (sphere1_center - sphere2_center).norm() -
                         (group1.radii[i] + group2.radii[j]);
           if (dist < dist_min) {
             dist_min = dist;
@@ -346,19 +371,18 @@ SphereCollisionCst::evaluate_dirty() {
       jac.row(1).setConstant(0.);
       return {Eigen::Vector2d(min_val_other, dist_min), jac};
     } else {
+      // HACK: we know that in the non-gradient evaluation the cache
+      // is already created
       auto& group1 = sphere_groups_[min_pairs->at(0)];
+      const auto& center1 = group1.sphere_positions_cache.col(min_pairs->at(1));
       auto& group2 = sphere_groups_[min_pairs->at(2)];
-      auto& sphere1 = group1.sphere_ids[min_pairs->at(1)];
-      auto& sphere2 = group2.sphere_ids[min_pairs->at(3)];
-      const auto& center1 = kin_->get_link_pose(sphere1);
-      const auto& center2 = kin_->get_link_pose(sphere2);
-      Eigen::Vector3d center_diff = center1.trans() - center2.trans();
-      Eigen::MatrixXd&& jac1 =
-          kin_->get_jacobian(sphere1, control_joint_ids_,
-                             tinyfk::RotationType::IGNORE, with_base_);
-      Eigen::MatrixXd&& jac2 =
-          kin_->get_jacobian(sphere2, control_joint_ids_,
-                             tinyfk::RotationType::IGNORE, with_base_);
+      const auto& center2 = group2.sphere_positions_cache.col(min_pairs->at(3));
+
+      Eigen::Vector3d center_diff = center1 - center2;
+      auto&& jac1 = kin_->get_attached_point_jacobian(
+          group1.parent_link_id, center1, control_joint_ids_, with_base_);
+      auto&& jac2 = kin_->get_attached_point_jacobian(
+          group2.parent_link_id, center2, control_joint_ids_, with_base_);
       double norminv = 1.0 / center_diff.norm();
       Eigen::VectorXd&& grad_in_cspace_self =
           norminv * center_diff.transpose() * (jac1 - jac2);
@@ -373,22 +397,22 @@ SphereCollisionCst::evaluate_dirty() {
 std::vector<std::pair<Eigen::Vector3d, double>>
 SphereCollisionCst::get_group_spheres() const {
   std::vector<std::pair<Eigen::Vector3d, double>> spheres;
-  for (auto& sphere_group : sphere_groups_) {
-    const auto& pose = kin_->get_link_pose(sphere_group.group_sphere_id);
-    spheres.push_back({pose.trans(), sphere_group.group_radius});
-  }
+  // for (auto& sphere_group : sphere_groups_) {
+  //   const auto& pose = kin_->get_link_pose(sphere_group.group_sphere_id);
+  //   spheres.push_back({pose.trans(), sphere_group.group_radius});
+  // }
   return spheres;
 }
 
 std::vector<std::pair<Eigen::Vector3d, double>>
 SphereCollisionCst::get_all_spheres() const {
   std::vector<std::pair<Eigen::Vector3d, double>> spheres;
-  for (auto& sphere_group : sphere_groups_) {
-    for (size_t i = 0; i < sphere_group.sphere_ids.size(); i++) {
-      const auto& pose = kin_->get_link_pose(sphere_group.sphere_ids[i]);
-      spheres.push_back({pose.trans(), sphere_group.radii[i]});
-    }
-  }
+  // for (auto& sphere_group : sphere_groups_) {
+  //   for (size_t i = 0; i < sphere_group.sphere_ids.size(); i++) {
+  //     const auto& pose = kin_->get_link_pose(sphere_group.sphere_ids[i]);
+  //     spheres.push_back({pose.trans(), sphere_group.radii[i]});
+  //   }
+  // }
   return spheres;
 }
 
