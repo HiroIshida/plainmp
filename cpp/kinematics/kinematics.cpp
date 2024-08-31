@@ -51,20 +51,19 @@ void KinematicModel::build_cache_until(size_t link_id) const
 void KinematicModel::build_cache_until_inner(size_t link_id) const {
   auto hlink = links_[link_id];
 
-  link_id_stack_.reset();
+  std::array<size_t, 64> id_stack_like;  // 64 is enough for almost all cases
+  size_t idx = 0;
   while(!transform_cache_.is_cached(hlink->id)) {
-    urdf::LinkSharedPtr plink = hlink->getParent();
-    link_id_stack_.push(hlink->id);
-    hlink = plink;
+    id_stack_like[idx++] = hlink->id;
+    hlink = hlink->getParent();
   }
 
   Transform tf_rlink_to_plink = transform_cache_.data_[hlink->id];
-  while(!link_id_stack_.empty()) {
-    size_t hid = link_id_stack_.top();
-    link_id_stack_.pop();
+  while(idx > 0) {
+    size_t hid = id_stack_like[--idx];
     Transform tf_rlink_to_hlink = tf_rlink_to_plink * tf_plink_to_hlink_cache_[hid];
     transform_cache_.set_cache(hid, tf_rlink_to_hlink);
-    tf_rlink_to_plink = tf_rlink_to_hlink;
+    tf_rlink_to_plink = std::move(tf_rlink_to_hlink);
   }
 }
 

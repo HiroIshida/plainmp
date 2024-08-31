@@ -94,9 +94,6 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   int num_dof = joint_ids.size();
   std::vector<double> joint_angles(num_dof, 0.0);
 
-  link_id_stack_ = SizedStack<size_t>(N_link);
-  transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, Transform>>(
-      N_link); // for batch update
   transform_cache_ = SizedCache<Transform>(N_link);
   tf_plink_to_hlink_cache_ = std::vector<Transform>(N_link);
   for(size_t hid = 0; hid < N_link; hid++) {
@@ -352,8 +349,6 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const Transfo
   links_[parent_id]->child_joints.push_back(fixed_joint);
 
   transform_cache_.extend();
-  link_id_stack_.extend();
-  transform_stack2_.extend();
   tf_plink_to_hlink_cache_.push_back(pose);
 
   this->update_rptable(); // set _rptable
