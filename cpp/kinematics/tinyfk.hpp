@@ -91,6 +91,7 @@ public: // functions
 
   inline void clear_cache() {
       transform_cache_.clear();
+      transform_cache_.set_cache(root_link_id_, base_pose_);
   }
 
   void set_init_angles();

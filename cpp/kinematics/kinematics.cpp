@@ -54,10 +54,6 @@ void KinematicModel::build_cache_until_inner(size_t link_id) const {
   link_id_stack_.reset();
   while(!transform_cache_.is_cached(hlink->id)) {
     urdf::LinkSharedPtr plink = hlink->getParent();
-    if (plink == nullptr) { // root link
-      transform_cache_.set_cache(hlink->id, base_pose_);
-      break;
-    }
     link_id_stack_.push(hlink->id);
     hlink = plink;
   }
@@ -66,8 +62,7 @@ void KinematicModel::build_cache_until_inner(size_t link_id) const {
   while(!link_id_stack_.empty()) {
     size_t hid = link_id_stack_.top();
     link_id_stack_.pop();
-    auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[hid];
-    Transform tf_rlink_to_hlink = tf_rlink_to_plink * tf_plink_to_hlink;
+    Transform tf_rlink_to_hlink = tf_rlink_to_plink * tf_plink_to_hlink_cache_[hid];
     transform_cache_.set_cache(hid, tf_rlink_to_hlink);
     tf_rlink_to_plink = tf_rlink_to_hlink;
   }
