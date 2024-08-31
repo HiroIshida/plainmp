@@ -126,14 +126,22 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
     if(joint->type == urdf::Joint::PRISMATIC) {
       Eigen::Vector3d trans = joint->axis * joint_angles[i];
       tf_plink_to_hlink.quat() = tf_plink_to_pjoint.quat();
-      tf_plink_to_hlink.trans() = tf_plink_to_pjoint.trans() + tf_plink_to_pjoint.quat() * trans;
+      if(joint->is_origin_with_rotation){
+        tf_plink_to_hlink.trans() = tf_plink_to_pjoint.trans() + tf_plink_to_pjoint.quat() * trans;
+      }else{
+        tf_plink_to_hlink.trans() = tf_plink_to_pjoint.trans() + trans;
+      }
     }else{
       double s, c;
       sincos(0.5 * joint_angles[i], &s, &c);
       Eigen::Quaterniond quat;
       quat.coeffs().segment(0, 3) = joint->axis * s;
       quat.w() = c;
-      tf_plink_to_hlink.quat() = tf_plink_to_pjoint.quat() * quat;
+      if(joint->is_origin_with_rotation){
+        tf_plink_to_hlink.quat() = tf_plink_to_pjoint.quat() * quat;
+      }else{
+        tf_plink_to_hlink.quat() = std::move(quat);
+      }
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint.trans();
     }
   }

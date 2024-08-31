@@ -187,6 +187,7 @@ public:
   Eigen::Vector3d axis;
 
   unsigned int id;
+  bool is_origin_with_rotation;
 
   /// child Link element
   ///   child link frame is the same as the Joint frame
@@ -231,6 +232,10 @@ public:
     this->calibration.reset();
     this->mimic.reset();
     this->type = UNKNOWN;
+
+    // check if the origin has rotation
+    auto rotmat = this->parent_to_joint_origin_transform.quat().toRotationMatrix();
+    this->is_origin_with_rotation = !rotmat.isApprox(Eigen::Matrix3d::Identity());
   };
 
 private:
