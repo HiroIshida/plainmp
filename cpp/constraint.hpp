@@ -24,7 +24,7 @@ class ConstraintBase {
         control_joint_ids_(kin->get_joint_ids(control_joint_names)),
         with_base_(with_base) {}
 
-  void update_kintree(const std::vector<double>& q) {
+  virtual void update_kintree(const std::vector<double>& q) {
     if (with_base_) {
       std::vector<double> q_head(control_joint_ids_.size());
       std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
@@ -219,11 +219,27 @@ struct SphereAttachmentSpec {
 
 struct SphereGroup {
   std::string parent_link_name;
-  std::vector<size_t> sphere_ids;
+  size_t parent_link_id;
   Eigen::VectorXd radii;
   size_t group_sphere_id;
   double group_radius;
   bool ignore_collision;
+  Eigen::Matrix3Xd relative_positions;
+  // cache
+  Eigen::Matrix3Xd sphere_position_cache;
+  bool is_dirty = true;
+
+  void create_sphere_position_cache_if_necessary(
+      std::shared_ptr<tinyfk::KinematicModel> kin) {
+    if (!is_dirty) {
+      return;
+    }
+    auto plink_pose = kin->get_link_pose(parent_link_id);
+    Eigen::Matrix3d rot = plink_pose.quat().toRotationMatrix();
+    this->sphere_position_cache =
+        (rot * relative_positions).colwise() + plink_pose.trans();
+    this->is_dirty = false;
+  }
 };
 
 class SphereCollisionCst : public IneqConstraintBase {
@@ -236,6 +252,13 @@ class SphereCollisionCst : public IneqConstraintBase {
       const std::vector<SphereAttachmentSpec>& sphere_specs,
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
       std::optional<SDFBase::Ptr> fixed_sdf);
+
+  void update_kintree(const std::vector<double>& q) override {
+    IneqConstraintBase::update_kintree(q);
+    for (auto& group : sphere_groups_) {
+      group.is_dirty = true;
+    }
+  }
 
   void set_sdf(const SDFBase::Ptr& sdf) {
     sdf_ = sdf;
