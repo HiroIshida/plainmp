@@ -170,7 +170,9 @@ bool SphereCollisionCst::check_ext_collision() {
     if (group.ignore_collision) {
       continue;
     }
-    group.create_group_sphere_position_cache_if_necessary(kin_);
+    if(group.is_group_sphere_position_dirty){
+      group.create_group_sphere_position_cache(kin_);
+    }
     bool broad_collision = false;
     for (auto& sdf : all_sdfs_cache_) {
       if (!sdf->is_outside(group.group_sphere_position_cache,
@@ -184,7 +186,9 @@ bool SphereCollisionCst::check_ext_collision() {
     }
 
     for (auto& sdf : all_sdfs_cache_) {
-      group.create_sphere_position_cache_if_necessary(kin_);
+      if(group.is_sphere_positions_dirty){
+        group.create_sphere_position_cache(kin_);
+      }
       for (size_t i = 0; i < group.radii.size(); i++) {
         if (!sdf->is_outside(group.sphere_positions_cache.col(i),
                              group.radii[i])) {
@@ -200,8 +204,12 @@ bool SphereCollisionCst::check_self_collision() {
   for (auto& group_id_pair : selcol_group_id_pairs_) {
     auto& group1 = sphere_groups_[group_id_pair.first];
     auto& group2 = sphere_groups_[group_id_pair.second];
-    group1.create_group_sphere_position_cache_if_necessary(kin_);
-    group2.create_group_sphere_position_cache_if_necessary(kin_);
+    if(group1.is_group_sphere_position_dirty){
+      group1.create_group_sphere_position_cache(kin_);
+    }
+    if(group2.is_group_sphere_position_dirty){
+      group2.create_group_sphere_position_cache(kin_);
+    }
 
     double outer_sqdist = (group1.group_sphere_position_cache -
                            group2.group_sphere_position_cache)
@@ -211,8 +219,12 @@ bool SphereCollisionCst::check_self_collision() {
       continue;
     }
 
-    group1.create_sphere_position_cache_if_necessary(kin_);
-    group2.create_sphere_position_cache_if_necessary(kin_);
+    if(group1.is_sphere_positions_dirty){
+      group1.create_sphere_position_cache(kin_);
+    }
+    if(group2.is_sphere_positions_dirty){
+      group2.create_sphere_position_cache(kin_);
+    }
 
     // check if the inner volumes are colliding
     for (size_t i = 0; i < group1.radii.size(); i++) {

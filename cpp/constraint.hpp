@@ -243,11 +243,8 @@ struct SphereGroup {
     is_sphere_positions_dirty = true;
   }
 
-  inline void create_group_sphere_position_cache_if_necessary(
+  void create_group_sphere_position_cache(
       std::shared_ptr<tinyfk::KinematicModel> kin) {
-    if (!is_group_sphere_position_dirty) {
-      return;
-    }
     auto plink_pose = kin->get_link_pose(parent_link_id);
     if (is_rot_mat_dirty) {
       rot_mat_cache = plink_pose.quat().toRotationMatrix();
@@ -258,11 +255,8 @@ struct SphereGroup {
     this->is_group_sphere_position_dirty = false;
   }
 
-  void create_sphere_position_cache_if_necessary(
+  void create_sphere_position_cache(
       std::shared_ptr<tinyfk::KinematicModel> kin) {
-    if (!is_sphere_positions_dirty) {
-      return;
-    }
     auto plink_pose = kin->get_link_pose(parent_link_id);
     if (is_rot_mat_dirty) {
       rot_mat_cache = plink_pose.quat().toRotationMatrix();
