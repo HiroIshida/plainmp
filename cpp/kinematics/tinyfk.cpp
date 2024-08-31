@@ -126,8 +126,7 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
     if(joint->type != urdf::Joint::PRISMATIC) { [[likely]]
       double s, c;
       sincos(0.5 * joint_angles[i], &s, &c);
-      tf_plink_to_hlink.quat().coeffs().segment(0, 3) = joint->axis * s;
-      tf_plink_to_hlink.quat().coeffs().w() = c;
+      tf_plink_to_hlink.quat().coeffs() << s * joint->axis, c;
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint.trans();
     }else{
       Eigen::Vector3d trans = joint->axis * joint_angles[i];
