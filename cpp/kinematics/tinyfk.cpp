@@ -53,8 +53,12 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   }
 
   // allign joint ids
-  std::vector<urdf::JointSharedPtr> joints;
   std::unordered_map<std::string, int> joint_ids;
+  std::vector<urdf::JointSharedPtr> joints;
+  std::vector<int> joint_types;
+  std::vector<Eigen::Vector3d> joint_axes;
+  std::vector<Eigen::Vector3d> joint_positions;
+  std::vector<int> joint_child_link_ids;
   auto root_link = links[root_link_id_];
   std::stack<urdf::JointSharedPtr> joint_stack;
   for (auto &joint : root_link->child_joints) {
@@ -70,6 +74,10 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
         jtype == urdf::Joint::PRISMATIC) {
       joint->id = joint_counter;
       joints.push_back(joint);
+      joint_types.push_back(jtype);
+      joint_axes.push_back(joint->axis);
+      joint_positions.push_back(joint->parent_to_joint_origin_transform.trans());
+      joint_child_link_ids.push_back(joint->getChildLink()->id);
       joint_ids[joint->name] = joint_counter;
       joint_counter++;
     }
@@ -98,6 +106,10 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   links_ = links;
   link_ids_ = link_ids;
   joints_ = joints;
+  joint_types_ = joint_types;
+  joint_axes_ = joint_axes;
+  joint_positions_ = joint_positions;
+  joint_child_link_ids_ = joint_child_link_ids;
   joint_ids_ = joint_ids;
   num_dof_ = num_dof;
   total_mass_ = total_mass;
@@ -132,18 +144,17 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
   for (size_t i = 0; i < joint_ids.size(); i++) {
     auto joint_id = joint_ids[i];
     joint_angles_[joint_id] = joint_angles[i];
-    auto joint = joints_[joint_id];
-    auto& tf_plink_to_pjoint = joint->parent_to_joint_origin_transform;
-    auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[joint->getChildLink()->id];
-    if(joint->type != urdf::Joint::PRISMATIC) { [[likely]]
+    auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[joint_child_link_ids_[joint_id]];
+    auto& tf_plink_to_pjoint_trans = joint_positions_[joint_id];
+    if(joint_types_[joint_id] != urdf::Joint::PRISMATIC) { [[likely]]
       double s, c;
       sincos(0.5 * joint_angles[i], &s, &c);
-      tf_plink_to_hlink.quat().coeffs() << s * joint->axis, c;
-      tf_plink_to_hlink.trans() = tf_plink_to_pjoint.trans();
+      tf_plink_to_hlink.quat().coeffs() << s * joint_axes_[joint_id], c;
+      tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
     }else{
-      Eigen::Vector3d trans = joint->axis * joint_angles[i];
-      tf_plink_to_hlink.quat() = tf_plink_to_pjoint.quat();
-      tf_plink_to_hlink.trans() = tf_plink_to_pjoint.trans() + trans;
+      Eigen::Vector3d&& trans = joint_axes_[joint_id] * joint_angles[i];
+      tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans + trans;
+      tf_plink_to_hlink.quat().setIdentity();
     }
   }
   clear_cache();

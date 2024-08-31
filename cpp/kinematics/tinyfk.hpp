@@ -53,6 +53,11 @@ public: // members
   std::vector<urdf::LinkSharedPtr> com_dummy_links_;
 
   std::vector<urdf::JointSharedPtr> joints_;
+  std::vector<int> joint_types_;
+  std::vector<Eigen::Vector3d> joint_axes_;
+  std::vector<Eigen::Vector3d> joint_positions_;
+  std::vector<int> joint_child_link_ids_;
+
   std::unordered_map<std::string, int> joint_ids_;
   std::vector<double> joint_angles_;
   Transform base_pose_;
