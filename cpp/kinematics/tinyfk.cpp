@@ -5,6 +5,9 @@
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
+#define VCL_NAMESPACE vcl
+#include <vectorclass.h>
+#include <vectormath_lib.h>
 
 namespace tinyfk {
 
@@ -141,15 +144,62 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
 
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
                                       const std::vector<double> &joint_angles) {
+  // TODO: 64 is just a random large enough number to avoid dynamic allocation
+  std::array<double, 64> sin_cache;
+  std::array<double, 64> cos_cache;
+#ifdef __AVX512F__
+  // TODO: this is not tested at all
+  std::array<double, 64> padded_joint_angles;
+  for(size_t i = 0; i < joint_ids.size(); i++) {
+    padded_joint_angles[i] = joint_angles[i];
+  }
+  // e.g if joint_ids.size() = 12, then n_iter = 2
+  size_t n_iter = (joint_ids.size() + 7) / 8;
+  for(size_t i = 0; i < n_iter; i++){
+    vcl::Vec8d angles;
+    angles.load(padded_joint_angles.data() + i * 8);
+    auto x = angles * 0.5;
+    auto xx = x * x;
+    auto xxx = x * xx;
+    auto xxxx = xx * xx;
+    auto xxxxx = xx * xxx;
+    auto sins = x - xxx * 0.1666666 + xxxxx * 0.0083333;
+    auto coss = 1 - xx * 0.5 + xxxx * 0.0416666667;
+    sins.store(sin_cache.data() + i * 8);
+    coss.store(cos_cache.data() + i * 8);
+  }
+#elif __AVX__
+  // TODO: this is not tested at all
+  std::array<double, 64> padded_joint_angles;
+  for(size_t i = 0; i < joint_ids.size(); i++) {
+    padded_joint_angles[i] = joint_angles[i];
+  }
+  size_t n_iter = (joint_ids.size() + 3) / 4;
+  for(size_t i = 0; i < n_iter; i++){
+    vcl::Vec4d angles;
+    angles.load(padded_joint_angles.data() + i * 4);
+    auto x = angles * 0.5;
+    auto xx = x * x;
+    auto xxx = x * xx;
+    auto xxxx = xx * xx;
+    auto xxxxx = xx * xxx;
+    auto sins = x - xxx * 0.1666666 + xxxxx * 0.0083333;
+    auto coss = 1 - xx * 0.5 + xxxx * 0.0416666667;
+    sins.store(sin_cache.data() + i * 4);
+    coss.store(cos_cache.data() + i * 4);
+  }
+#else
+  for(size_t i = 0; i < joint_ids.size(); i++) {
+    sincos(0.5 * joint_angles[i], &sin_cache[i], &cos_cache[i]);
+  }
+#endif
   for (size_t i = 0; i < joint_ids.size(); i++) {
     auto joint_id = joint_ids[i];
     joint_angles_[joint_id] = joint_angles[i];
     auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[joint_child_link_ids_[joint_id]];
     auto& tf_plink_to_pjoint_trans = joint_positions_[joint_id];
     if(joint_types_[joint_id] != urdf::Joint::PRISMATIC) { [[likely]]
-      double s, c;
-      sincos(0.5 * joint_angles[i], &s, &c);
-      tf_plink_to_hlink.quat().coeffs() << s * joint_axes_[joint_id], c;
+      tf_plink_to_hlink.quat().coeffs() << sin_cache[i] * joint_axes_[joint_id], cos_cache[i];
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
     }else{
       Eigen::Vector3d&& trans = joint_axes_[joint_id] * joint_angles[i];

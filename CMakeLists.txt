@@ -17,6 +17,8 @@ option(OMPL_REGISTRATION OFF)  # avoid popup in browser
 add_subdirectory(third/ompl)
 include_directories("third/ompl/src")
 
+include_directories("third/version2")
+
 option(USE_VALGRIND "Use valgrind to profile the code" OFF)
 if(USE_VALGRIND)
     find_path(VALGRIND_INCLUDE_DIR
