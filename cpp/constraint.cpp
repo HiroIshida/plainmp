@@ -183,6 +183,10 @@ bool SphereCollisionCst::check_ext_collision() {
           if (group.is_sphere_positions_dirty) {
             group.create_sphere_position_cache(kin_);
           }
+          if (sdf->is_outside_aabb_batch(group.sphere_positions_cache,
+                                         group.radii)) {
+            continue;
+          }
           for (size_t i = 0; i < group.radii.size(); i++) {
             if (!sdf->is_outside_aabb(group.sphere_positions_cache.col(i),
                                       group.radii[i])) {
