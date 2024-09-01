@@ -250,7 +250,7 @@ struct SphereGroup {
   }
 
   void create_group_sphere_position_cache(
-      std::shared_ptr<tinyfk::KinematicModel> kin) {
+      const std::shared_ptr<tinyfk::KinematicModel>& kin) {
     auto plink_pose = kin->get_link_pose(parent_link_id);
     // The code below is "safe" but not efficient so see the HACK below
     // if (is_rot_mat_dirty) {
@@ -265,7 +265,7 @@ struct SphereGroup {
   }
 
   void create_sphere_position_cache(
-      std::shared_ptr<tinyfk::KinematicModel> kin) {
+      const std::shared_ptr<tinyfk::KinematicModel>& kin) {
     // The code below is "safe" but not efficient so see the HACK below
     // auto plink_pose = kin->get_link_pose(parent_link_id);
     // if (is_rot_mat_dirty) {
