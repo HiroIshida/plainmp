@@ -5,6 +5,9 @@
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
+#define VCL_NAMESPACE vcl
+#include <vectorclass.h>
+#include <vectormath_lib.h>
 
 namespace tinyfk {
 
@@ -19,15 +22,21 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   std::vector<urdf::LinkSharedPtr> links;
   std::unordered_map<std::string, int> link_ids;
   int lid = 0;
-  for (const auto &map_pair : robot_urdf_interface->links_) {
-    std::string name = map_pair.first;
-    urdf::LinkSharedPtr link = map_pair.second;
-    link_ids[name] = lid;
+  std::stack<urdf::LinkSharedPtr> link_stack;
+  link_stack.push(robot_urdf_interface->root_link_);
+  while (!link_stack.empty()) {
+    auto link = link_stack.top();
+    link_stack.pop();
+    link_ids[link->name] = lid;
     link->id = lid;
     links.push_back(link);
     lid++;
+    for (auto &child_link : link->child_links) {
+      link_stack.push(child_link);
+    }
   }
   size_t N_link = lid; // starting from 0 and finally ++ increment, so it'S ok
+  root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
 
   // compute total mass
   double total_mass = 0.0;
@@ -37,41 +46,54 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
     }
   }
 
-  // construct joints and joint_ids, and numbering joint id
-  std::vector<urdf::JointSharedPtr> joints;
-  std::unordered_map<std::string, int> joint_ids;
-  int jid = 0;
-  for (auto &map_pair : robot_urdf_interface->joints_) {
-    std::string jname = map_pair.first;
-    urdf::JointSharedPtr joint = map_pair.second;
-    size_t jtype = joint->type;
-
-    if (jtype == urdf::Joint::REVOLUTE || jtype == urdf::Joint::CONTINUOUS ||
-        jtype == urdf::Joint::PRISMATIC) {
-      joints.push_back(joint);
-      joint_ids[jname] = jid;
-      joint->id = jid;
-      jid++;
-    } else if (jtype == urdf::Joint::FIXED) {
-    } else {
-      throw std::invalid_argument("unsuported joint type is detected");
-    }
-  }
-
   // set joint->_child_link.
-  for (urdf::JointSharedPtr joint : joints) {
+  for(const auto& pair : robot_urdf_interface->joints_) {
+    urdf::JointSharedPtr joint = pair.second;
     std::string clink_name = joint->child_link_name;
     int clink_id = link_ids[clink_name];
     urdf::LinkSharedPtr clink = links[clink_id];
     joint->setChildLink(clink);
   }
 
+  // allign joint ids
+  std::unordered_map<std::string, int> joint_ids;
+  std::vector<urdf::JointSharedPtr> joints;
+  std::vector<int> joint_types;
+  std::vector<Eigen::Vector3d> joint_axes;
+  std::vector<Eigen::Vector3d> joint_positions;
+  std::vector<int> joint_child_link_ids;
+  auto root_link = links[root_link_id_];
+  std::stack<urdf::JointSharedPtr> joint_stack;
+  for (auto &joint : root_link->child_joints) {
+    joint_stack.push(joint);
+  }
+  size_t joint_counter = 0;
+  while (!joint_stack.empty()) {
+    // assign joint ids in the order of DFS
+    auto joint = joint_stack.top();
+    joint_stack.pop();
+    auto jtype = joint->type;
+    if (jtype == urdf::Joint::REVOLUTE || jtype == urdf::Joint::CONTINUOUS ||
+        jtype == urdf::Joint::PRISMATIC) {
+      joint->id = joint_counter;
+      joints.push_back(joint);
+      joint_types.push_back(jtype);
+      joint_axes.push_back(joint->axis);
+      joint_positions.push_back(joint->parent_to_joint_origin_transform.trans());
+      joint_child_link_ids.push_back(joint->getChildLink()->id);
+      joint_ids[joint->name] = joint_counter;
+      joint_counter++;
+    }
+    if(joint->getChildLink() != nullptr) {
+      for (auto &child_joint : joint->getChildLink()->child_joints) {
+        joint_stack.push(child_joint);
+      }
+    }
+  }
+
   int num_dof = joint_ids.size();
   std::vector<double> joint_angles(num_dof, 0.0);
 
-  link_id_stack_ = SizedStack<size_t>(N_link);
-  transform_stack2_ = SizedStack<std::pair<urdf::LinkSharedPtr, Transform>>(
-      N_link); // for batch update
   transform_cache_ = SizedCache<Transform>(N_link);
   tf_plink_to_hlink_cache_ = std::vector<Transform>(N_link);
   for(size_t hid = 0; hid < N_link; hid++) {
@@ -81,10 +103,13 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
     }
   }
 
-  root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
   links_ = links;
   link_ids_ = link_ids;
   joints_ = joints;
+  joint_types_ = joint_types;
+  joint_axes_ = joint_axes;
+  joint_positions_ = joint_positions;
+  joint_child_link_ids_ = joint_child_link_ids;
   joint_ids_ = joint_ids;
   num_dof_ = num_dof;
   total_mass_ = total_mass;
@@ -116,14 +141,68 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
 
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
                                       const std::vector<double> &joint_angles) {
+  // TODO: 64 is just a random large enough number to avoid dynamic allocation
+  std::array<double, 64> sin_cache;
+  std::array<double, 64> cos_cache;
+#ifdef __AVX512F__
+  // TODO: this is not tested at all
+  std::array<double, 64> padded_joint_angles;
+  for(size_t i = 0; i < joint_ids.size(); i++) {
+    padded_joint_angles[i] = joint_angles[i];
+  }
+  // e.g if joint_ids.size() = 12, then n_iter = 2
+  size_t n_iter = (joint_ids.size() + 7) / 8;
+  for(size_t i = 0; i < n_iter; i++){
+    vcl::Vec8d angles;
+    angles.load(padded_joint_angles.data() + i * 8);
+    auto x = angles * 0.5;
+    auto xx = x * x;
+    auto xxx = x * xx;
+    auto xxxx = xx * xx;
+    auto xxxxx = xx * xxx;
+    auto sins = x - xxx * 0.1666666 + xxxxx * 0.0083333;
+    auto coss = 1 - xx * 0.5 + xxxx * 0.0416666667;
+    sins.store(sin_cache.data() + i * 8);
+    coss.store(cos_cache.data() + i * 8);
+  }
+#elif __AVX__
+  // TODO: this is not tested at all
+  std::array<double, 64> padded_joint_angles;
+  for(size_t i = 0; i < joint_ids.size(); i++) {
+    padded_joint_angles[i] = joint_angles[i];
+  }
+  size_t n_iter = (joint_ids.size() + 3) / 4;
+  for(size_t i = 0; i < n_iter; i++){
+    vcl::Vec4d angles;
+    angles.load(padded_joint_angles.data() + i * 4);
+    auto x = angles * 0.5;
+    auto xx = x * x;
+    auto xxx = x * xx;
+    auto xxxx = xx * xx;
+    auto xxxxx = xx * xxx;
+    auto sins = x - xxx * 0.1666666 + xxxxx * 0.0083333;
+    auto coss = 1 - xx * 0.5 + xxxx * 0.0416666667;
+    sins.store(sin_cache.data() + i * 4);
+    coss.store(cos_cache.data() + i * 4);
+  }
+#else
+  for(size_t i = 0; i < joint_ids.size(); i++) {
+    sincos(0.5 * joint_angles[i], &sin_cache[i], &cos_cache[i]);
+  }
+#endif
   for (size_t i = 0; i < joint_ids.size(); i++) {
     auto joint_id = joint_ids[i];
     joint_angles_[joint_id] = joint_angles[i];
-    auto joint = joints_[joint_id];
-    auto& tf_plink_to_pjoint = joint->parent_to_joint_origin_transform;
-    auto&& tf_pjoint_to_hlink = joint->transform(joint_angles[i]);
-    auto&& tf_plink_to_hlink = tf_plink_to_pjoint * tf_pjoint_to_hlink;
-    tf_plink_to_hlink_cache_[joint->getChildLink()->id] = tf_plink_to_hlink;
+    auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[joint_child_link_ids_[joint_id]];
+    auto& tf_plink_to_pjoint_trans = joint_positions_[joint_id];
+    if(joint_types_[joint_id] != urdf::Joint::PRISMATIC) {
+      tf_plink_to_hlink.quat().coeffs() << sin_cache[i] * joint_axes_[joint_id], cos_cache[i];
+      tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
+    }else{
+      Eigen::Vector3d&& trans = joint_axes_[joint_id] * joint_angles[i];
+      tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans + trans;
+      tf_plink_to_hlink.quat().setIdentity();
+    }
   }
   clear_cache();
 }
@@ -270,8 +349,6 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const Transfo
   links_[parent_id]->child_joints.push_back(fixed_joint);
 
   transform_cache_.extend();
-  link_id_stack_.extend();
-  transform_stack2_.extend();
   tf_plink_to_hlink_cache_.push_back(pose);
 
   this->update_rptable(); // set _rptable

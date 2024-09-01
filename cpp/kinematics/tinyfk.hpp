@@ -53,6 +53,11 @@ public: // members
   std::vector<urdf::LinkSharedPtr> com_dummy_links_;
 
   std::vector<urdf::JointSharedPtr> joints_;
+  std::vector<int> joint_types_;
+  std::vector<Eigen::Vector3d> joint_axes_;
+  std::vector<Eigen::Vector3d> joint_positions_;
+  std::vector<int> joint_child_link_ids_;
+
   std::unordered_map<std::string, int> joint_ids_;
   std::vector<double> joint_angles_;
   Transform base_pose_;
@@ -61,8 +66,6 @@ public: // members
   int num_dof_;
   double total_mass_;
 
-  mutable SizedStack<size_t> link_id_stack_;
-  mutable SizedStack<std::pair<urdf::LinkSharedPtr, Transform>> transform_stack2_;
   mutable SizedCache<Transform> transform_cache_;
   mutable std::vector<Transform> tf_plink_to_hlink_cache_;
 
@@ -86,6 +89,7 @@ public: // functions
 
   inline void clear_cache() {
       transform_cache_.clear();
+      transform_cache_.set_cache(root_link_id_, base_pose_);
   }
 
   void set_init_angles();

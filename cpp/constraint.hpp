@@ -263,14 +263,22 @@ struct SphereGroup {
 
   void create_sphere_position_cache(
       std::shared_ptr<tinyfk::KinematicModel> kin) {
-    auto plink_pose = kin->get_link_pose(parent_link_id);
-    if (is_rot_mat_dirty) {
-      rot_mat_cache = plink_pose.quat().toRotationMatrix();
-      this->is_rot_mat_dirty = false;
+    // The code below is "safe" but not efficient so see the HACK below
+    // auto plink_pose = kin->get_link_pose(parent_link_id);
+    // if (is_rot_mat_dirty) {
+    //   rot_mat_cache = plink_pose.quat().toRotationMatrix();
+    //   this->is_rot_mat_dirty = false;
+    // }
+
+    // HACK: because the sub-sphere is evaluated after the group sphere
+    // we know that there exiss matrix cache and transform cache. so...
+    auto& plink_trans = kin->transform_cache_.data_[parent_link_id].trans();
+
+    // NOTE: the above for-loop is faster than batch operation using Colwise
+    for (int i = 0; i < sphere_positions_cache.cols(); i++) {
+      sphere_positions_cache.col(i) =
+          rot_mat_cache * sphere_relative_positions.col(i) + plink_trans;
     }
-    this->sphere_positions_cache =
-        (rot_mat_cache * sphere_relative_positions).colwise() +
-        plink_pose.trans();
     this->is_sphere_positions_dirty = false;
   }
 };

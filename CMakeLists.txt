@@ -2,10 +2,11 @@ set(CMAKE_CXX_STANDARD 17)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
-set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS_INIT} -Wall -fPIC")
+set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS_INIT} -fPIC")
 
 find_package(Eigen3 REQUIRED)
 ADD_DEFINITIONS(-DEIGEN_NO_DEBUG)
+ADD_DEFINITIONS(-DEIGEN_DONT_VECTORIZE)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 add_subdirectory("third/urdf_parser")
@@ -15,6 +16,8 @@ find_package(Boost REQUIRED COMPONENTS serialization)
 option(OMPL_REGISTRATION OFF)  # avoid popup in browser
 add_subdirectory(third/ompl)
 include_directories("third/ompl/src")
+
+include_directories("third/version2")
 
 option(USE_VALGRIND "Use valgrind to profile the code" OFF)
 if(USE_VALGRIND)

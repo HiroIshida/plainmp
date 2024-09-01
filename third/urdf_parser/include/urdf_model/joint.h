@@ -187,6 +187,7 @@ public:
   Eigen::Vector3d axis;
 
   unsigned int id;
+  bool is_origin_with_rotation;
 
   /// child Link element
   ///   child link frame is the same as the Joint frame
@@ -213,26 +214,6 @@ public:
   /// Option to Mimic another Joint
   JointMimicSharedPtr mimic;
 
-  QuatTrans<double> transform(double angle){
-      if(type == REVOLUTE || type==CONTINUOUS){
-        QuatTrans<double> tf;
-        tf.quat().coeffs().segment(0,3) = axis * sin(angle * 0.5);
-        tf.quat().w() = cos(angle * 0.5);
-        tf.trans().setZero();
-        return tf;
-      }
-      if(type == PRISMATIC){
-        QuatTrans<double> tf;
-        tf.quat().setIdentity();
-        tf.trans() = axis * angle;
-        return tf;
-      }
-      if(type == FIXED){
-        return QuatTrans<double>::Identity();
-      }
-      throw std::runtime_error("unsupported joint detected");
-  }
-
   void setChildLink(const LinkSharedPtr &child)
   { child_link_ = child; }
 
@@ -251,6 +232,13 @@ public:
     this->calibration.reset();
     this->mimic.reset();
     this->type = UNKNOWN;
+
+    // check if the origin has rotation
+    auto rotmat = this->parent_to_joint_origin_transform.quat().toRotationMatrix();
+    this->is_origin_with_rotation = !rotmat.isApprox(Eigen::Matrix3d::Identity());
+    if(is_origin_with_rotation){
+      throw std::runtime_error("currently, origin with rotation is not supported");
+    }
   };
 
 private:
