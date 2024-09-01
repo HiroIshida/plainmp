@@ -136,6 +136,13 @@ public: // functions
                                RotationType rot_type = RotationType::IGNORE,
                                bool with_base = false);
 
+  Eigen::MatrixXd get_attached_point_jacobian(
+          size_t plink_id,
+          Eigen::Vector3d global_pos, // TODO: provide relative pos is clearner though
+          const std::vector<size_t>& joint_ids,
+          bool with_base = false);
+
+
   Eigen::Vector3d get_com();
 
   Eigen::MatrixXd get_com_jacobian(const std::vector<size_t> &joint_ids,
