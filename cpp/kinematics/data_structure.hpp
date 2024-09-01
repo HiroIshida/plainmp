@@ -1,4 +1,5 @@
 #include <vector>
+#include <cstdint>
 
 namespace tinyfk {
 
@@ -6,31 +7,32 @@ template <class DataT> class SizedCache {
 public:
   explicit SizedCache(size_t cache_size)
       : cache_size_(cache_size), data_(std::vector<DataT>(cache_size)),
-        cache_predicate_vector_(std::vector<bool>(cache_size, false)) {}
+        cache_predicate_vector_(std::vector<std::uint8_t>(cache_size, 0)) {}
 
   SizedCache() : SizedCache(0) {}
 
   inline void set_cache(size_t id, const DataT &data) {
-    cache_predicate_vector_[id] = true;
+    cache_predicate_vector_[id] = 1;
     data_[id] = data;
   }
 
-  inline bool is_cached(size_t id) const { return cache_predicate_vector_[id]; }
+  inline bool is_cached(size_t id) const {
+    return (cache_predicate_vector_[id] == 1);
+  }
 
   void extend() {
     cache_size_++;
     data_.push_back(DataT());
-    cache_predicate_vector_.push_back(false);
+    cache_predicate_vector_.push_back(0);
     this->clear();
   }
 
-  // this looks inefficient (due to dynamic allocation), but it is somehow 
-  // faster than using std::fill ...
-  inline void clear() { cache_predicate_vector_ = std::vector<bool>(cache_size_); }
+  inline void clear() { std::fill(cache_predicate_vector_.begin(), cache_predicate_vector_.end(), 0); }
 
   int cache_size_;
   std::vector<DataT> data_;
-  std::vector<bool> cache_predicate_vector_;
+  // std::vector<bool> is not good for indexing
+  std::vector<std::uint8_t> cache_predicate_vector_;
 };
 
 template <class ElementT> class SizedStack {
