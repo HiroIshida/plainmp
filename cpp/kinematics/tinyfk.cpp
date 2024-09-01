@@ -38,6 +38,16 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   size_t N_link = lid; // starting from 0 and finally ++ increment, so it'S ok
   root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
 
+  // compute link_parent_link_ids
+  std::vector<size_t> link_parent_link_ids(N_link);
+  for(const auto& link : links) {
+    if(link->getParent() != nullptr) {
+      link_parent_link_ids[link->id] = link->getParent()->id;
+    }else{
+      link_parent_link_ids[link->id] = 999999; // dummy value to cause segfault
+    }
+  }
+
   // compute total mass
   double total_mass = 0.0;
   for (const auto &link : links) {
@@ -105,6 +115,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
 
   links_ = links;
   link_ids_ = link_ids;
+  link_parent_link_ids_ = link_parent_link_ids;
   joints_ = joints;
   joint_types_ = joint_types;
   joint_axes_ = joint_axes;
@@ -350,6 +361,7 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const Transfo
 
   transform_cache_.extend();
   tf_plink_to_hlink_cache_.push_back(pose);
+  link_parent_link_ids_.push_back(parent_id);
 
   this->update_rptable(); // set _rptable
 

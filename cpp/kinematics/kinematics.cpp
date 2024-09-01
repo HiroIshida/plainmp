@@ -48,17 +48,15 @@ void KinematicModel::build_cache_until(size_t link_id) const
   }
 }
 
-void KinematicModel::build_cache_until_inner(size_t link_id) const {
-  auto hlink = links_[link_id];
-
+void KinematicModel::build_cache_until_inner(size_t hlink_id) const {
   std::array<size_t, 64> id_stack_like;  // 64 is enough for almost all cases
   size_t idx = 0;
-  while(!transform_cache_.is_cached(hlink->id)) {
-    id_stack_like[idx++] = hlink->id;
-    hlink = hlink->getParent();
+  while(!transform_cache_.is_cached(hlink_id)) {
+    id_stack_like[idx++] = hlink_id;
+    hlink_id = link_parent_link_ids_[hlink_id];
   }
 
-  Transform tf_rlink_to_plink = transform_cache_.data_[hlink->id];
+  Transform tf_rlink_to_plink = transform_cache_.data_[hlink_id];
   while(idx > 0) {
     size_t hid = id_stack_like[--idx];
     Transform tf_rlink_to_hlink = tf_rlink_to_plink * tf_plink_to_hlink_cache_[hid];

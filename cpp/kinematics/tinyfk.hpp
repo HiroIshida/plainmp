@@ -50,6 +50,7 @@ public: // members
   size_t root_link_id_;
   std::vector<urdf::LinkSharedPtr> links_;
   std::unordered_map<std::string, int> link_ids_;
+  std::vector<size_t> link_parent_link_ids_;
   std::vector<urdf::LinkSharedPtr> com_dummy_links_;
 
   std::vector<urdf::JointSharedPtr> joints_;
