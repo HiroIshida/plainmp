@@ -257,24 +257,22 @@ SphereCollisionCst::evaluate_dirty() {
       if (group.is_group_sphere_position_dirty) {
         group.create_group_sphere_position_cache(kin_);
       }
-      for (auto& sdf : all_sdfs_cache_) {
+      for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
+        auto& sdf = all_sdfs_cache_[j];
         if (!sdf->is_outside(group.group_sphere_position_cache,
                              group.group_radius + cutoff_dist_)) {
-          // if broad collision is detected
+          // if broad collision with sdf-j detected
           if (group.is_sphere_positions_dirty) {
             group.create_sphere_position_cache(kin_);
           }
-          for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
-            auto& sdf = all_sdfs_cache_[j];
-            for (size_t k = 0; k < group.radii.size(); k++) {
-              auto sphere_center = group.sphere_positions_cache.col(k);
-              double val = sdf->evaluate(sphere_center) - group.radii[k];
-              if (val < min_val_other) {
-                min_val_other = val;
-                min_group_idx = i;
-                min_sdf_idx = j;
-                min_sphere_idx = k;
-              }
+          for (size_t k = 0; k < group.radii.size(); k++) {
+            auto sphere_center = group.sphere_positions_cache.col(k);
+            double val = sdf->evaluate(sphere_center) - group.radii[k];
+            if (val < min_val_other) {
+              min_val_other = val;
+              min_group_idx = i;
+              min_sdf_idx = j;
+              min_sphere_idx = k;
             }
           }
         }
