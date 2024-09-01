@@ -11,7 +11,9 @@ namespace py = pybind11;
 void bind_primitive_sdf(py::module& m) {
   auto m_psdf = m.def_submodule("primitive_sdf");
   py::class_<Pose>(m_psdf, "Pose", py::module_local())
-      .def(py::init<const Eigen::Vector3d&, const Eigen::Matrix3d&>());
+      .def(py::init<const Eigen::Vector3d&, const Eigen::Matrix3d&>())
+      .def_readonly("axis_aligned", &Pose::axis_aligned_)
+      .def_readonly("z_axis_aligned", &Pose::z_axis_aligned_);
   py::class_<SDFBase, SDFBase::Ptr>(
       m_psdf, "SDFBase",
       py::module_local());  // user is not supposed to instantiate this class.

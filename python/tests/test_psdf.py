@@ -9,6 +9,21 @@ import plainmp.psdf as psdf
 from plainmp.utils import sksdf_to_cppsdf
 
 
+def test_pose_axis_align():
+    trans = np.zeros(3)
+    p1 = psdf.Pose(trans, np.eye(3))
+    assert p1.axis_aligned
+    assert p1.z_axis_aligned
+
+    p2 = psdf.Pose(trans, rpy_matrix(0.3, 0.0, 0.0))
+    assert not p2.axis_aligned
+    assert p2.z_axis_aligned
+
+    p3 = psdf.Pose(trans, rpy_matrix(0.3, 0.3, 0.3))
+    assert not p3.axis_aligned
+    assert not p3.z_axis_aligned
+
+
 @pytest.mark.parametrize("sksdf", [BoxSDF([0.5, 0.3, 0.6]), CylinderSDF(0.7, 0.2), SphereSDF(0.5)])
 def test_consistency_with_skrobot(sksdf):
     for i in range(100):

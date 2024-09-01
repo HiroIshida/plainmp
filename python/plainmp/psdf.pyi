@@ -4,6 +4,10 @@ import numpy as np
 
 class Pose:
     def __init__(self, translation: np.ndarray, rotation: np.ndarray) -> None: ...
+    @property
+    def axis_aligned(self) -> bool: ...
+    @property
+    def z_axis_aligned(self) -> bool: ...
 
 class SDFBase:
     def evaluate(self, point: np.ndarray) -> float:
