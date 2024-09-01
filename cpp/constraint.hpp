@@ -252,10 +252,13 @@ struct SphereGroup {
   void create_group_sphere_position_cache(
       std::shared_ptr<tinyfk::KinematicModel> kin) {
     auto plink_pose = kin->get_link_pose(parent_link_id);
-    if (is_rot_mat_dirty) {
-      rot_mat_cache = plink_pose.quat().toRotationMatrix();
-      this->is_rot_mat_dirty = false;
-    }
+    // The code below is "safe" but not efficient so see the HACK below
+    // if (is_rot_mat_dirty) {
+    //   rot_mat_cache = plink_pose.quat().toRotationMatrix();
+    //   this->is_rot_mat_dirty = false;
+    // }
+    // HACK: because is_group_sphere_position_dirty => is_sphere_positions_dirty
+    rot_mat_cache = plink_pose.quat().toRotationMatrix();
     this->group_sphere_position_cache =
         rot_mat_cache * group_sphere_relative_position + plink_pose.trans();
     this->is_group_sphere_position_dirty = false;
