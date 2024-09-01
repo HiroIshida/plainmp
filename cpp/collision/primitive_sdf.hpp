@@ -141,9 +141,13 @@ struct BoxSDF : public PrimitiveSDFBase {
   const Eigen::Vector3d& get_width() const { return width_; }
 
   double evaluate(const Point& p) const override {
-    Eigen::Vector3d sdists =
-        (pose_.rot_inv_ * (p - pose_.position_)).array().abs() -
-        half_width_.array();
+    Eigen::Vector3d sdists;
+    if (pose_.axis_aligned_) {
+      sdists = (p - pose_.position_).array().abs() - half_width_.array();
+    } else {
+      sdists = (pose_.rot_inv_ * (p - pose_.position_)).array().abs() -
+               half_width_.array();
+    }
     Eigen::Vector3d m = sdists.array().max(0.0);
     double outside_distance = m.norm();
     double inside_distance = (sdists.cwiseMin(0.0)).maxCoeff();
@@ -164,22 +168,53 @@ struct BoxSDF : public PrimitiveSDFBase {
     return outside_distance > radius;
     <<<<<<< */
 
-    // TODO: create axis-aligned bounding box case
-    auto p_from_center = p - pose_.position_;
-    double x_signed_dist =
-        abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
-    if (x_signed_dist > radius) {
-      return true;
-    }
-    double y_signed_dist =
-        abs(p_from_center.dot(pose_.rot_.col(1))) - half_width_(1);
-    if (y_signed_dist > radius) {
-      return true;
-    }
-    double z_signed_dist =
-        abs(p_from_center.dot(pose_.rot_.col(2))) - half_width_(2);
-    if (z_signed_dist > radius) {
-      return true;
+    double x_signed_dist, y_signed_dist, z_signed_dist;
+    if (pose_.axis_aligned_) {
+      x_signed_dist = abs(p(0) - pose_.position_(0)) - half_width_(0);
+      if (x_signed_dist > radius) {
+        return true;
+      }
+      y_signed_dist = abs(p(1) - pose_.position_(1)) - half_width_(1);
+      if (y_signed_dist > radius) {
+        return true;
+      }
+      z_signed_dist = abs(p(2) - pose_.position_(2)) - half_width_(2);
+      if (z_signed_dist > radius) {
+        return true;
+      }
+    } else if (pose_.z_axis_aligned_) {
+      z_signed_dist = abs(p(2) - pose_.position_(2)) - half_width_(2);
+      if (z_signed_dist > radius) {
+        return true;
+      }
+      auto p_from_center = p - pose_.position_;
+      x_signed_dist =
+          abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
+      if (x_signed_dist > radius) {
+        return true;
+      }
+      y_signed_dist =
+          abs(p_from_center.dot(pose_.rot_.col(1))) - half_width_(1);
+      if (y_signed_dist > radius) {
+        return true;
+      }
+    } else {
+      auto p_from_center = p - pose_.position_;
+      x_signed_dist =
+          abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
+      if (x_signed_dist > radius) {
+        return true;
+      }
+      y_signed_dist =
+          abs(p_from_center.dot(pose_.rot_.col(1))) - half_width_(1);
+      if (y_signed_dist > radius) {
+        return true;
+      }
+      z_signed_dist =
+          abs(p_from_center.dot(pose_.rot_.col(2))) - half_width_(2);
+      if (z_signed_dist > radius) {
+        return true;
+      }
     }
 
     if (radius < 1e-6) {
