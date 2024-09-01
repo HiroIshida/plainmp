@@ -13,7 +13,7 @@ else:
 
 setup(
     name="plainmp",
-    version="0.0.11",
+    version="0.0.12",
     description="experimental",
     author="Hirokazu Ishida",
     license="PolyForm NonCommercial 1.0.0",
