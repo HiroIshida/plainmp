@@ -192,8 +192,8 @@ Eigen::MatrixXd KinematicModel::get_attached_point_jacobian(
         bool with_base){
   const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
   Eigen::MatrixXd jacobian = Eigen::MatrixXd::Zero(3, dim_dof);
-  // the following logic is copied from get_jacobian()
 
+  // NOTE: the following logic is copied from get_jacobian()
   for (size_t i = 0; i < joint_ids.size(); i++) {
     int jid = joint_ids[i];
     if (rptable_.isRelevant(plink_id, jid)) {
@@ -218,11 +218,42 @@ Eigen::MatrixXd KinematicModel::get_attached_point_jacobian(
     }
   }
 
-  if(with_base){
-    size_t n_joint = joint_ids.size();
+  // NOTE: the following logic is copied from get_jacobian()
+  Transform tf_rlink_to_elink = Transform::Identity();
+  tf_rlink_to_elink.trans() = apoint_global_pos;
+  Transform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
+  Eigen::Vector3d rpy_rlink_to_blink;
+  if (with_base) {
+    tf_rlink_to_blink = get_link_pose(root_link_id_);
+    tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
+    rpy_rlink_to_blink = tf_rlink_to_blink.getRPY();
+    tf_blink_to_elink = tf_blink_to_rlink * tf_rlink_to_elink;
+  }
+
+  if (with_base) {
+    const size_t n_joint = joint_ids.size();
     jacobian(0, n_joint + 0) = 1.0;
     jacobian(1, n_joint + 1) = 1.0;
     jacobian(2, n_joint + 2) = 1.0;
+
+    // we resort to numerical method to base pose jacobian (just because I don't
+    // have time)
+    // TODO(HiroIshida): compute using analytical method.
+    constexpr double eps = 1e-7;
+    for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
+      const size_t idx_col = n_joint + 3 + rpy_idx;
+
+      auto rpy_tweaked = rpy_rlink_to_blink;
+      rpy_tweaked[rpy_idx] += eps;
+
+      Transform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
+      tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
+      Transform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
+      auto pose_out = tf_rlink_to_elink_tweaked;
+
+      const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
+      jacobian.block<3, 1>(0, idx_col) = pos_diff / eps;
+    }
   }
   return jacobian;
 }
