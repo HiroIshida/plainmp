@@ -37,6 +37,7 @@
 #ifndef URDF_MODEL_TYPES_H
 #define URDF_MODEL_TYPES_H
 
+#include <cstring>
 #include <memory>
 #include <iostream>
 #include <Eigen/Dense>
@@ -94,6 +95,13 @@ struct QuatTrans {
     // NOTE: considering memory layout, (quat, trans) is much better than (trans, quat)
     Eigen::Quaternion<Scalar> quat_;
     Eigen::Matrix<Scalar, 3, 1> trans_;
+
+    inline QuatTrans<Scalar>& operator=(const QuatTrans<Scalar>& other) {
+        quat_ = other.quat_;
+        // somehow eigen's assginment operator is quite slow. so
+        std::memcpy(trans_.data(), other.trans().data(), sizeof(Scalar) * 3);
+        return *this;
+    }
 
     // acceessor
     inline Eigen::Quaternion<Scalar>& quat() { return quat_; }
