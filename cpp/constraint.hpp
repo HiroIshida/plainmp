@@ -333,7 +333,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<std::pair<size_t, size_t>> selcol_group_id_pairs_;
   SDFBase::Ptr fixed_sdf_;
   SDFBase::Ptr sdf_;  // set later by user
-  std::vector<SDFBase::Ptr> all_sdfs_cache_;
+  std::vector<PrimitiveSDFBase::Ptr> all_sdfs_cache_;
   double cutoff_dist_ = 0.1;
 };
 

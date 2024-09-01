@@ -108,12 +108,33 @@ struct UnionSDF : public SDFBase {
 struct PrimitiveSDFBase : public SDFBase {
  public:
   using Ptr = std::shared_ptr<PrimitiveSDFBase>;
+
+  // this filtering is quite fast as it is not virtual function
+  inline bool is_outside_aabb(const Point& p, double radius) const {
+    if (p(2) < lb(2) - radius || p(2) > ub(2) + radius) {
+      return true;
+    }
+    if (p(1) < lb(1) - radius || p(1) > ub(1) + radius) {
+      return true;
+    }
+    if (p(0) < lb(0) - radius || p(0) > ub(0) + radius) {
+      return true;
+    }
+    return false;
+  }
+  Eigen::Vector3d lb;
+  Eigen::Vector3d ub;
 };
 
 struct GroundSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<GroundSDF>;
   SDFType get_type() const override { return SDFType::GROUND; }
-  GroundSDF(double height) : height_(height) {}
+  GroundSDF(double height) : height_(height) {
+    lb = Eigen::Vector3d(-std::numeric_limits<double>::infinity(),
+                         -std::numeric_limits<double>::infinity(), 0.0);
+    ub = Eigen::Vector3d(std::numeric_limits<double>::infinity(),
+                         std::numeric_limits<double>::infinity(), 0.0);
+  }
   Values evaluate_batch(const Points& p) const override {
     return p.row(2).array() + height_;
   }
@@ -131,7 +152,28 @@ struct BoxSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<BoxSDF>;
   SDFType get_type() const override { return SDFType::BOX; }
   BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
-      : width_(width), half_width_(0.5 * width), pose_(pose) {}
+      : width_(width), half_width_(0.5 * width), pose_(pose) {
+    Eigen::Matrix3Xd local_vertices(3, 8);
+    local_vertices.col(0) =
+        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
+    local_vertices.col(1) =
+        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
+    local_vertices.col(2) =
+        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
+    local_vertices.col(3) =
+        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
+    local_vertices.col(4) =
+        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
+    local_vertices.col(5) =
+        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
+    local_vertices.col(6) =
+        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
+    local_vertices.col(7) =
+        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
+    auto world_vertices = pose.inverse().transform_points(local_vertices);
+    lb = world_vertices.rowwise().minCoeff();
+    ub = world_vertices.rowwise().maxCoeff();
+  }
 
   void set_width(const Eigen::Vector3d& width) {
     width_ = width;
@@ -260,7 +302,20 @@ struct CylinderSDF : public PrimitiveSDFBase {
         rsq_cylinder_(radius * radius),
         height_(height),
         half_height_(0.5 * height),
-        pose_(pose) {}
+        pose_(pose) {
+    Eigen::Matrix3Xd local_vertices(3, 8);
+    local_vertices.col(0) = Eigen::Vector3d(-radius, -radius, -height * 0.5);
+    local_vertices.col(1) = Eigen::Vector3d(radius, -radius, -height * 0.5);
+    local_vertices.col(2) = Eigen::Vector3d(-radius, radius, -height * 0.5);
+    local_vertices.col(3) = Eigen::Vector3d(radius, radius, -height * 0.5);
+    local_vertices.col(4) = Eigen::Vector3d(-radius, -radius, height * 0.5);
+    local_vertices.col(5) = Eigen::Vector3d(radius, -radius, height * 0.5);
+    local_vertices.col(6) = Eigen::Vector3d(-radius, radius, height * 0.5);
+    local_vertices.col(7) = Eigen::Vector3d(radius, radius, height * 0.5);
+    auto world_vertices = pose.inverse().transform_points(local_vertices);
+    lb = world_vertices.rowwise().minCoeff();
+    ub = world_vertices.rowwise().maxCoeff();
+  }
 
   double evaluate(const Point& p) const override {
     double z_signed_dist, xdot_abs, ydot_abs;
@@ -330,7 +385,10 @@ struct SphereSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<SphereSDF>;
   SDFType get_type() const override { return SDFType::SPHERE; }
   SphereSDF(double radius, const Pose& pose)
-      : r_sphere_(radius), rsq_sphere_(radius * radius), pose_(pose) {}
+      : r_sphere_(radius), rsq_sphere_(radius * radius), pose_(pose) {
+    lb = pose.position_ - Eigen::Vector3d(radius, radius, radius);
+    ub = pose.position_ + Eigen::Vector3d(radius, radius, radius);
+  }
 
   double evaluate(const Point& p) const override {
     auto p_from_center = p - pose_.position_;

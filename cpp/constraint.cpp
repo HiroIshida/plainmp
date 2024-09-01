@@ -175,15 +175,22 @@ bool SphereCollisionCst::check_ext_collision() {
     }
 
     for (auto& sdf : all_sdfs_cache_) {
-      if (!sdf->is_outside(group.group_sphere_position_cache,
-                           group.group_radius)) {
-        if (group.is_sphere_positions_dirty) {
-          group.create_sphere_position_cache(kin_);
-        }
-        for (size_t i = 0; i < group.radii.size(); i++) {
-          if (!sdf->is_outside(group.sphere_positions_cache.col(i),
-                               group.radii[i])) {
-            return false;
+      if (!sdf->is_outside_aabb(group.group_sphere_position_cache,
+                                group.group_radius)) {
+        if (!sdf->is_outside(group.group_sphere_position_cache,
+                             group.group_radius)) {
+          // now narrow phase collision checking
+          if (group.is_sphere_positions_dirty) {
+            group.create_sphere_position_cache(kin_);
+          }
+          for (size_t i = 0; i < group.radii.size(); i++) {
+            if (!sdf->is_outside_aabb(group.sphere_positions_cache.col(i),
+                                      group.radii[i])) {
+              if (!sdf->is_outside(group.sphere_positions_cache.col(i),
+                                   group.radii[i])) {
+                return false;
+              }
+            }
           }
         }
       }
@@ -422,7 +429,8 @@ void SphereCollisionCst::set_all_sdfs_inner(SDFBase::Ptr sdf) {
       set_all_sdfs_inner(sub_sdf);
     }
   } else {
-    all_sdfs_cache_.push_back(sdf);
+    auto primitive_sdf = std::static_pointer_cast<PrimitiveSDFBase>(sdf);
+    all_sdfs_cache_.push_back(primitive_sdf);
   }
 }
 
