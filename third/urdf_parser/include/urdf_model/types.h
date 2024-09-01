@@ -91,6 +91,7 @@ std::shared_ptr<T> static_pointer_cast(std::shared_ptr<U> const & r)
 
 template<typename Scalar>
 struct QuatTrans {
+    // NOTE: considering memory layout, (quat, trans) is much better than (trans, quat)
     Eigen::Quaternion<Scalar> quat_;
     Eigen::Matrix<Scalar, 3, 1> trans_;
 
