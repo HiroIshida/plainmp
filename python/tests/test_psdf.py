@@ -11,9 +11,16 @@ from plainmp.utils import sksdf_to_cppsdf
 
 @pytest.mark.parametrize("sksdf", [BoxSDF([0.5, 0.3, 0.6]), CylinderSDF(0.7, 0.2), SphereSDF(0.5)])
 def test_consistency_with_skrobot(sksdf):
-    for _ in range(100):
+    for i in range(100):
         trans = np.random.randn(3) * 0.5
-        yaw, pitch, roll = np.random.randn(3)
+        if i == 0:
+            yaw = pitch = roll = 0.0
+        elif i == 1:
+            yaw = 0.3
+            pitch = 0.0
+            roll = 0.0
+        else:
+            yaw, pitch, roll = np.random.randn(3)
         co = Coordinates(trans, rot=rpy_matrix(yaw, pitch, roll))
         sksdf.newcoords(co)
         sdf = sksdf_to_cppsdf(sksdf)
@@ -69,9 +76,14 @@ sksdfs = [
 
 @pytest.mark.parametrize("sksdf", sksdfs)
 def test_closed_primitive_sdfs(sksdf):
-    for _ in range(10):
+    for i in range(10):
         xyz = np.random.randn(3)
-        ypr = np.random.randn(3)
+        if i == 0:
+            ypr = np.zeros(3)
+        elif i == 1:
+            ypr = np.array([0.3, 0.0, 0.0])
+        else:
+            ypr = np.random.randn(3)
         sksdf.newcoords(Coordinates(xyz, ypr))
         cppsdf = convert(sksdf)
 

@@ -17,7 +17,18 @@ using Values = Eigen::VectorXd;
 
 struct Pose {
   Pose(const Eigen::Vector3d& position, const Eigen::Matrix3d& rotation)
-      : position_(position), rot_(rotation), rot_inv_(rotation.inverse()) {}
+      : position_(position), rot_(rotation), rot_inv_(rotation.inverse()) {
+    axis_aligned_ = rot_.isApprox(Eigen::Matrix3d::Identity());
+    if (axis_aligned_) {
+      z_axis_aligned_ = true;
+    } else {
+      double tol = 1e-6;
+      z_axis_aligned_ =
+          std::abs(rot_(2, 2) - 1.0) < tol && std::abs(rot_(0, 2)) < tol &&
+          std::abs(rot_(1, 2)) < tol && std::abs(rot_(2, 0)) < tol &&
+          std::abs(rot_(2, 1)) < tol;
+    }
+  }
 
   Points transform_points(const Points& p) const {
     return rot_inv_ * (p.colwise() - position_);
@@ -34,6 +45,8 @@ struct Pose {
   Eigen::Vector3d position_;
   Eigen::Matrix3d rot_;
   Eigen::Matrix3d rot_inv_;
+  bool axis_aligned_;
+  bool z_axis_aligned_;
 };
 
 enum SDFType { UNION, BOX, CYLINDER, SPHERE, GROUND };
@@ -151,7 +164,7 @@ struct BoxSDF : public PrimitiveSDFBase {
     return outside_distance > radius;
     <<<<<<< */
 
-    // TODO: create axis-aligned bounding box case?
+    // TODO: create axis-aligned bounding box case
     auto p_from_center = p - pose_.position_;
     double x_signed_dist =
         abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
@@ -215,11 +228,17 @@ struct CylinderSDF : public PrimitiveSDFBase {
         pose_(pose) {}
 
   double evaluate(const Point& p) const override {
-    auto p_from_center = p - pose_.position_;
-    auto z_signed_dist =
-        abs(p_from_center.dot(pose_.rot_.col(2))) - half_height_;
-    double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
-    double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
+    double z_signed_dist, xdot_abs, ydot_abs;
+    if (pose_.z_axis_aligned_) {
+      z_signed_dist = abs(p(2) - pose_.position_(2)) - half_height_;
+      xdot_abs = abs(p(0) - pose_.position_(0));
+      ydot_abs = abs(p(1) - pose_.position_(1));
+    } else {
+      auto p_from_center = p - pose_.position_;
+      z_signed_dist = abs(p_from_center.dot(pose_.rot_.col(2))) - half_height_;
+      xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
+      ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
+    }
     double r_signed_dist =
         sqrt(xdot_abs * xdot_abs + ydot_abs * ydot_abs) - r_cylinder_;
     Eigen::Vector2d d_2d(r_signed_dist, z_signed_dist);
@@ -229,14 +248,23 @@ struct CylinderSDF : public PrimitiveSDFBase {
   }
 
   bool is_outside(const Point& p, double radius) const override {
-    auto p_from_center = p - pose_.position_;
-    auto z_signed_dist =
-        abs(p_from_center.dot(pose_.rot_.col(2))) - half_height_;
-    if (z_signed_dist > radius) {
-      return true;
+    double z_signed_dist, xdot_abs, ydot_abs;
+    if (pose_.z_axis_aligned_) {
+      z_signed_dist = abs(p(2) - pose_.position_(2)) - half_height_;
+      if (z_signed_dist > radius) {
+        return true;
+      }
+      xdot_abs = abs(p(0) - pose_.position_(0));
+      ydot_abs = abs(p(1) - pose_.position_(1));
+    } else {
+      auto p_from_center = p - pose_.position_;
+      z_signed_dist = abs(p_from_center.dot(pose_.rot_.col(2))) - half_height_;
+      if (z_signed_dist > radius) {
+        return true;
+      }
+      xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
+      ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
     }
-    double xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
-    double ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
     double dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
     if (radius < 1e-6) {
       return dist_sq > rsq_cylinder_;
