@@ -24,7 +24,7 @@ class ConstraintBase {
         control_joint_ids_(kin->get_joint_ids(control_joint_names)),
         with_base_(with_base) {}
 
-  virtual void update_kintree(const std::vector<double>& q) {
+  void update_kintree(const std::vector<double>& q) {
     if (with_base_) {
       std::vector<double> q_head(control_joint_ids_.size());
       std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
@@ -42,6 +42,10 @@ class ConstraintBase {
     }
   }
 
+  // Intentionally not put this into update_kintree, considering that
+  // this will be called from composite constraint by for-loop
+  virtual void post_update_kintree() {}
+
   inline size_t q_dim() const {
     return control_joint_ids_.size() + (with_base_ ? 6 : 0);
   }
@@ -49,6 +53,7 @@ class ConstraintBase {
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate(
       const std::vector<double>& q) {
     update_kintree(q);
+    post_update_kintree();
     return evaluate_dirty();
   }
 
@@ -81,6 +86,7 @@ class IneqConstraintBase : public ConstraintBase {
   using ConstraintBase::ConstraintBase;
   bool is_valid(const std::vector<double>& q) {
     update_kintree(q);
+    post_update_kintree();
     return is_valid_dirty();
   }
   bool is_equality() const override { return false; }
@@ -280,8 +286,7 @@ class SphereCollisionCst : public IneqConstraintBase {
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
       std::optional<SDFBase::Ptr> fixed_sdf);
 
-  void update_kintree(const std::vector<double>& q) override {
-    IneqConstraintBase::update_kintree(q);
+  void post_update_kintree() override {
     for (auto& group : sphere_groups_) {
       group.clear_cache();
     }
