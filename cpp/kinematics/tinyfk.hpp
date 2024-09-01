@@ -64,7 +64,6 @@ public: // members
   mutable SizedStack<size_t> link_id_stack_;
   mutable SizedStack<std::pair<urdf::LinkSharedPtr, Transform>> transform_stack2_;
   mutable SizedCache<Transform> transform_cache_;
-  mutable SizedCache<Eigen::Matrix3d> rotmat_cache_;
   mutable std::vector<Transform> tf_plink_to_hlink_cache_;
 
 public: // functions
@@ -87,7 +86,6 @@ public: // functions
 
   inline void clear_cache() {
       transform_cache_.clear();
-      rotmat_cache_.clear();
   }
 
   void set_init_angles();
@@ -135,6 +133,13 @@ public: // functions
                                const std::vector<size_t> &joint_ids,
                                RotationType rot_type = RotationType::IGNORE,
                                bool with_base = false);
+
+  Eigen::MatrixXd get_attached_point_jacobian(
+          size_t plink_id,
+          Eigen::Vector3d global_pos, // TODO: provide relative pos is clearner though
+          const std::vector<size_t>& joint_ids,
+          bool with_base = false);
+
 
   Eigen::Vector3d get_com();
 

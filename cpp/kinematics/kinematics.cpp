@@ -31,6 +31,7 @@ void KinematicModel::build_cache_until(size_t link_id) const
   if(links_[link_id]->consider_rotation) {
     this->build_cache_until_inner(link_id);
   } else {
+    // TODO: we should remove this!
     auto hlink = links_[link_id];
     auto plink = hlink->getParent();
     auto pjoint = hlink->parent_joint;
@@ -38,12 +39,8 @@ void KinematicModel::build_cache_until(size_t link_id) const
       build_cache_until_inner(plink->id);
     }
     Transform& tf_rlink_to_plink = transform_cache_.data_[plink->id];
-
-    if(!rotmat_cache_.is_cached(plink->id)) {
-      rotmat_cache_.set_cache(plink->id, tf_rlink_to_plink.quat().toRotationMatrix());
-    }
-
-    Eigen::Vector3d&& pos = tf_rlink_to_plink.trans() + rotmat_cache_.data_[plink->id] * pjoint->parent_to_joint_origin_transform.trans();
+    auto&& rotmat = tf_rlink_to_plink.quat().toRotationMatrix();
+    Eigen::Vector3d&& pos = tf_rlink_to_plink.trans() + rotmat * pjoint->parent_to_joint_origin_transform.trans();
     // HACK: we want to update the only position part
     // thus, we commented out the private: and directly access the data
     transform_cache_.cache_predicate_vector_[link_id] = true;
@@ -105,9 +102,6 @@ KinematicModel::get_jacobian(size_t elink_id,
     if (rptable_.isRelevant(elink_id, jid)) {
       const urdf::JointSharedPtr &hjoint = joints_[jid];
       size_t type = hjoint->type;
-      if (type == urdf::Joint::FIXED) {
-        assert(type != urdf::Joint::FIXED && "fixed type is not accepted");
-      }
       urdf::LinkSharedPtr clink =
           hjoint->getChildLink(); // rotation of clink and hlink is same. so
                                   // clink is ok.
@@ -152,18 +146,17 @@ KinematicModel::get_jacobian(size_t elink_id,
   }
 
   if (with_base) {
-    const size_t dim_dof = joint_ids.size();
-
-    jacobian(0, dim_dof + 0) = 1.0;
-    jacobian(1, dim_dof + 1) = 1.0;
-    jacobian(2, dim_dof + 2) = 1.0;
+    const size_t n_joint = joint_ids.size();
+    jacobian(0, n_joint + 0) = 1.0;
+    jacobian(1, n_joint + 1) = 1.0;
+    jacobian(2, n_joint + 2) = 1.0;
 
     // we resort to numerical method to base pose jacobian (just because I don't
     // have time)
     // TODO(HiroIshida): compute using analytical method.
     constexpr double eps = 1e-7;
     for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
-      const size_t idx_col = dim_dof + 3 + rpy_idx;
+      const size_t idx_col = n_joint + 3 + rpy_idx;
 
       auto rpy_tweaked = rpy_rlink_to_blink;
       rpy_tweaked[rpy_idx] += eps;
@@ -183,6 +176,80 @@ KinematicModel::get_jacobian(size_t elink_id,
         // jacobian.block<4, 1>(3, idx_col) = (pose_out.q.coeffs() - erot).toEigen() / eps;
         jacobian.block<4, 1>(3, idx_col) = (pose_out.quat().coeffs() - erot.coeffs()) / eps;
       }
+    }
+  }
+  return jacobian;
+}
+
+
+Eigen::MatrixXd KinematicModel::get_attached_point_jacobian(
+        size_t plink_id,
+        Eigen::Vector3d apoint_global_pos,
+        const std::vector<size_t>& joint_ids,
+        bool with_base){
+  const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
+  Eigen::MatrixXd jacobian = Eigen::MatrixXd::Zero(3, dim_dof);
+
+  // NOTE: the following logic is copied from get_jacobian()
+  for (size_t i = 0; i < joint_ids.size(); i++) {
+    int jid = joint_ids[i];
+    if (rptable_.isRelevant(plink_id, jid)) {
+      const urdf::JointSharedPtr &hjoint = joints_[jid];
+      size_t type = hjoint->type;
+      urdf::LinkSharedPtr clink =
+          hjoint->getChildLink(); // rotation of clink and hlink is same. so
+                                  // clink is ok.
+      const auto& tf_rlink_to_clink = get_link_pose(clink->id);
+      auto &crot = tf_rlink_to_clink.quat();
+      auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
+
+      Eigen::Vector3d dpos;
+      if (type == urdf::Joint::PRISMATIC) {
+        dpos = world_axis;
+      } else { // revolute or continuous
+        auto &cpos = tf_rlink_to_clink.trans();
+        auto vec_clink_to_elink = apoint_global_pos - cpos;
+        dpos = world_axis.cross(vec_clink_to_elink);
+      }
+      jacobian.block<3, 1>(0, i) = dpos;
+    }
+  }
+
+  // NOTE: the following logic is copied from get_jacobian()
+  Transform tf_rlink_to_elink = Transform::Identity();
+  tf_rlink_to_elink.trans() = apoint_global_pos;
+  Transform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
+  Eigen::Vector3d rpy_rlink_to_blink;
+  if (with_base) {
+    tf_rlink_to_blink = get_link_pose(root_link_id_);
+    tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
+    rpy_rlink_to_blink = tf_rlink_to_blink.getRPY();
+    tf_blink_to_elink = tf_blink_to_rlink * tf_rlink_to_elink;
+  }
+
+  if (with_base) {
+    const size_t n_joint = joint_ids.size();
+    jacobian(0, n_joint + 0) = 1.0;
+    jacobian(1, n_joint + 1) = 1.0;
+    jacobian(2, n_joint + 2) = 1.0;
+
+    // we resort to numerical method to base pose jacobian (just because I don't
+    // have time)
+    // TODO(HiroIshida): compute using analytical method.
+    constexpr double eps = 1e-7;
+    for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
+      const size_t idx_col = n_joint + 3 + rpy_idx;
+
+      auto rpy_tweaked = rpy_rlink_to_blink;
+      rpy_tweaked[rpy_idx] += eps;
+
+      Transform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
+      tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
+      Transform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
+      auto pose_out = tf_rlink_to_elink_tweaked;
+
+      const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
+      jacobian.block<3, 1>(0, idx_col) = pos_diff / eps;
     }
   }
   return jacobian;

@@ -29,6 +29,9 @@ class CompositeConstraintBase {
 
   void update_kintree(const std::vector<double>& q) {
     constraints_.front()->update_kintree(q);
+    for (auto& cst : constraints_) {
+      cst->post_update_kintree();
+    }
   }
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate(
