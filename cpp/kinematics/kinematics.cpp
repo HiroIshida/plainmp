@@ -59,7 +59,7 @@ void KinematicModel::build_cache_until_inner(size_t hlink_id) const {
   Transform tf_rlink_to_plink = transform_cache_.data_[hlink_id];
   while(idx > 0) {
     size_t hid = id_stack_like[--idx];
-    Transform tf_rlink_to_hlink = tf_rlink_to_plink * tf_plink_to_hlink_cache_[hid];
+    Transform tf_rlink_to_hlink = tf_rlink_to_plink.quat_identity_sensitive_mul(tf_plink_to_hlink_cache_[hid]);
     transform_cache_.set_cache(hid, tf_rlink_to_hlink);
     tf_rlink_to_plink = std::move(tf_rlink_to_hlink);
   }

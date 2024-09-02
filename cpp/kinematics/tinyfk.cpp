@@ -109,7 +109,12 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   for(size_t hid = 0; hid < N_link; hid++) {
     auto pjoint = links[hid]->parent_joint;
     if(pjoint != nullptr) {
+      // HACK: if joint is not fixed, the value (origin_transform, quat_identity)
+      // will be overwritten in the set_joint_angles(q)
       tf_plink_to_hlink_cache_[hid] = pjoint->parent_to_joint_origin_transform;
+      // HACK: assume that joint origin rotation is identity
+      // actually this is checked in the urdf loading time, so this must be ok
+      tf_plink_to_hlink_cache_[hid].is_quat_identity_ = true;
     }
   }
 
@@ -209,10 +214,12 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
     if(joint_types_[joint_id] != urdf::Joint::PRISMATIC) {
       tf_plink_to_hlink.quat().coeffs() << sin_cache[i] * joint_axes_[joint_id], cos_cache[i];
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
+      tf_plink_to_hlink.is_quat_identity_ = false;
     }else{
       Eigen::Vector3d&& trans = joint_axes_[joint_id] * joint_angles[i];
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans + trans;
       tf_plink_to_hlink.quat().setIdentity();
+      tf_plink_to_hlink.is_quat_identity_ = true;
     }
   }
   clear_cache();

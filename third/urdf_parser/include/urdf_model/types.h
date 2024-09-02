@@ -95,6 +95,7 @@ struct QuatTrans {
     // NOTE: considering memory layout, (quat, trans) is much better than (trans, quat)
     Eigen::Quaternion<Scalar> quat_;
     Eigen::Matrix<Scalar, 3, 1> trans_;
+    bool is_quat_identity_ = false;
 
     inline QuatTrans<Scalar>& operator=(const QuatTrans<Scalar>& other) {
         quat_ = other.quat_;
@@ -121,7 +122,22 @@ struct QuatTrans {
         trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
     }
     inline QuatTrans<Scalar> operator*(const QuatTrans<Scalar>& other) const {
-        return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
+        if(other.is_quat_identity_) {
+            return {quat_, trans_ + quat_ * other.trans_};
+        } else {
+            return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
+        }
+    }
+
+    inline QuatTrans<Scalar> quat_identity_sensitive_mul(const QuatTrans<Scalar>& other) const {
+        // NOTE: in kin tree update, left side is from root => current transform
+        // which is usually not quat-identity. but other is from pair-link-wise transform
+        // thus more likely to be quat-identity. Thus...
+        if(other.is_quat_identity_) {
+            return {quat_, trans_ + quat_ * other.trans_};
+        } else {
+            return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
+        }
     }
 
     QuatTrans<Scalar> getInverse() const {
