@@ -29,6 +29,7 @@
 #include <boost/filesystem.hpp>
 #include <cassert>
 #include <cstddef>
+#include <cstring>
 #include <functional>
 #include <iostream>
 #include <limits>
@@ -78,7 +79,7 @@ std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si, std::optio
 }
 
 template <bool Constrained>
-std::vector<double> state_to_vec(const ob::State* state, size_t dim)
+inline void state_to_vec(const ob::State* state, std::vector<double>& vec)
 {
   const ob::RealVectorStateSpace::StateType* rs;
   if constexpr (Constrained) {
@@ -88,11 +89,7 @@ std::vector<double> state_to_vec(const ob::State* state, size_t dim)
   } else {
     rs = state->as<ob::RealVectorStateSpace::StateType>();
   }
-  std::vector<double> vec(dim);
-  for (size_t i = 0; i < dim; ++i) {
-    vec[i] = rs->values[i];
-  }
-  return vec;
+  std::memcpy(vec.data(), rs->values, vec.size() * sizeof(double));
 };
 
 og::PathGeometric points_to_pathgeometric(const std::vector<std::vector<double>>& points,
@@ -198,8 +195,10 @@ std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
   const size_t dim = space->getDimension();
 
   const auto is_state_pair_inside_box = [&](const ob::State* s1, const ob::State* s2) -> bool {
-    const auto vec_left = state_to_vec<true>(s1, dim);
-    const auto vec_right = state_to_vec<true>(s2, dim);
+    std::vector<double> vec_left(dim);
+    std::vector<double> vec_right(dim);
+    state_to_vec<true>(s1, vec_left);
+    state_to_vec<true>(s2, vec_right);
 
     for (size_t i = 0; i < dim; ++i) {
       const double&& abs_diff_i = std::abs(vec_left[i] - vec_right[i]);
@@ -353,9 +352,9 @@ struct CollisionAwareSpaceInformation {
   bool is_valid(const ob::State* state)
   {
     const size_t dim = si_->getStateDimension();
-    const auto vec = state_to_vec<Constrained>(state, dim);
+    state_to_vec<Constrained>(state, tmp_vec_);
     this->is_valid_call_count_++;
-    return ineq_cst_->is_valid(vec);
+    return ineq_cst_->is_valid(tmp_vec_);
   }
 
   ob::SpaceInformationPtr si_;
@@ -363,6 +362,7 @@ struct CollisionAwareSpaceInformation {
   size_t is_valid_call_count_;
   const size_t max_is_valid_call_;
   std::vector<double> box_width_;
+  std::vector<double> tmp_vec_; // to avoid dynamic allocation (used in is_valid)
 };
 
 struct UnconstrianedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInformation<false> {
@@ -372,7 +372,7 @@ struct UnconstrianedCollisoinAwareSpaceInformation : public CollisionAwareSpaceI
       cst::IneqConstraintBase::Ptr ineq_cst,
       size_t max_is_valid_call,
       const std::vector<double>& box_width)
-      : CollisionAwareSpaceInformation<false>{nullptr, ineq_cst, 0, max_is_valid_call, box_width}
+      : CollisionAwareSpaceInformation<false>{nullptr, ineq_cst, 0, max_is_valid_call, box_width, std::vector<double>(box_width.size())}
   {
     const auto space = bound2space(lb, ub);
     si_ = std::make_shared<ob::SpaceInformation>(space);
@@ -396,7 +396,7 @@ struct ConstrainedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInf
       size_t max_is_valid_call,
       const std::vector<double>& box_width,
       ConstStateType cs_type = ConstStateType::PROJECTION)
-      : CollisionAwareSpaceInformation<true>{nullptr, ineq_cst, 0, max_is_valid_call, box_width}
+      : CollisionAwareSpaceInformation<true>{nullptr, ineq_cst, 0, max_is_valid_call, box_width, std::vector<double>(box_width.size())}
   {
     size_t dim_ambient = lb.size();
     size_t dim_constraint = f_const(lb).size();  // detect by dummy input
@@ -468,8 +468,10 @@ struct PlannerBase {
     // states
     auto trajectory = std::vector<std::vector<double>>();
 
+  std::vector<double> tmp_vec(dim);
     if constexpr (Constrained) {
-      trajectory.push_back(state_to_vec<Constrained>(states[0], dim));
+      state_to_vec<Constrained>(states[0], tmp_vec);
+      trajectory.push_back(tmp_vec);
 
       for (size_t i = 0; i < states.size() - 1; ++i) {
         const ob::SpaceInformation* si = csi_->si_.get();
@@ -480,7 +482,8 @@ struct PlannerBase {
         for (size_t j = 0; j < fractions->size(); ++j) {
           const auto s_new = si->allocState();
           space->interpolate(states.at(i), states.at(i + 1), fractions->at(j), s_new);
-          trajectory.push_back(state_to_vec<Constrained>(s_new, dim));
+          state_to_vec<Constrained>(s_new, tmp_vec);
+          trajectory.push_back(tmp_vec);
         }
       }
       OMPL_INFORM("interpolate trajectory. original %d points => interped %d points",
@@ -488,7 +491,8 @@ struct PlannerBase {
                   trajectory.size());
     } else {
       for (const auto& state : states) {
-        trajectory.push_back(state_to_vec<Constrained>(state, dim));
+        state_to_vec<Constrained>(state, tmp_vec);
+        trajectory.push_back(tmp_vec);
       }
     }
     return trajectory;
