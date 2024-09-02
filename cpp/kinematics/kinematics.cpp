@@ -56,12 +56,23 @@ void KinematicModel::build_cache_until_inner(size_t hlink_id) const {
     hlink_id = link_parent_link_ids_[hlink_id];
   }
 
-  Transform tf_rlink_to_plink = transform_cache_.data_[hlink_id];
+  // >> ORIGINAL EQUIVALENT CODE
+  // Transform tf_rlink_to_plink = transform_cache_.data_[hlink_id];
+  // while(idx > 0) {
+  //   size_t hid = id_stack_like[--idx];
+  //   Transform tf_rlink_to_hlink = tf_rlink_to_plink.quat_identity_sensitive_mul(tf_plink_to_hlink_cache_[hid]);
+  //   transform_cache_.set_cache(hid, tf_rlink_to_hlink);
+  //   tf_rlink_to_plink = std::move(tf_rlink_to_hlink);
+  // }
+  // << ORIGINAL EQUIVALENT CODE
+
+  // >> LESS STACK ALLOCATION CODE
+  size_t hid = hlink_id;
   while(idx > 0) {
-    size_t hid = id_stack_like[--idx];
-    Transform tf_rlink_to_hlink = tf_rlink_to_plink.quat_identity_sensitive_mul(tf_plink_to_hlink_cache_[hid]);
-    transform_cache_.set_cache(hid, tf_rlink_to_hlink);
-    tf_rlink_to_plink = std::move(tf_rlink_to_hlink);
+    size_t hid_prev = hid;
+    hid = id_stack_like[--idx];
+    transform_cache_.data_[hid_prev].quat_identity_sensitive_mult_and_assign(tf_plink_to_hlink_cache_[hid], transform_cache_.data_[hid]);
+    transform_cache_.cache_predicate_vector_[hid] = true;
   }
 }
 

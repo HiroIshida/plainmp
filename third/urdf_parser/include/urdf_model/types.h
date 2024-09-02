@@ -129,6 +129,16 @@ struct QuatTrans {
         }
     }
 
+    inline void quat_identity_sensitive_mult_and_assign(const QuatTrans<Scalar>& other, QuatTrans<Scalar>& result) const {
+        if(other.is_quat_identity_) {
+          result.quat_ = quat_;
+          result.trans_ = trans_ + quat_ * other.trans_;
+        }else{
+          result.quat_ = quat_ * other.quat_;
+          result.trans_ = trans_ + quat_ * other.trans_;
+        }
+    }
+
     inline QuatTrans<Scalar> quat_identity_sensitive_mul(const QuatTrans<Scalar>& other) const {
         // NOTE: in kin tree update, left side is from root => current transform
         // which is usually not quat-identity. but other is from pair-link-wise transform
