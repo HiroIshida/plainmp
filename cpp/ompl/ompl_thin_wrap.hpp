@@ -127,6 +127,10 @@ class BoxMotionValidator : public ob::MotionValidator
   BoxMotionValidator(const ob::SpaceInformationPtr& si, std::vector<double> width)
       : ob::MotionValidator(si), width_(width)
   {
+      // NOTE: precompute inv width, because devide is more expensive than multiply
+      for(size_t i = 0; i < width.size(); ++i) {
+          inv_width_.push_back(1.0 / width[i]);
+      }
   }
 
   bool checkMotion(const ob::State* s1, const ob::State* s2) const
@@ -139,9 +143,8 @@ class BoxMotionValidator : public ob::MotionValidator
     double max_diff = -std::numeric_limits<double>::infinity();
     size_t longest_idx = 0;
     for (size_t idx = 0; idx < si_->getStateDimension(); ++idx) {
-      const double check_width = width_[idx];
       const double diff = rs2->values[idx] - rs1->values[idx];
-      const double abs_scaled_diff = std::abs(diff) / check_width;
+      const double abs_scaled_diff = std::abs(diff) * inv_width_[idx];
       if (abs_scaled_diff > max_diff) {
         max_diff = abs_scaled_diff;
         longest_idx = idx;
@@ -178,6 +181,7 @@ class BoxMotionValidator : public ob::MotionValidator
 
  private:
   std::vector<double> width_;
+  std::vector<double> inv_width_;
 };
 
 std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
