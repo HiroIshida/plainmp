@@ -125,6 +125,7 @@ struct PrimitiveSDFBase : public SDFBase {
 
   inline bool is_outside_aabb_batch(const Points& ps,
                                     const Eigen::VectorXd& radii) const {
+    // this is much faster than loop-based implementation
     double ps_x_min_minus_radius =
         (ps.row(0).transpose() - radii).minCoeff();
     if (ps_x_min_minus_radius > ub(0)) {
