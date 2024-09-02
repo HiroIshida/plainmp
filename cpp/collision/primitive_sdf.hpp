@@ -111,16 +111,9 @@ struct PrimitiveSDFBase : public SDFBase {
 
   // this filtering is quite fast as it is not virtual function
   inline bool is_outside_aabb(const Point& p, double radius) const {
-    if (p(2) < lb(2) - radius || p(2) > ub(2) + radius) {
-      return true;
-    }
-    if (p(1) < lb(1) - radius || p(1) > ub(1) + radius) {
-      return true;
-    }
-    if (p(0) < lb(0) - radius || p(0) > ub(0) + radius) {
-      return true;
-    }
-    return false;
+    return p(0) < lb(0) - radius || p(0) > ub(0) + radius ||
+           p(1) < lb(1) - radius || p(1) > ub(1) + radius ||
+           p(2) < lb(2) - radius || p(2) > ub(2) + radius;
   }
 
   inline bool is_outside_aabb_batch(const Points& ps,
