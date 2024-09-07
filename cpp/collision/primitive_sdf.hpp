@@ -119,35 +119,29 @@ struct PrimitiveSDFBase : public SDFBase {
   inline bool is_outside_aabb_batch(const Points& ps,
                                     const Eigen::VectorXd& radii) const {
     // this is much faster than loop-based implementation
-    double ps_x_min_minus_radius =
-        (ps.row(0).transpose() - radii).minCoeff();
+    double ps_x_min_minus_radius = (ps.row(0).transpose() - radii).minCoeff();
     if (ps_x_min_minus_radius > ub(0)) {
       return true;
     }
-    double ps_x_max_plus_radius =
-        (ps.row(0).transpose() + radii).maxCoeff();
+    double ps_x_max_plus_radius = (ps.row(0).transpose() + radii).maxCoeff();
     if (ps_x_max_plus_radius < lb(0)) {
       return true;
     }
 
-    double ps_y_min_minus_radius =
-        (ps.row(1).transpose() - radii).minCoeff();
+    double ps_y_min_minus_radius = (ps.row(1).transpose() - radii).minCoeff();
     if (ps_y_min_minus_radius > ub(1)) {
       return true;
     }
-    double ps_y_max_plus_radius =
-        (ps.row(1).transpose() + radii).maxCoeff();
+    double ps_y_max_plus_radius = (ps.row(1).transpose() + radii).maxCoeff();
     if (ps_y_max_plus_radius < lb(1)) {
       return true;
     }
 
-    double ps_z_min_minus_radius =
-        (ps.row(2).transpose() - radii).minCoeff();
+    double ps_z_min_minus_radius = (ps.row(2).transpose() - radii).minCoeff();
     if (ps_z_min_minus_radius > ub(2)) {
       return true;
     }
-    double ps_z_max_plus_radius =
-        (ps.row(2).transpose() + radii).maxCoeff();
+    double ps_z_max_plus_radius = (ps.row(2).transpose() + radii).maxCoeff();
     if (ps_z_max_plus_radius < lb(2)) {
       return true;
     }
