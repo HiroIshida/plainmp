@@ -77,7 +77,8 @@ public: // functions
 
   void set_joint_angles(
       const std::vector<size_t> &joint_ids,
-      const std::vector<double> &joint_angles);
+      const std::vector<double> &joint_angles,
+      bool high_accuracy = true);
 
   inline Transform get_base_pose() const {
     return base_pose_;

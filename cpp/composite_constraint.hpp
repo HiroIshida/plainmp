@@ -27,8 +27,8 @@ class CompositeConstraintBase {
     }
   }
 
-  void update_kintree(const std::vector<double>& q) {
-    constraints_.front()->update_kintree(q);
+  void update_kintree(const std::vector<double>& q, bool high_accuracy = true) {
+    constraints_.front()->update_kintree(q, high_accuracy);
     for (auto& cst : constraints_) {
       cst->post_update_kintree();
     }
@@ -87,7 +87,7 @@ class IneqCompositeCst
   using Ptr = std::shared_ptr<IneqCompositeCst>;
   using CompositeConstraintBase::CompositeConstraintBase;
   bool is_valid(const std::vector<double>& q) {
-    update_kintree(q);
+    update_kintree(q, false);
     for (const auto& cst : constraints_) {
       if (!cst->is_valid_dirty())
         return false;
