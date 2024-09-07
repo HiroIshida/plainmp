@@ -24,7 +24,7 @@ class ConstraintBase {
         control_joint_ids_(kin->get_joint_ids(control_joint_names)),
         with_base_(with_base) {}
 
-  void update_kintree(const std::vector<double>& q) {
+  void update_kintree(const std::vector<double>& q, bool high_accuracy = true) {
     if (with_base_) {
       std::vector<double> q_head(control_joint_ids_.size());
       std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
@@ -38,7 +38,7 @@ class ConstraintBase {
       pose.setQuaternionFromRPY(q[head + 3], q[head + 4], q[head + 5]);
       kin_->set_base_pose(pose);
     } else {
-      kin_->set_joint_angles(control_joint_ids_, q);
+      kin_->set_joint_angles(control_joint_ids_, q, high_accuracy);
     }
   }
 
@@ -85,7 +85,7 @@ class IneqConstraintBase : public ConstraintBase {
   using Ptr = std::shared_ptr<IneqConstraintBase>;
   using ConstraintBase::ConstraintBase;
   bool is_valid(const std::vector<double>& q) {
-    update_kintree(q);
+    update_kintree(q, false);
     post_update_kintree();
     return is_valid_dirty();
   }

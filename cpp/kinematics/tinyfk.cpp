@@ -156,63 +156,56 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
 }
 
 void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
-                                      const std::vector<double> &joint_angles) {
-  // TODO: 64 is just a random large enough number to avoid dynamic allocation
-  std::array<double, 64> sin_cache;
-  std::array<double, 64> cos_cache;
-#ifdef __AVX512F__
-  // TODO: this is not tested at all
-  std::array<double, 64> padded_joint_angles;
-  for(size_t i = 0; i < joint_ids.size(); i++) {
-    padded_joint_angles[i] = joint_angles[i];
-  }
-  // e.g if joint_ids.size() = 12, then n_iter = 2
-  size_t n_iter = (joint_ids.size() + 7) / 8;
-  for(size_t i = 0; i < n_iter; i++){
-    vcl::Vec8d angles;
-    angles.load(padded_joint_angles.data() + i * 8);
-    auto x = angles * 0.5;
-    auto xx = x * x;
-    auto xxx = x * xx;
-    auto xxxx = xx * xx;
-    auto xxxxx = xx * xxx;
-    auto sins = x - xxx * 0.1666666 + xxxxx * 0.0083333;
-    auto coss = 1 - xx * 0.5 + xxxx * 0.0416666667;
-    sins.store(sin_cache.data() + i * 8);
-    coss.store(cos_cache.data() + i * 8);
-  }
-#elif __AVX__
-  // TODO: this is not tested at all
-  std::array<double, 64> padded_joint_angles;
-  for(size_t i = 0; i < joint_ids.size(); i++) {
-    padded_joint_angles[i] = joint_angles[i];
-  }
-  size_t n_iter = (joint_ids.size() + 3) / 4;
-  for(size_t i = 0; i < n_iter; i++){
-    vcl::Vec4d angles;
-    angles.load(padded_joint_angles.data() + i * 4);
-    auto x = angles * 0.5;
-    auto xx = x * x;
-    auto xxx = x * xx;
-    auto xxxx = xx * xx;
-    auto xxxxx = xx * xxx;
-    auto sins = x - xxx * 0.1666666 + xxxxx * 0.0083333;
-    auto coss = 1 - xx * 0.5 + xxxx * 0.0416666667;
-    sins.store(sin_cache.data() + i * 4);
-    coss.store(cos_cache.data() + i * 4);
-  }
-#else
-  for(size_t i = 0; i < joint_ids.size(); i++) {
-    sincos(0.5 * joint_angles[i], &sin_cache[i], &cos_cache[i]);
-  }
-#endif
+                                      const std::vector<double> &joint_angles,
+                                      bool high_accuracy) {
   for (size_t i = 0; i < joint_ids.size(); i++) {
     auto joint_id = joint_ids[i];
     joint_angles_[joint_id] = joint_angles[i];
     auto& tf_plink_to_hlink = tf_plink_to_hlink_cache_[joint_child_link_ids_[joint_id]];
     auto& tf_plink_to_pjoint_trans = joint_positions_[joint_id];
     if(joint_types_[joint_id] != urdf::Joint::PRISMATIC) {
-      tf_plink_to_hlink.quat().coeffs() << sin_cache[i] * joint_axes_[joint_id], cos_cache[i];
+      auto x = joint_angles[i] * 0.5;
+      if(high_accuracy){
+        tf_plink_to_hlink.quat().coeffs() << sin(x) * joint_axes_[joint_id], cos(x);
+      }else{
+        // Approximate sin(x) = x - x^3/3! + x^5/5! - x^7/7! + x^9/9!
+        // Approximate cos(x) = 1 - x^2/2! + x^4/4! - x^6/6! + x^8/8!
+        constexpr auto half_pi = M_PI * 0.5;
+        constexpr auto one_dev_2pi = 1.0 / (2 * M_PI);
+        auto cos_sign = 1.0;
+        if(x > half_pi || x < -0.5 * half_pi){
+          if(x > M_PI || x < -M_PI){
+            x = x - 2 * M_PI * std::floor(x * one_dev_2pi + 0.5);
+          }
+          if(x < -half_pi){
+            x = -x - M_PI;
+            cos_sign = -1.0;
+          }else if(x > half_pi){
+            x = -x + M_PI;
+            cos_sign = -1.0;
+          }else{
+          }
+        }
+        auto xx = x * x;
+        auto xxx = x * xx;
+        auto xxxx = xx * xx;
+        auto xxxxx = xx * xxx;
+        auto xxxxxx = xxx * xxx;
+        auto xxxxxxx = xxx * xxxx;
+        auto xxxxxxxx = xxxx * xxxx;
+        auto xxxxxxxxx = xxxx * xxxxx;
+        constexpr auto coeff2 = 1.0 / (1.0 * 2.0);
+        constexpr auto coeff3 = 1.0 / (1.0 * 2.0 * 3.0);
+        constexpr auto coeff4 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0);
+        constexpr auto coeff5 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0);
+        constexpr auto coeff6 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0);
+        constexpr auto coeff7 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0);
+        constexpr auto coeff8 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0 * 8.0);
+        constexpr auto coeff9 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0 * 8.0 * 9.0);
+        auto s = x - xxx * coeff3 + xxxxx * coeff5 - xxxxxxx * coeff7 + xxxxxxxxx * coeff9;
+        auto c = cos_sign * (1 - xx * coeff2 + xxxx * coeff4 - xxxxxx * coeff6 + xxxxxxxx * coeff8);
+        tf_plink_to_hlink.quat().coeffs() << s * joint_axes_[joint_id], c;
+      }
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
       tf_plink_to_hlink.is_quat_identity_ = false;
     }else{
