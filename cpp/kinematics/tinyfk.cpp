@@ -168,17 +168,21 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
       if(high_accuracy){
         tf_plink_to_hlink.quat().coeffs() << sin(x) * joint_axes_[joint_id], cos(x);
       }else{
-        // DO NOT USE THIS in the gradient-based optimization
         // Approximate sin(x) = x - x^3/3! + x^5/5! - x^7/7! + x^9/9!
         // Approximate cos(x) = 1 - x^2/2! + x^4/4! - x^6/6! + x^8/8!
-        if(x > 0.5 * M_PI || x < -0.5 * M_PI){
+        constexpr auto half_pi = M_PI * 0.5;
+        constexpr auto one_dev_2pi = 1.0 / (2 * M_PI);
+        auto cos_sign = 1.0;
+        if(x > half_pi || x < -0.5 * half_pi){
           if(x > M_PI || x < -M_PI){
-            x = x - 2 * M_PI * std::floor(x * 0.1591549430918953 + 0.5);
+            x = x - 2 * M_PI * std::floor(x * one_dev_2pi + 0.5);
           }
-          if(x < -0.5 * M_PI){
+          if(x < -half_pi){
             x = -x - M_PI;
-          }else if(x > 0.5 * M_PI){
+            cos_sign = -1.0;
+          }else if(x > half_pi){
             x = -x + M_PI;
+            cos_sign = -1.0;
           }else{
           }
         }
@@ -199,7 +203,7 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
         constexpr auto coeff8 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0 * 8.0);
         constexpr auto coeff9 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0 * 8.0 * 9.0);
         auto s = x - xxx * coeff3 + xxxxx * coeff5 - xxxxxxx * coeff7 + xxxxxxxxx * coeff9;
-        auto c = 1 - xx * coeff2 + xxxx * coeff4 - xxxxxx * coeff6 + xxxxxxxx * coeff8;
+        auto c = cos_sign * (1 - xx * coeff2 + xxxx * coeff4 - xxxxxx * coeff6 + xxxxxxxx * coeff8);
         tf_plink_to_hlink.quat().coeffs() << s * joint_axes_[joint_id], c;
       }
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
