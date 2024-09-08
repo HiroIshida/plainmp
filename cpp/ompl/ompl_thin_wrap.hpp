@@ -158,6 +158,24 @@ class BoxMotionValidator : public ob::MotionValidator
 };
 
 struct CollisionAwareSpaceInformation {
+  CollisionAwareSpaceInformation(
+      const std::vector<double>& lb,
+      const std::vector<double>& ub,
+      cst::IneqConstraintBase::Ptr ineq_cst,
+      size_t max_is_valid_call,
+      const std::vector<double>& box_width)
+      : si_(nullptr), ineq_cst_(ineq_cst), is_valid_call_count_(0), max_is_valid_call_(max_is_valid_call),
+        box_width_(box_width), tmp_vec_(lb.size())
+  {
+    const auto space = bound2space(lb, ub);
+    si_ = std::make_shared<ob::SpaceInformation>(space);
+    if (box_width.size() != space->getDimension()) {
+      throw std::runtime_error("box dimension and space dimension mismatch");
+    }
+    si_->setMotionValidator(std::make_shared<BoxMotionValidator>(si_, box_width));
+    si_->setup();
+  }
+
   void resetCount() { this->is_valid_call_count_ = 0; }
 
   static std::shared_ptr<ob::StateSpace> bound2space(const std::vector<double>& lb,
@@ -191,27 +209,19 @@ struct CollisionAwareSpaceInformation {
   std::vector<double> tmp_vec_; // to avoid dynamic allocation (used in is_valid)
 };
 
-struct UnconstrianedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInformation {
-  UnconstrianedCollisoinAwareSpaceInformation(
-      const std::vector<double>& lb,
-      const std::vector<double>& ub,
-      cst::IneqConstraintBase::Ptr ineq_cst,
-      size_t max_is_valid_call,
-      const std::vector<double>& box_width)
-      : CollisionAwareSpaceInformation{nullptr, ineq_cst, 0, max_is_valid_call, box_width, std::vector<double>(box_width.size())}
-  {
-    const auto space = bound2space(lb, ub);
-    si_ = std::make_shared<ob::SpaceInformation>(space);
-    if (box_width.size() != space->getDimension()) {
-      throw std::runtime_error("box dimension and space dimension mismatch");
-    }
-    si_->setMotionValidator(std::make_shared<BoxMotionValidator>(si_, box_width));
-    si_->setup();
-  }
-};
-
 
 struct PlannerBase {
+  PlannerBase(const std::vector<double>& lb,
+                           const std::vector<double>& ub,
+                           cst::IneqConstraintBase::Ptr ineq_cst,
+                           size_t max_is_valid_call,
+                           const std::vector<double>& box_width)
+  {
+    csi_ = std::make_unique<CollisionAwareSpaceInformation>(
+        lb, ub, ineq_cst, max_is_valid_call, box_width);
+    setup_ = std::make_unique<og::SimpleSetup>(csi_->si_);
+    setup_->setStateValidityChecker([this](const ob::State* s) { return this->csi_->is_valid(s); });
+  }
   std::optional<std::vector<std::vector<double>>> solve(const std::vector<double>& start,
                                                         const std::vector<double>& goal,
                                                         bool simplify)
@@ -279,26 +289,11 @@ struct PlannerBase {
   size_t getCallCount() const {
     return csi_->is_valid_call_count_;
   }
-  std::unique_ptr<UnconstrianedCollisoinAwareSpaceInformation> csi_;
+  std::unique_ptr<CollisionAwareSpaceInformation> csi_;
   std::unique_ptr<og::SimpleSetup> setup_;
 };
 
-struct UnconstrainedPlannerBase : public PlannerBase {
-  UnconstrainedPlannerBase(const std::vector<double>& lb,
-                           const std::vector<double>& ub,
-                           cst::IneqConstraintBase::Ptr ineq_cst,
-                           size_t max_is_valid_call,
-                           const std::vector<double>& box_width)
-      : PlannerBase{nullptr, nullptr}
-  {
-    csi_ = std::make_unique<UnconstrianedCollisoinAwareSpaceInformation>(
-        lb, ub, ineq_cst, max_is_valid_call, box_width);
-    setup_ = std::make_unique<og::SimpleSetup>(csi_->si_);
-    setup_->setStateValidityChecker([this](const ob::State* s) { return this->csi_->is_valid(s); });
-  }
-};
-
-struct OMPLPlanner : public UnconstrainedPlannerBase {
+struct OMPLPlanner : public PlannerBase {
   OMPLPlanner(const std::vector<double>& lb,
               const std::vector<double>& ub,
               cst::IneqConstraintBase::Ptr ineq_cst,
@@ -306,20 +301,20 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
               const std::vector<double>& box_width,
               const std::string& algo_name,
               std::optional<double> range)
-      : UnconstrainedPlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
+      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
   {
     const auto algo = get_algorithm(algo_name, range);
     setup_->setPlanner(algo);
   }
 };
  
-struct ERTConnectPlanner : public UnconstrainedPlannerBase {
+struct ERTConnectPlanner : public PlannerBase {
   ERTConnectPlanner(const std::vector<double>& lb,
                     const std::vector<double>& ub,
                     cst::IneqConstraintBase::Ptr ineq_cst,
                     size_t max_is_valid_call,
                     const std::vector<double>& box_width)
-      : UnconstrainedPlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
+      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
   {
     auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
     setup_->setPlanner(ert_connect);
