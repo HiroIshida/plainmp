@@ -57,11 +57,6 @@ namespace ob = ompl::base;
 namespace og = ompl::geometric;
 namespace ot = ompl::tools;
 
-// TODO: I wanted to pass and return eigen::matrix / vector, but
-// pybind fail to convert numpy to eigen in callback case
-using ConstFn = std::function<std::vector<double>(std::vector<double>)>;
-using ConstJacFn = std::function<std::vector<std::vector<double>>(std::vector<double>)>;
-
 template <typename T>
 std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si, std::optional<double> range)
 {
@@ -72,14 +67,22 @@ std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si, std::optio
   return algo;
 }
 
-inline void state_to_vec(const ob::State* state, std::vector<double>& vec)
+template <typename Scalar>
+inline void state_to_vec(const ob::State* state, std::vector<Scalar>& vec)
 {
   const ob::RealVectorStateSpace::StateType* rs;
   rs = state->as<ob::RealVectorStateSpace::StateType>();
-  std::memcpy(vec.data(), rs->values, vec.size() * sizeof(double));
+  if constexpr (std::is_same<Scalar, double>::value) {
+    std::memcpy(vec.data(), rs->values, vec.size() * sizeof(double));
+  } else {
+    for (size_t i = 0; i < vec.size(); ++i) {
+      vec[i] = rs->values[i];
+    }
+  }
 };
 
-og::PathGeometric points_to_pathgeometric(const std::vector<std::vector<double>>& points,
+template <typename Scalar>
+og::PathGeometric points_to_pathgeometric(const std::vector<std::vector<Scalar>>& points,
                                           ob::SpaceInformationPtr si)
 {
   auto pg = og::PathGeometric(si);
@@ -94,10 +97,11 @@ og::PathGeometric points_to_pathgeometric(const std::vector<std::vector<double>>
   return pg;
 }
 
+template <typename Scalar>
 class BoxMotionValidator : public ob::MotionValidator
 {
  public:
-  BoxMotionValidator(const ob::SpaceInformationPtr& si, std::vector<double> width)
+  BoxMotionValidator(const ob::SpaceInformationPtr& si, std::vector<Scalar> width)
       : ob::MotionValidator(si), width_(width)
   {
       // NOTE: precompute inv width, because devide is more expensive than multiply
@@ -112,12 +116,12 @@ class BoxMotionValidator : public ob::MotionValidator
     const auto rs2 = s2->as<ob::RealVectorStateSpace::StateType>();
 
     // find longest (relative) axis index
-    double diff_longest_axis;
-    double max_diff = -std::numeric_limits<double>::infinity();
+    Scalar diff_longest_axis;
+    Scalar max_diff = -std::numeric_limits<Scalar>::infinity();
     size_t longest_idx = 0;
     for (size_t idx = 0; idx < si_->getStateDimension(); ++idx) {
-      const double diff = rs2->values[idx] - rs1->values[idx];
-      const double abs_scaled_diff = std::abs(diff) * inv_width_[idx];
+      const Scalar diff = rs2->values[idx] - rs1->values[idx];
+      const Scalar abs_scaled_diff = std::abs(diff) * inv_width_[idx];
       if (abs_scaled_diff > max_diff) {
         max_diff = abs_scaled_diff;
         longest_idx = idx;
@@ -132,9 +136,9 @@ class BoxMotionValidator : public ob::MotionValidator
     const auto s_test = si_->allocState()->as<ob::RealVectorStateSpace::StateType>();
 
     const auto space = si_->getStateSpace();
-    const double step_ratio = width_[longest_idx] / std::abs(diff_longest_axis);
+    const Scalar step_ratio = width_[longest_idx] / std::abs(diff_longest_axis);
 
-    double travel_rate = 0.0;
+    Scalar travel_rate = 0.0;
     while (travel_rate + step_ratio < 1.0) {
       travel_rate += step_ratio;
       space->interpolate(rs1, rs2, travel_rate, s_test);
@@ -153,17 +157,18 @@ class BoxMotionValidator : public ob::MotionValidator
   }
 
  private:
-  std::vector<double> width_;
-  std::vector<double> inv_width_;
+  std::vector<Scalar> width_;
+  std::vector<Scalar> inv_width_;
 };
 
+template <typename Scalar>
 struct CollisionAwareSpaceInformation {
   CollisionAwareSpaceInformation(
-      const std::vector<double>& lb,
-      const std::vector<double>& ub,
-      cst::IneqConstraintBase::Ptr ineq_cst,
+      const std::vector<Scalar>& lb,
+      const std::vector<Scalar>& ub,
+      typename cst::IneqConstraintBase<Scalar>::Ptr ineq_cst,
       size_t max_is_valid_call,
-      const std::vector<double>& box_width)
+      const std::vector<Scalar>& box_width)
       : si_(nullptr), ineq_cst_(ineq_cst), is_valid_call_count_(0), max_is_valid_call_(max_is_valid_call),
         box_width_(box_width), tmp_vec_(lb.size())
   {
@@ -172,19 +177,26 @@ struct CollisionAwareSpaceInformation {
     if (box_width.size() != space->getDimension()) {
       throw std::runtime_error("box dimension and space dimension mismatch");
     }
-    si_->setMotionValidator(std::make_shared<BoxMotionValidator>(si_, box_width));
+    si_->setMotionValidator(std::make_shared<BoxMotionValidator<Scalar>>(si_, box_width));
     si_->setup();
   }
 
   void resetCount() { this->is_valid_call_count_ = 0; }
 
-  static std::shared_ptr<ob::StateSpace> bound2space(const std::vector<double>& lb,
-                                                     const std::vector<double>& ub)
+  static std::shared_ptr<ob::StateSpace> bound2space(const std::vector<Scalar>& lb,
+                                                     const std::vector<Scalar>& ub)
   {
     const size_t dim = lb.size();
     auto bounds = ob::RealVectorBounds(dim);
-    bounds.low = lb;
-    bounds.high = ub;
+    if constexpr (std::is_same<Scalar, double>::value) {
+      bounds.low = lb;
+      bounds.high = ub;
+    } else {
+      for (size_t i = 0; i < dim; ++i) {
+        bounds.setLow(i, lb[i]);
+        bounds.setHigh(i, ub[i]);
+      }
+    }
     const auto space(std::make_shared<ob::RealVectorStateSpace>(dim));
     space->setBounds(bounds);
     space->setup();
@@ -202,44 +214,43 @@ struct CollisionAwareSpaceInformation {
   }
 
   ob::SpaceInformationPtr si_;
-  cst::IneqConstraintBase::Ptr ineq_cst_;
+  typename cst::IneqConstraintBase<Scalar>::Ptr ineq_cst_;
   size_t is_valid_call_count_;
   const size_t max_is_valid_call_;
-  std::vector<double> box_width_;
-  std::vector<double> tmp_vec_; // to avoid dynamic allocation (used in is_valid)
+  std::vector<Scalar> box_width_;
+  std::vector<Scalar> tmp_vec_; // to avoid dynamic allocation (used in is_valid)
 };
 
 
+template<typename Scalar>
 struct PlannerBase {
-  PlannerBase(const std::vector<double>& lb,
-                           const std::vector<double>& ub,
-                           cst::IneqConstraintBase::Ptr ineq_cst,
+  PlannerBase(const std::vector<Scalar>& lb,
+                           const std::vector<Scalar>& ub,
+                           typename cst::IneqConstraintBase<Scalar>::Ptr ineq_cst,
                            size_t max_is_valid_call,
-                           const std::vector<double>& box_width)
+                           const std::vector<Scalar>& box_width)
   {
-    csi_ = std::make_unique<CollisionAwareSpaceInformation>(
+    csi_ = std::make_unique<CollisionAwareSpaceInformation<Scalar>>(
         lb, ub, ineq_cst, max_is_valid_call, box_width);
     setup_ = std::make_unique<og::SimpleSetup>(csi_->si_);
     setup_->setStateValidityChecker([this](const ob::State* s) { return this->csi_->is_valid(s); });
   }
-  std::optional<std::vector<std::vector<double>>> solve(const std::vector<double>& start,
-                                                        const std::vector<double>& goal,
+  std::optional<std::vector<std::vector<Scalar>>> solve(const std::vector<Scalar>& start,
+                                                        const std::vector<Scalar>& goal,
                                                         bool simplify)
   {
     setup_->clear();
     csi_->resetCount();
-
-    // args shold be eigen maybe?
-    Eigen::VectorXd vec_start = Eigen::Map<const Eigen::VectorXd>(&start[0], start.size());
-    Eigen::VectorXd vec_goal = Eigen::Map<const Eigen::VectorXd>(&goal[0], goal.size());
 
     ob::ScopedState<> sstart(csi_->si_->getStateSpace());
     ob::ScopedState<> sgoal(csi_->si_->getStateSpace());
 
     auto rstart = sstart->as<ob::RealVectorStateSpace::StateType>();
     auto rgoal = sgoal->as<ob::RealVectorStateSpace::StateType>();
+
     std::copy(start.begin(), start.end(), rstart->values);
     std::copy(goal.begin(), goal.end(), rgoal->values);
+
     setup_->setStartAndGoalStates(sstart, sgoal);
 
     std::function<bool()> fn = [this]() { return csi_->is_terminatable(); };
@@ -259,9 +270,8 @@ struct PlannerBase {
     const size_t dim = start.size();
 
     // states
-    auto trajectory = std::vector<std::vector<double>>();
-
-  std::vector<double> tmp_vec(dim);
+    auto trajectory = std::vector<std::vector<Scalar>>();
+    std::vector<Scalar> tmp_vec(dim);
     for (const auto& state : states) {
       state_to_vec(state, tmp_vec);
       trajectory.push_back(tmp_vec);
@@ -269,7 +279,7 @@ struct PlannerBase {
     return trajectory;
   }
 
-  std::shared_ptr<ob::Planner> get_algorithm(const std::string& name, std::optional<double> range)
+  std::shared_ptr<ob::Planner> get_algorithm(const std::string& name, std::optional<Scalar> range)
   {
     const auto space_info = csi_->si_;
     if (name.compare("BKPIECE1") == 0) {
@@ -289,51 +299,53 @@ struct PlannerBase {
   size_t getCallCount() const {
     return csi_->is_valid_call_count_;
   }
-  std::unique_ptr<CollisionAwareSpaceInformation> csi_;
+  std::unique_ptr<CollisionAwareSpaceInformation<Scalar>> csi_;
   std::unique_ptr<og::SimpleSetup> setup_;
 };
 
-struct OMPLPlanner : public PlannerBase {
-  OMPLPlanner(const std::vector<double>& lb,
-              const std::vector<double>& ub,
-              cst::IneqConstraintBase::Ptr ineq_cst,
+template <typename Scalar>
+struct OMPLPlanner : public PlannerBase<Scalar> {
+  OMPLPlanner(const std::vector<Scalar>& lb,
+              const std::vector<Scalar>& ub,
+              typename cst::IneqConstraintBase<Scalar>::Ptr ineq_cst,
               size_t max_is_valid_call,
-              const std::vector<double>& box_width,
+              const std::vector<Scalar>& box_width,
               const std::string& algo_name,
-              std::optional<double> range)
-      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
+              std::optional<Scalar> range)
+      : PlannerBase<Scalar>(lb, ub, ineq_cst, max_is_valid_call, box_width)
   {
-    const auto algo = get_algorithm(algo_name, range);
-    setup_->setPlanner(algo);
+    const auto algo = this->get_algorithm(algo_name, range);
+    this->setup_->setPlanner(algo);
   }
 };
  
-struct ERTConnectPlanner : public PlannerBase {
-  ERTConnectPlanner(const std::vector<double>& lb,
-                    const std::vector<double>& ub,
-                    cst::IneqConstraintBase::Ptr ineq_cst,
+template <typename Scalar>
+struct ERTConnectPlanner : public PlannerBase<Scalar> {
+  ERTConnectPlanner(const std::vector<Scalar>& lb,
+                    const std::vector<Scalar>& ub,
+                    typename cst::IneqConstraintBase<Scalar>::Ptr ineq_cst,
                     size_t max_is_valid_call,
-                    const std::vector<double>& box_width)
-      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width)
+                    const std::vector<Scalar>& box_width)
+      : PlannerBase<Scalar>(lb, ub, ineq_cst, max_is_valid_call, box_width)
   {
-    auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
-    setup_->setPlanner(ert_connect);
+    auto ert_connect = std::make_shared<og::ERTConnect>(this->csi_->si_);
+    this->setup_->setPlanner(ert_connect);
   }
 
-  void set_heuristic(const std::vector<std::vector<double>>& points)
+  void set_heuristic(const std::vector<std::vector<Scalar>>& points)
   {
     auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
     const auto heuristic = geo_path.getStates();
-    const auto ert_connect = setup_->getPlanner()->as<og::ERTConnect>();
+    const auto ert_connect = this->setup_->getPlanner()->template as<og::ERTConnect>();
     ert_connect->setExperience(heuristic);
   }
 
-  void set_parameters(std::optional<double> omega_min,
-                      std::optional<double> omega_max,
-                      std::optional<double> eps)
+  void set_parameters(std::optional<Scalar> omega_min,
+                      std::optional<Scalar> omega_max,
+                      std::optional<Scalar> eps)
   {
-    const auto planner = setup_->getPlanner();
-    const auto ert_connect = planner->as<og::ERTConnect>();
+    const auto planner = this->setup_->getPlanner();
+    const auto ert_connect = planner->template as<og::ERTConnect>();
     if (omega_min) {
       ert_connect->setExperienceFractionMin(*omega_min);
     }

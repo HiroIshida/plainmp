@@ -27,9 +27,9 @@ void stop_profiling() {
 
 PYBIND11_MODULE(_plainmp, m) {
   primitive_sdf::bind_primitive_sdf<double>(m);
-  cst::bind_collision_constraints(m);
+  cst::bind_collision_constraints<double>(m);
   tinyfk::bind_tinyfk(m);
-  bind_ompl(m);
+  bind_ompl<double>(m);
   m.def("start_profiling", &start_profiling);
   m.def("stop_profiling", &stop_profiling);
 }

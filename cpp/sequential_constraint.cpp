@@ -2,14 +2,19 @@
 
 namespace cst {
 
-void SequentialCst::add_globally(const ConstraintBase::Ptr& constraint) {
-  for (size_t t = 0; t < T_; ++t) {
+template <typename Scalar>
+void SequentialCst<Scalar>::add_globally(
+    const typename ConstraintBase<Scalar>::Ptr& constraint) {
+  for (size_t t = 0; t < this->T_; ++t) {
     this->add_at(constraint, t);
   }
 }
 
-void SequentialCst::add_at(const ConstraintBase::Ptr& constraint, size_t t) {
-  if (t >= T_) {
+template <typename Scalar>
+void SequentialCst<Scalar>::add_at(
+    const typename ConstraintBase<Scalar>::Ptr& constraint,
+    size_t t) {
+  if (t >= this->T_) {
     throw std::runtime_error("t is out of range");
   }
   finalized_ = false;
@@ -17,23 +22,26 @@ void SequentialCst::add_at(const ConstraintBase::Ptr& constraint, size_t t) {
   cst_dim_ += constraint->cst_dim();
 }
 
-void SequentialCst::add_fixed_point_at(const Eigen::VectorXd& q, size_t t) {
-  if (t >= T_) {
+template <typename Scalar>
+void SequentialCst<Scalar>::add_fixed_point_at(const Values& q, size_t t) {
+  if (t >= this->T_) {
     throw std::runtime_error("t is out of range");
   }
   fixed_points_[t] = q;
   cst_dim_ += q.size();
 }
 
-void SequentialCst::add_motion_step_box_constraint(
-    const Eigen::VectorXd& box_width) {
+template <typename Scalar>
+void SequentialCst<Scalar>::add_motion_step_box_constraint(
+    const Values& box_width) {
   for (size_t t = 0; t < T_ - 1; ++t) {
     cst_dim_ += box_width.size() * 2;  // 2 for lower and upper bounds
   }
   msbox_width_ = box_width;
 }
 
-void SequentialCst::finalize() {
+template <typename Scalar>
+void SequentialCst<Scalar>::finalize() {
   // remove constraints at time t if fixed_points are set
   for (size_t t = 0; t < T_; ++t) {
     if (fixed_points_[t].has_value()) {
@@ -50,14 +58,16 @@ void SequentialCst::finalize() {
   finalized_ = true;
 }
 
-std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
-    const Eigen::VectorXd& x) {
-  Eigen::VectorXd c(cst_dim());
+template <typename Scalar>
+std::pair<typename SequentialCst<Scalar>::Values,
+          typename SequentialCst<Scalar>::SMatrix>
+SequentialCst<Scalar>::evaluate(const Values& x) {
+  Values c(cst_dim());
   size_t x_head = 0;
   size_t c_head = 0;
   for (size_t t = 0; t < T_; ++t) {
-    std::vector<double> q(x.segment(x_head, q_dim_).data(),
-                          x.segment(x_head, q_dim_).data() + q_dim_);
+    std::vector<Scalar> q(x.segment(x_head, q_dim_).data(),
+             x.segment(x_head, q_dim_).data() + q_dim_);
     // we assume that all the constraints share the same kinematic tree
     // thus updating one of the constraints propagates the update to all
     if (constraints_seq_[t].size() == 0) {
@@ -96,8 +106,8 @@ std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
   // having kinematic tree, so we can evaluate it directly.
   if (msbox_width_.has_value()) {
     for (size_t t = 0; t < T_ - 1; ++t) {
-      Eigen::VectorXd q1 = x.segment(t * q_dim_, q_dim_);
-      Eigen::VectorXd q2 = x.segment((t + 1) * q_dim_, q_dim_);
+      Values q1 = x.segment(t * q_dim_, q_dim_);
+      Values q2 = x.segment((t + 1) * q_dim_, q_dim_);
       // ||q1 - q2|| <= msbox_width_ (element-wise)
       // equivalent to:
       // q1 - q2 <= msbox_width_ and q2 - q1 <= msbox_width_
@@ -117,7 +127,8 @@ std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
   return {c, jac_};
 }
 
-std::string SequentialCst::to_string() const {
+template <typename Scalar>
+std::string SequentialCst<Scalar>::to_string() const {
   std::stringstream ss;
   ss << "Sequential constraint:" << std::endl;
   ss << "total dim: " << cst_dim() << std::endl;
@@ -137,5 +148,8 @@ std::string SequentialCst::to_string() const {
   }
   return ss.str();
 }
+
+template class SequentialCst<double>;
+template class SequentialCst<float>;
 
 }  // namespace cst

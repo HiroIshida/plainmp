@@ -11,10 +11,14 @@
 #include "kinematics/tinyfk.hpp"
 
 namespace cst {
-template <typename T>
+
+template <typename T, typename Scalar>
 class CompositeConstraintBase {
  public:
   using Ptr = std::shared_ptr<CompositeConstraintBase>;
+  using Values = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+  using MatrixDynamic = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+
   CompositeConstraintBase(std::vector<T> constraints)
       : constraints_(constraints) {
     // all constraints must have the same kinematic chain
@@ -27,20 +31,19 @@ class CompositeConstraintBase {
     }
   }
 
-  void update_kintree(const std::vector<double>& q, bool high_accuracy = true) {
+  void update_kintree(const std::vector<Scalar>& q, bool high_accuracy = true) {
     constraints_.front()->update_kintree(q, high_accuracy);
     for (auto& cst : constraints_) {
       cst->post_update_kintree();
     }
   }
 
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate(
-      const std::vector<double>& q) {
-    update_kintree(q);
+  std::pair<Values, MatrixDynamic> evaluate(const std::vector<Scalar>& q) {
+    this->update_kintree(q);
 
     size_t dim = this->cst_dim();
-    Eigen::VectorXd vals(dim);
-    Eigen::MatrixXd jac(dim, q_dim());
+    Values vals(dim);
+    MatrixDynamic jac(dim, q_dim());
     size_t head = 0;
     for (const auto& cst : constraints_) {
       size_t dim_local = cst->cst_dim();
@@ -73,22 +76,29 @@ class CompositeConstraintBase {
   std::vector<T> constraints_;
 };
 
-class EqCompositeCst : public CompositeConstraintBase<EqConstraintBase::Ptr> {
+template <typename Scalar>
+class EqCompositeCst
+    : public CompositeConstraintBase<typename EqConstraintBase<Scalar>::Ptr,
+                                     Scalar> {
  public:
   using Ptr = std::shared_ptr<EqCompositeCst>;
-  using CompositeConstraintBase::CompositeConstraintBase;
+  using CompositeConstraintBase<typename EqConstraintBase<Scalar>::Ptr,
+                                Scalar>::CompositeConstraintBase;
   size_t cst_dim() const;
   bool is_equality() const { return true; }
 };
 
+template <typename Scalar>
 class IneqCompositeCst
-    : public CompositeConstraintBase<IneqConstraintBase::Ptr> {
+    : public CompositeConstraintBase<typename IneqConstraintBase<Scalar>::Ptr,
+                                     Scalar> {
  public:
   using Ptr = std::shared_ptr<IneqCompositeCst>;
-  using CompositeConstraintBase::CompositeConstraintBase;
-  bool is_valid(const std::vector<double>& q) {
-    update_kintree(q, false);
-    for (const auto& cst : constraints_) {
+  using CompositeConstraintBase<typename IneqConstraintBase<Scalar>::Ptr,
+                                Scalar>::CompositeConstraintBase;
+  bool is_valid(const std::vector<Scalar>& q) {
+    this->update_kintree(q, false);
+    for (const auto& cst : this->constraints_) {
       if (!cst->is_valid_dirty())
         return false;
     }
@@ -97,4 +107,9 @@ class IneqCompositeCst
   size_t cst_dim() const;
   bool is_equality() const { return false; }
 };
+
+// explicit instantiation
+template class CompositeConstraintBase<EqConstraintBase<double>::Ptr, double>;
+template class CompositeConstraintBase<IneqConstraintBase<double>::Ptr, double>;
+
 }  // namespace cst
