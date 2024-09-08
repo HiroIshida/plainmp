@@ -41,13 +41,24 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
   size_t N_link = lid; // starting from 0 and finally ++ increment, so it'S ok
   root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
 
-  // compute link_parent_link_ids
+  // compute link struct of arrays
   std::vector<size_t> link_parent_link_ids(N_link);
+  std::vector<bool> link_consider_rotation(N_link);
+  std::vector<std::vector<size_t>> link_child_link_idss(N_link);
   for(const auto& link : links) {
     if(link->getParent() != nullptr) {
       link_parent_link_ids[link->id] = link->getParent()->id;
     }else{
       link_parent_link_ids[link->id] = 999999; // dummy value to cause segfault
+    }
+    link_consider_rotation[link->id] = link->consider_rotation;
+    for(const auto& child_link : link->child_links) {
+      link_child_link_idss[link->id].push_back(child_link->id);
+    }
+    if(link->inertial != nullptr) {
+      com_link_ids_.push_back(link->id);
+      link_masses_.push_back(link->inertial->mass);
+      com_local_positions_.push_back(link->inertial->origin.trans());
     }
   }
 
@@ -130,9 +141,10 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
     }
   }
 
-  links_ = links;
   link_name_id_map_ = link_ids;
   link_parent_link_ids_ = link_parent_link_ids;
+  link_child_link_idss_ = link_child_link_idss;
+  link_consider_rotation_ = link_consider_rotation;
   joint_types_ = joint_types;
   joint_axes_ = joint_axes;
   joint_positions_ = joint_positions;
@@ -141,29 +153,8 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
   num_dof_ = num_dof;
   total_mass_ = total_mass;
   joint_angles_ = joint_angles;
-
-  // add COM of each link as new link
-  {
-    // NOTE: due to my bad design (add_new_link update internal state)
-    // this procedure must come after initialization of member variables
-    std::vector<urdf::LinkSharedPtr> com_dummy_links;
-    for (const auto &link : links) {
-      if (link->inertial == nullptr) {
-        continue;
-      }
-      Transform new_link_pose;
-      new_link_pose.trans() = link->inertial->origin.trans();
-      const auto new_link = this->add_new_link(link->id, new_link_pose, false);
-      // set new link's inertial as the same as the parent
-      // except its origin is zero
-      new_link->inertial = link->inertial;
-      new_link->inertial->origin = Transform::Identity();
-      com_dummy_links.push_back(new_link);
-    }
-    this->com_dummy_links_ = com_dummy_links;
-  }
-
   this->set_base_pose(Transform::Identity());
+  this->update_rptable();
 }
 
 template<typename Scalar>
@@ -292,7 +283,7 @@ KinematicModel<Scalar>::get_link_ids(std::vector<std::string> link_names) const 
 }
 
 template<typename Scalar>
-urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id,
+size_t KinematicModel<Scalar>::add_new_link(size_t parent_id,
                                  const std::array<Scalar, 3> &position,
                                  const std::array<Scalar, 3> &rpy,
                                  bool consider_rotation,
@@ -304,7 +295,7 @@ urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id,
 }
 
 template<typename Scalar>
-urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id, const Transform &pose,
+size_t KinematicModel<Scalar>::add_new_link(size_t parent_id, const Transform &pose,
                                  bool consider_rotation,
                                  std::optional<std::string> link_name) {
 
@@ -322,7 +313,7 @@ urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id, const
     link_name = "hash_" + std::to_string(hval) + "_" + std::to_string(parent_id) + "_" + std::to_string(consider_rotation);
     bool link_name_exists = (link_name_id_map_.find(link_name.value()) != link_name_id_map_.end());
     if (link_name_exists) {
-      return links_[link_name_id_map_[link_name.value()]];
+      return link_name_id_map_[link_name.value()];
     }
   }else{
     bool link_name_exists = (link_name_id_map_.find(link_name.value()) != link_name_id_map_.end());
@@ -337,26 +328,17 @@ urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id, const
   fixed_joint->parent_to_joint_origin_transform = pose;
   fixed_joint->type = urdf::Joint::FIXED;
 
-  int link_id = links_.size();
-  auto new_link = std::make_shared<urdf::Link>();
-  new_link->parent_joint = fixed_joint;
-  new_link->setParent(links_[parent_id]);
-  new_link->name = link_name.value();
-  new_link->id = link_id;
-  new_link->consider_rotation = consider_rotation;
-
+  int link_id = link_name_id_map_.size();
   link_name_id_map_[link_name.value()] = link_id;
-  links_.push_back(new_link);
-  links_[parent_id]->child_links.push_back(new_link);
-  links_[parent_id]->child_joints.push_back(fixed_joint);
 
   transform_cache_.extend();
   tf_plink_to_hlink_cache_.push_back(pose);
   link_parent_link_ids_.push_back(parent_id);
-
+  link_consider_rotation_.push_back(consider_rotation);
+  link_child_link_idss_[parent_id].push_back(link_id);
+  link_child_link_idss_.push_back(std::vector<size_t>());
   this->update_rptable(); // set _rptable
-
-  return new_link;
+  return link_id;
 }
 
 template<typename Scalar>
@@ -370,14 +352,14 @@ void KinematicModel<Scalar>::update_rptable() {
 
   for(size_t joint_id = 0; joint_id < n_dof; joint_id++) {
     auto clink_id = joint_child_link_ids_[joint_id];
-    std::stack<urdf::LinkSharedPtr> link_stack;
-    link_stack.push(links_[clink_id]);
+    std::stack<size_t> link_stack;
+    link_stack.push(clink_id);
     while (!link_stack.empty()) {
-      auto here_link = link_stack.top();
+      auto hlink_id = link_stack.top();
       link_stack.pop();
-      rptable.table_[here_link->id][joint_id] = true;
-      for (auto &link : here_link->child_links) {
-        link_stack.push(link);
+      rptable.table_[hlink_id][joint_id] = true;
+      for (auto clink_id : link_child_link_idss_[hlink_id]) {
+        link_stack.push(clink_id);
       }
     }
   }

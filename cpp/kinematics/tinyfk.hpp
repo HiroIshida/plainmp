@@ -48,12 +48,17 @@ public: // members
   using Bound = std::pair<Scalar, Scalar>;
   urdf::ModelInterfaceSharedPtr robot_urdf_interface_;
 
-  size_t root_link_id_;
-  std::vector<urdf::LinkSharedPtr> links_;
-  std::unordered_map<std::string, int> link_name_id_map_;
-  std::vector<size_t> link_parent_link_ids_;
-  std::vector<urdf::LinkSharedPtr> com_dummy_links_;
+  // link stuff 
+  size_t root_link_id_; // N_link
+  std::unordered_map<std::string, int> link_name_id_map_;  // N_link
+  std::vector<size_t> link_parent_link_ids_;  // N_link
+  std::vector<std::vector<size_t>> link_child_link_idss_;  // N_link
+  std::vector<bool> link_consider_rotation_;  // N_link
+  std::vector<size_t> com_link_ids_;  // N_COM_link
+  std::vector<Scalar> link_masses_;  // N_COM_link
+  std::vector<Vector3> com_local_positions_;  // N_COM_link
 
+  // joint stuff
   std::vector<int> joint_types_;
   std::vector<Vector3> joint_axes_;
   std::vector<Vector3> joint_positions_;
@@ -68,6 +73,7 @@ public: // members
   int num_dof_;
   Scalar total_mass_;
 
+  // cache stuff
   mutable SizedCache<Transform> transform_cache_;
   mutable std::vector<Transform> tf_plink_to_hlink_cache_;
 
@@ -107,14 +113,6 @@ public: // functions
 
   std::vector<size_t> get_link_ids(std::vector<std::string> link_names) const;
 
-  std::vector<std::string> get_link_names() const {
-    std::vector<std::string> link_names;
-    for (auto &link : links_) {
-      link_names.push_back(link->name);
-    }
-    return link_names;
-  }
-
   const Transform& get_link_pose(size_t link_id) const {
     if(!transform_cache_.is_cached(link_id)) {
       build_cache_until(link_id);
@@ -143,13 +141,13 @@ public: // functions
     joint_angles_[joint_id] = angle;
   }
 
-  urdf::LinkSharedPtr add_new_link(size_t parent_id,
+  size_t add_new_link(size_t parent_id,
                                    const std::array<Scalar, 3> &position,
                                    const std::array<Scalar, 3> &rpy,
                                    bool consider_rotation,
                                    std::optional<std::string> link_name = std::nullopt);
 
-  urdf::LinkSharedPtr add_new_link(size_t parent_id, const Transform &pose,
+  size_t add_new_link(size_t parent_id, const Transform &pose,
                                    bool consider_rotation,
                                    std::optional<std::string> link_name = std::nullopt);
 

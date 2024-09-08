@@ -31,19 +31,18 @@ template class KinematicModel<double>;
 template <typename Scalar>
 void KinematicModel<Scalar>::build_cache_until(size_t link_id) const
 {
-  if(links_[link_id]->consider_rotation) {
+  if(link_consider_rotation_[link_id]) {
     this->build_cache_until_inner(link_id);
   } else {
     // TODO: we should remove this!
-    auto hlink = links_[link_id];
-    auto plink = hlink->getParent();
-    auto pjoint = hlink->parent_joint;
-    if(!transform_cache_.is_cached(plink->id)) {
-      build_cache_until_inner(plink->id);
+    auto plink_id = link_parent_link_ids_[link_id];
+    if(!transform_cache_.is_cached(plink_id)) {
+      build_cache_until_inner(plink_id);
     }
-    Transform& tf_rlink_to_plink = transform_cache_.data_[plink->id];
+    Transform& tf_rlink_to_plink = transform_cache_.data_[plink_id];
     auto&& rotmat = tf_rlink_to_plink.quat().toRotationMatrix();
-    Vector3&& pos = tf_rlink_to_plink.trans() + rotmat * pjoint->parent_to_joint_origin_transform.trans();
+    auto& plink_to_hlink_trans = tf_plink_to_hlink_cache_[link_id].trans();
+    Vector3&& pos = tf_rlink_to_plink.trans() + rotmat * plink_to_hlink_trans;
     // HACK: we want to update the only position part
     // thus, we commented out the private: and directly access the data
     transform_cache_.cache_predicate_vector_[link_id] = true;
@@ -265,10 +264,11 @@ typename KinematicModel<Scalar>::Vector3
 KinematicModel<Scalar>::get_com() {
   Vector3 com_average = Vector3::Zero();
   double mass_total = 0.0;
-  for (const auto &link : com_dummy_links_) {
-    mass_total += link->inertial->mass;
-    const auto& tf_base_to_com = get_link_pose(link->id);
-    com_average += link->inertial->mass * tf_base_to_com.trans();
+  for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
+    const auto& tf_base_to_link = get_link_pose(com_link_ids_[iter]);
+    const Vector3&& tf_base_to_com_trans = tf_base_to_link.trans() + tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
+    com_average += link_masses_[iter] * tf_base_to_com_trans;
+    mass_total += link_masses_[iter];
   }
   com_average /= mass_total;
   return com_average;
@@ -282,11 +282,12 @@ KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t> &joint_ids,
   const size_t dim_dof = joint_ids.size() + with_base * 6;
   MatrixDynamic jac_average = MatrixDynamic::Zero(jac_rank, dim_dof);
   double mass_total = 0.0;
-  for (const auto &com_link : com_dummy_links_) {
-    mass_total += com_link->inertial->mass;
-    auto jac = this->get_jacobian(com_link->id, joint_ids, RotationType::IGNORE,
-                                  with_base);
-    jac_average += com_link->inertial->mass * jac;
+  for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
+    const auto& tf_base_to_link = get_link_pose(com_link_ids_[iter]);
+    const Vector3&& tf_base_to_com_trans = tf_base_to_link.trans() + tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
+    auto jac = this->get_attached_point_jacobian(com_link_ids_[iter], tf_base_to_com_trans, joint_ids, with_base);
+    mass_total += link_masses_[iter];
+    jac_average += link_masses_[iter] * jac;
   }
   jac_average /= mass_total;
   return jac_average;

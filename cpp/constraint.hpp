@@ -185,8 +185,7 @@ class RelativePoseCst : public EqConstraintBase {
     auto pose = Transform::Identity();
     pose.trans() = relative_pose;
     size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
-    auto new_link = kin_->add_new_link(link_id1_, pose, true);
-    dummy_link_id_ = new_link->id;
+    dummy_link_id_ = kin_->add_new_link(link_id1_, pose, true);
   }
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;

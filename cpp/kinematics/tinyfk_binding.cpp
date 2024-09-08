@@ -18,8 +18,7 @@ class _KinematicModel : public KinematicModel<double> {
                                    const std::array<double, 3> &rpy,
                                    bool consider_rotation) {
     size_t parent_id = get_link_ids({parent_name})[0];
-    auto link = KinematicModel::add_new_link(parent_id, position, rpy, consider_rotation, link_name);
-    return link->id;
+    return KinematicModel::add_new_link(parent_id, position, rpy, consider_rotation, link_name);
   }
 };
 

@@ -64,15 +64,15 @@ FixedZAxisCst::FixedZAxisCst(
   {
     auto pose = Transform::Identity();
     pose.trans().x() = 1;
-    auto new_link = kin_->add_new_link(link_id_, pose, false);
-    aux_link_ids_.push_back(new_link->id);
+    auto new_link_id = kin_->add_new_link(link_id_, pose, false);
+    aux_link_ids_.push_back(new_link_id);
   }
 
   {
     auto pose = Transform::Identity();
     pose.trans().y() = 1;
-    auto new_link = kin_->add_new_link(link_id_, pose, false);
-    aux_link_ids_.push_back(new_link->id);
+    auto new_link_id = kin_->add_new_link(link_id_, pose, false);
+    aux_link_ids_.push_back(new_link_id);
   }
 }
 
