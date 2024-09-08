@@ -97,6 +97,13 @@ struct QuatTrans {
     Eigen::Matrix<Scalar, 3, 1> trans_;
     bool is_quat_identity_ = false;
 
+    template <typename ScalarTo>
+    QuatTrans<ScalarTo> cast() const {
+      auto&& quat_new = quat_.template cast<ScalarTo>();
+      auto&& trans_new = trans_.template cast<ScalarTo>();
+      return QuatTrans<ScalarTo>(quat_new, trans_new, is_quat_identity_);
+    }
+
     inline QuatTrans<Scalar>& operator=(const QuatTrans<Scalar>& other) {
         quat_ = other.quat_;
         // somehow eigen's assginment operator is quite slow. so
