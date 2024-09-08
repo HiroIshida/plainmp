@@ -54,7 +54,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
 }
 
 FixedZAxisCst::FixedZAxisCst(
-    std::shared_ptr<tinyfk::KinematicModel> kin,
+    std::shared_ptr<tinyfk::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
     bool with_base,
     const std::string& link_name)
@@ -62,17 +62,17 @@ FixedZAxisCst::FixedZAxisCst(
       link_id_(kin_->get_link_ids({link_name})[0]) {
   aux_link_ids_.clear();
   {
-    auto pose = tinyfk::Transform::Identity();
+    auto pose = Transform::Identity();
     pose.trans().x() = 1;
-    auto new_link = kin_->add_new_link(link_id_, pose, false);
-    aux_link_ids_.push_back(new_link->id);
+    auto new_link_id = kin_->add_new_link(link_id_, pose, false);
+    aux_link_ids_.push_back(new_link_id);
   }
 
   {
-    auto pose = tinyfk::Transform::Identity();
+    auto pose = Transform::Identity();
     pose.trans().y() = 1;
-    auto new_link = kin_->add_new_link(link_id_, pose, false);
-    aux_link_ids_.push_back(new_link->id);
+    auto new_link_id = kin_->add_new_link(link_id_, pose, false);
+    aux_link_ids_.push_back(new_link_id);
   }
 }
 
@@ -102,7 +102,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
 };
 
 SphereCollisionCst::SphereCollisionCst(
-    std::shared_ptr<tinyfk::KinematicModel> kin,
+    std::shared_ptr<tinyfk::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
     bool with_base,
     const std::vector<SphereAttachmentSpec>& sphere_specs,

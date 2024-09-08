@@ -92,6 +92,7 @@ std::shared_ptr<T> static_pointer_cast(std::shared_ptr<U> const & r)
 
 template<typename Scalar>
 struct QuatTrans {
+    using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
     // NOTE: considering memory layout, (quat, trans) is much better than (trans, quat)
     Eigen::Quaternion<Scalar> quat_;
     Eigen::Matrix<Scalar, 3, 1> trans_;
@@ -102,6 +103,13 @@ struct QuatTrans {
         // somehow eigen's assginment operator is quite slow. so
         std::memcpy(trans_.data(), other.trans().data(), sizeof(Scalar) * 3);
         return *this;
+    }
+
+    template <typename ScalarTo>
+    QuatTrans<ScalarTo> cast() const {
+      auto&& quat_new = quat_.template cast<ScalarTo>();
+      auto&& trans_new = trans_.template cast<ScalarTo>();
+      return {quat_new, trans_new, is_quat_identity_};
     }
 
     // acceessor
@@ -155,7 +163,7 @@ struct QuatTrans {
         return {q_inv, q_inv * (-trans_)};
     }
 
-    Eigen::Vector3d getRPY() const {
+    Vector3 getRPY() const {
       auto sqx = quat_.x() * quat_.x();
       auto sqy = quat_.y() * quat_.y();
       auto sqz = quat_.z() * quat_.z();
@@ -163,7 +171,7 @@ struct QuatTrans {
 
       // Cases derived from https://orbitalstation.wordpress.com/tag/quat_ernion/
       auto sarg = -2 * (quat_.x() * quat_.z() - quat_.w() * quat_.y());
-      const double pi_2 = 1.57079632679489661923;
+      const Scalar pi_2 = 1.57079632679489661923;
 
       Scalar roll, pitch, yaw;
       if (sarg <= -0.99999) {
@@ -182,7 +190,7 @@ struct QuatTrans {
       return {roll, pitch, yaw};
     }
 
-    void setQuaternionFromRPY(const Eigen::Vector3d& rpy) {
+    void setQuaternionFromRPY(const Vector3& rpy) {
         auto phi = rpy[0] / 2.0;
         auto the = rpy[1] / 2.0;
         auto psi = rpy[2] / 2.0;
@@ -196,7 +204,7 @@ struct QuatTrans {
         setQuaternionFromRPY(Eigen::Matrix<Scalar, 3, 1>(roll, pitch, yaw));
     }
 
-    static QuatTrans<Scalar> fromXYZRPY(const Eigen::Vector3f& xyz, const Eigen::Vector3f& rpy) {
+    static QuatTrans<Scalar> fromXYZRPY(const Vector3& xyz, const Vector3& rpy) {
         Eigen::Quaternion<Scalar> q;
         auto phi = rpy[0] / 2.0;
         auto the = rpy[1] / 2.0;
@@ -208,14 +216,14 @@ struct QuatTrans {
         return {Eigen::Quaternion<Scalar>(w, x, y, z), xyz};
     }
     static QuatTrans<Scalar> fromXYZRPY(Scalar x, Scalar y, Scalar z, Scalar roll, Scalar pitch, Scalar yaw) {
-        return fromXYZRPY(Eigen::Vector3d(x, y, z), Eigen::Vector3d(roll, pitch, yaw));
+        return fromXYZRPY(Vector3(x, y, z), Vector3(roll, pitch, yaw));
     }
 
-    static QuatTrans<Scalar> fromXYZ(const Eigen::Vector3d& xyz) {
+    static QuatTrans<Scalar> fromXYZ(const Vector3& xyz) {
         return {Eigen::Quaternion<Scalar>::Identity(), xyz};
     }
     static QuatTrans<Scalar> fromXYZ(Scalar x, Scalar y, Scalar z) {
-        return fromXYZ(Eigen::Vector3d(x, y, z));
+        return fromXYZ(Vector3(x, y, z));
     }
 };
 
