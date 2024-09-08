@@ -7,10 +7,11 @@
 
 namespace tinyfk {
 
-Eigen::Vector3d rpy_derivative(const Eigen::Vector3d &rpy, const Eigen::Vector3d &axis) {
-  Eigen::Vector3d drpy_dt;
-  double a2 = -rpy.y();
-  double a3 = -rpy.z();
+template <typename Scalar>
+Eigen::Matrix<Scalar, 3, 1> rpy_derivative(const Eigen::Matrix<Scalar, 3, 1> &rpy, const Eigen::Matrix<Scalar, 3, 1> &axis) {
+  Eigen::Matrix<Scalar, 3, 1> drpy_dt;
+  Scalar a2 = -rpy.y();
+  Scalar a3 = -rpy.z();
   drpy_dt.x() = cos(a3) / cos(a2) * axis.x ()- sin(a3) / cos(a2) * axis.y();
   drpy_dt.y() = sin(a3) * axis.x() + cos(a3) * axis.y();
   drpy_dt.z() = -cos(a3) * sin(a2) / cos(a2) * axis.x() +
@@ -18,15 +19,17 @@ Eigen::Vector3d rpy_derivative(const Eigen::Vector3d &rpy, const Eigen::Vector3d
   return drpy_dt;
 }
 
-Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector3d &omega) {
-  const double dxdt = 0.5 * (omega.z() * q.y() - omega.y() * q.z() + omega.x() * q.w());
-  const double dydt = 0.5 * (-omega.z() * q.x() + 0 * q.y() + omega.x() * q.z() + omega.y() * q.w());
-  const double dzdt = 0.5 * (omega.y() * q.x() - omega.x() * q.y() + 0 * q.z() + omega.z() * q.w());
-  const double dwdt = 0.5 * (-omega.x() * q.x() - omega.y() * q.y() - omega.z() * q.z() + 0 * q.w());
-  return Eigen::Quaterniond(-dwdt, dxdt, dydt, dzdt);
+template <typename Scalar>
+Eigen::Quaternion<Scalar> q_derivative(const Eigen::Quaternion<Scalar> &q, const Eigen::Matrix<Scalar, 3, 1> &omega) {
+  const Scalar dxdt = 0.5 * (omega.z() * q.y() - omega.y() * q.z() + omega.x() * q.w());
+  const Scalar dydt = 0.5 * (-omega.z() * q.x() + 0 * q.y() + omega.x() * q.z() + omega.y() * q.w());
+  const Scalar dzdt = 0.5 * (omega.y() * q.x() - omega.x() * q.y() + 0 * q.z() + omega.z() * q.w());
+  const Scalar dwdt = 0.5 * (-omega.x() * q.x() - omega.y() * q.y() - omega.z() * q.z() + 0 * q.w());
+  return Eigen::Quaternion<Scalar>(-dwdt, dxdt, dydt, dzdt);
 }
 
 template class KinematicModel<double>;
+template class KinematicModel<float>;
 
 template <typename Scalar>
 void KinematicModel<Scalar>::build_cache_until(size_t link_id) const
@@ -128,12 +131,12 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
       } else {
 
         if (rot_type == RotationType::RPY) { // (compute rpy jacobian)
-          auto drpy_dt = rpy_derivative(erpy, world_axis);
+          auto drpy_dt = rpy_derivative<Scalar>(erpy, world_axis);
           jacobian.template block<3, 1>(3, i) = drpy_dt;
         }
 
         if (rot_type == RotationType::XYZW) { // (compute quat jacobian)
-          auto dq_dt = q_derivative(erot_inverse, world_axis);
+          auto dq_dt = q_derivative<Scalar>(erot_inverse, world_axis);
           jacobian.template block<4, 1>(3, i) = dq_dt.coeffs();
         }
       }

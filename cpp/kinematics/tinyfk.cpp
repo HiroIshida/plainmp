@@ -12,6 +12,7 @@
 namespace tinyfk {
 
 template class KinematicModel<double>;
+template class KinematicModel<float>;
 
 template<typename Scalar>
 KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
@@ -58,7 +59,13 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
     if(link->inertial != nullptr) {
       com_link_ids_.push_back(link->id);
       link_masses_.push_back(link->inertial->mass);
-      com_local_positions_.push_back(link->inertial->origin.trans());
+      if constexpr(std::is_same<Scalar, double>::value){
+        com_local_positions_.push_back(link->inertial->origin.trans());
+      }else if constexpr(std::is_same<Scalar, float>::value){
+        com_local_positions_.push_back(link->inertial->origin.trans().cast<float>());
+      }else {
+        static_assert(std::is_same<Scalar, double>::value || std::is_same<Scalar, float>::value, "Scalar must be double or float");
+      }
     }
   }
 
@@ -100,8 +107,15 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
         jtype == urdf::Joint::PRISMATIC) {
       joint->id = joint_counter;
       joint_types.push_back(jtype);
-      joint_axes.push_back(joint->axis);
-      joint_positions.push_back(joint->parent_to_joint_origin_transform.trans());
+      if constexpr(std::is_same<Scalar, double>::value){
+        joint_axes.push_back(joint->axis);
+        joint_positions.push_back(joint->parent_to_joint_origin_transform.trans());
+      }else if constexpr(std::is_same<Scalar, float>::value){
+        joint_axes.push_back(joint->axis.cast<float>());
+        joint_positions.push_back(joint->parent_to_joint_origin_transform.trans().cast<float>());
+      } else {
+        static_assert(std::is_same<Scalar, double>::value || std::is_same<Scalar, float>::value, "Scalar must be double or float");
+      }
       joint_child_link_ids.push_back(joint->getChildLink()->id);
       joint_ids[joint->name] = joint_counter;
 
@@ -134,7 +148,13 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
     if(pjoint != nullptr) {
       // HACK: if joint is not fixed, the value (origin_transform, quat_identity)
       // will be overwritten in the set_joint_angles(q)
-      tf_plink_to_hlink_cache_[hid] = pjoint->parent_to_joint_origin_transform;
+      if constexpr(std::is_same<Scalar, double>::value){
+        tf_plink_to_hlink_cache_[hid] = pjoint->parent_to_joint_origin_transform;
+      }else if constexpr(std::is_same<Scalar, float>::value){
+        tf_plink_to_hlink_cache_[hid] = pjoint->parent_to_joint_origin_transform.cast<float>();
+      }else{
+        static_assert(std::is_same<Scalar, double>::value || std::is_same<Scalar, float>::value, "Scalar must be double or float");
+      }
       // HACK: assume that joint origin rotation is identity
       // actually this is checked in the urdf loading time, so this must be ok
       tf_plink_to_hlink_cache_[hid].is_quat_identity_ = true;
@@ -322,11 +342,6 @@ size_t KinematicModel<Scalar>::add_new_link(size_t parent_id, const Transform &p
       throw std::runtime_error("link name : " + link_name.value() + " already exists");
     }
   }
-
-  auto fixed_joint = std::make_shared<urdf::Joint>();
-
-  fixed_joint->parent_to_joint_origin_transform = pose;
-  fixed_joint->type = urdf::Joint::FIXED;
 
   int link_id = link_name_id_map_.size();
   link_name_id_map_[link_name.value()] = link_id;
