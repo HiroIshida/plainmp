@@ -6,5 +6,7 @@
 
 namespace primitive_sdf {
 namespace py = pybind11;
+
+template <typename Scalar>
 void bind_primitive_sdf(py::module& m);
 }  // namespace primitive_sdf

@@ -295,7 +295,7 @@ class SphereCollisionCst : public IneqConstraintBase {
       bool with_base,
       const std::vector<SphereAttachmentSpec>& sphere_specs,
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
-      std::optional<SDFBase::Ptr> fixed_sdf);
+      std::optional<SDFBase<double>::Ptr> fixed_sdf);
 
   void post_update_kintree() override {
     for (auto& group : sphere_groups_) {
@@ -303,11 +303,11 @@ class SphereCollisionCst : public IneqConstraintBase {
     }
   }
 
-  void set_sdf(const SDFBase::Ptr& sdf) {
+  void set_sdf(const SDFBase<double>::Ptr& sdf) {
     sdf_ = sdf;
     set_all_sdfs();
   }
-  SDFBase::Ptr get_sdf() const { return sdf_; }
+  SDFBase<double>::Ptr get_sdf() const { return sdf_; }
 
   bool is_valid_dirty() override;
   bool check_ext_collision();
@@ -327,13 +327,13 @@ class SphereCollisionCst : public IneqConstraintBase {
 
  private:
   void set_all_sdfs();
-  void set_all_sdfs_inner(SDFBase::Ptr sdf);
+  void set_all_sdfs_inner(SDFBase<double>::Ptr sdf);
 
   std::vector<SphereGroup> sphere_groups_;
   std::vector<std::pair<size_t, size_t>> selcol_group_id_pairs_;
-  SDFBase::Ptr fixed_sdf_;
-  SDFBase::Ptr sdf_;  // set later by user
-  std::vector<PrimitiveSDFBase::Ptr> all_sdfs_cache_;
+  SDFBase<double>::Ptr fixed_sdf_;
+  SDFBase<double>::Ptr sdf_;  // set later by user
+  std::vector<PrimitiveSDFBase<double>::Ptr> all_sdfs_cache_;
   double cutoff_dist_ = 0.1;
 };
 
@@ -348,7 +348,7 @@ class ComInPolytopeCst : public IneqConstraintBase {
   ComInPolytopeCst(std::shared_ptr<tinyfk::KinematicModel<double>> kin,
                    const std::vector<std::string>& control_joint_names,
                    bool with_base,
-                   BoxSDF::Ptr polytope_sdf,
+                   BoxSDF<double>::Ptr polytope_sdf,
                    const std::vector<AppliedForceSpec> applied_forces)
       : IneqConstraintBase(kin, control_joint_names, with_base),
         polytope_sdf_(polytope_sdf) {
@@ -371,7 +371,7 @@ class ComInPolytopeCst : public IneqConstraintBase {
   std::string get_name() const override { return "ComInPolytopeCst"; }
 
  private:
-  BoxSDF::Ptr polytope_sdf_;
+  BoxSDF<double>::Ptr polytope_sdf_;
   std::vector<size_t> force_link_ids_;
   std::vector<double> applied_force_values_;
 };

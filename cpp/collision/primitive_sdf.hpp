@@ -11,18 +11,18 @@
 
 namespace primitive_sdf {
 
-using Point = Eigen::Vector3d;
-using Points = Eigen::Matrix3Xd;
-using Values = Eigen::VectorXd;
-
+template <typename Scalar>
 struct Pose {
-  Pose(const Eigen::Vector3d& position, const Eigen::Matrix3d& rotation)
+  using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Matrix3 = Eigen::Matrix<Scalar, 3, 3>;
+  using Matrix3X = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>;
+  Pose(const Vector3& position, const Matrix3& rotation)
       : position_(position), rot_(rotation), rot_inv_(rotation.inverse()) {
-    axis_aligned_ = rot_.isApprox(Eigen::Matrix3d::Identity());
+    axis_aligned_ = rot_.isApprox(Matrix3::Identity());
     if (axis_aligned_) {
       z_axis_aligned_ = true;
     } else {
-      double tol = 1e-6;
+      Scalar tol = 1e-6;
       z_axis_aligned_ =
           std::abs(rot_(2, 2) - 1.0) < tol && std::abs(rot_(0, 2)) < tol &&
           std::abs(rot_(1, 2)) < tol && std::abs(rot_(2, 0)) < tol &&
@@ -30,30 +30,36 @@ struct Pose {
     }
   }
 
-  Points transform_points(const Points& p) const {
+  Matrix3X transform_points(const Matrix3X& p) const {
     return rot_inv_ * (p.colwise() - position_);
   }
 
-  Point transform_point(const Point& p) const {
+  Vector3 transform_point(const Vector3& p) const {
     return rot_inv_ * (p - position_);
   }
 
-  void set_position(const Eigen::Vector3d& position) { position_ = position; }
+  void set_position(const Vector3& position) { position_ = position; }
 
-  Pose inverse() const { return Pose(-rot_ * position_, rot_inv_); }
+  Pose<Scalar> inverse() const { return {-rot_ * position_, rot_inv_}; }
 
-  Eigen::Vector3d position_;
-  Eigen::Matrix3d rot_;
-  Eigen::Matrix3d rot_inv_;
+  Vector3 position_;
+  Matrix3 rot_;
+  Matrix3 rot_inv_;
   bool axis_aligned_;
   bool z_axis_aligned_;
 };
 
 enum SDFType { UNION, BOX, CYLINDER, SPHERE, GROUND };
 
+template <typename Scalar>
 class SDFBase {
  public:
   using Ptr = std::shared_ptr<SDFBase>;
+  using Point = Eigen::Matrix<Scalar, 3, 1>;
+  using Points = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>;
+  using Values = Eigen::Matrix<Scalar, 1, Eigen::Dynamic>;
+  using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+
   virtual SDFType get_type() const = 0;
   virtual Values evaluate_batch(const Points& p) const {
     // naive implementation. please override this function if you have a better
@@ -64,14 +70,20 @@ class SDFBase {
     }
     return vals;
   }
-  virtual double evaluate(const Point& p) const = 0;
-  virtual bool is_outside(const Point& p, double radius) const = 0;
+  virtual Scalar evaluate(const Point& p) const = 0;
+  virtual bool is_outside(const Point& p, Scalar radius) const = 0;
 };
 
-struct UnionSDF : public SDFBase {
+template <typename Scalar>
+struct UnionSDF : public SDFBase<Scalar> {
   using Ptr = std::shared_ptr<UnionSDF>;
+  using Point = Eigen::Matrix<Scalar, 3, 1>;
+  using Points = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>;
+  using Values = Eigen::Matrix<Scalar, 1, Eigen::Dynamic>;
+
   SDFType get_type() const override { return SDFType::UNION; }
-  UnionSDF(std::vector<SDFBase::Ptr> sdfs, bool create_bvh) : sdfs_(sdfs) {
+  UnionSDF(std::vector<typename SDFBase<Scalar>::Ptr> sdfs, bool create_bvh)
+      : sdfs_(sdfs) {
     if (create_bvh) {
       throw std::runtime_error("Not implemented yet");
     }
@@ -85,15 +97,15 @@ struct UnionSDF : public SDFBase {
     return vals;
   }
 
-  double evaluate(const Point& p) const override {
-    double val = std::numeric_limits<double>::max();
+  Scalar evaluate(const Point& p) const override {
+    Scalar val = std::numeric_limits<Scalar>::max();
     for (const auto& sdf : sdfs_) {
       val = std::min(val, sdf->evaluate(p));
     }
     return val;
   }
 
-  bool is_outside(const Point& p, double radius) const override {
+  bool is_outside(const Point& p, Scalar radius) const override {
     for (const auto& sdf : sdfs_) {
       if (!sdf->is_outside(p, radius)) {
         return false;
@@ -102,15 +114,19 @@ struct UnionSDF : public SDFBase {
     return true;
   }
 
-  std::vector<std::shared_ptr<SDFBase>> sdfs_;
+  std::vector<typename SDFBase<Scalar>::Ptr> sdfs_;
 };
 
-struct PrimitiveSDFBase : public SDFBase {
+template <typename Scalar>
+struct PrimitiveSDFBase : public SDFBase<Scalar> {
  public:
   using Ptr = std::shared_ptr<PrimitiveSDFBase>;
+  using Point = Eigen::Matrix<Scalar, 3, 1>;
+  using Points = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>;
+  using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
 
   // this filtering is quite fast as it is not virtual function
-  inline bool is_outside_aabb(const Point& p, double radius) const {
+  inline bool is_outside_aabb(const Point& p, Scalar radius) const {
     return p(0) < lb(0) - radius || p(0) > ub(0) + radius ||
            p(1) < lb(1) - radius || p(1) > ub(1) + radius ||
            p(2) < lb(2) - radius || p(2) > ub(2) + radius;
@@ -119,116 +135,129 @@ struct PrimitiveSDFBase : public SDFBase {
   inline bool is_outside_aabb_batch(const Points& ps,
                                     const Eigen::VectorXd& radii) const {
     // this is much faster than loop-based implementation
-    double ps_x_min_minus_radius = (ps.row(0).transpose() - radii).minCoeff();
+    Scalar ps_x_min_minus_radius = (ps.row(0).transpose() - radii).minCoeff();
     if (ps_x_min_minus_radius > ub(0)) {
       return true;
     }
-    double ps_x_max_plus_radius = (ps.row(0).transpose() + radii).maxCoeff();
+    Scalar ps_x_max_plus_radius = (ps.row(0).transpose() + radii).maxCoeff();
     if (ps_x_max_plus_radius < lb(0)) {
       return true;
     }
 
-    double ps_y_min_minus_radius = (ps.row(1).transpose() - radii).minCoeff();
+    Scalar ps_y_min_minus_radius = (ps.row(1).transpose() - radii).minCoeff();
     if (ps_y_min_minus_radius > ub(1)) {
       return true;
     }
-    double ps_y_max_plus_radius = (ps.row(1).transpose() + radii).maxCoeff();
+    Scalar ps_y_max_plus_radius = (ps.row(1).transpose() + radii).maxCoeff();
     if (ps_y_max_plus_radius < lb(1)) {
       return true;
     }
 
-    double ps_z_min_minus_radius = (ps.row(2).transpose() - radii).minCoeff();
+    Scalar ps_z_min_minus_radius = (ps.row(2).transpose() - radii).minCoeff();
     if (ps_z_min_minus_radius > ub(2)) {
       return true;
     }
-    double ps_z_max_plus_radius = (ps.row(2).transpose() + radii).maxCoeff();
+    Scalar ps_z_max_plus_radius = (ps.row(2).transpose() + radii).maxCoeff();
     if (ps_z_max_plus_radius < lb(2)) {
       return true;
     }
     return false;
   }
 
-  Eigen::Vector3d lb;
-  Eigen::Vector3d ub;
+  Vector3 lb;
+  Vector3 ub;
 };
 
-struct GroundSDF : public PrimitiveSDFBase {
+template <typename Scalar>
+struct GroundSDF : public PrimitiveSDFBase<Scalar> {
   using Ptr = std::shared_ptr<GroundSDF>;
+  using Point = Eigen::Matrix<Scalar, 3, 1>;
+  using Points = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>;
+  using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Values = Eigen::Matrix<Scalar, 1, Eigen::Dynamic>;
+
   SDFType get_type() const override { return SDFType::GROUND; }
-  GroundSDF(double height) : height_(height) {
-    lb = Eigen::Vector3d(-std::numeric_limits<double>::infinity(),
-                         -std::numeric_limits<double>::infinity(), 0.0);
-    ub = Eigen::Vector3d(std::numeric_limits<double>::infinity(),
-                         std::numeric_limits<double>::infinity(), 0.0);
+
+  GroundSDF(Scalar height) : height_(height) {
+    this->lb = Vector3(-std::numeric_limits<Scalar>::infinity(),
+                       -std::numeric_limits<Scalar>::infinity(), 0.0);
+    this->ub = Vector3(std::numeric_limits<Scalar>::infinity(),
+                       std::numeric_limits<Scalar>::infinity(), 0.0);
   }
   Values evaluate_batch(const Points& p) const override {
     return p.row(2).array() + height_;
   }
-  double evaluate(const Point& p) const override { return p(2) + height_; }
-  bool is_outside(const Point& p, double radius) const override {
+  Scalar evaluate(const Point& p) const override { return p(2) + height_; }
+  bool is_outside(const Point& p, Scalar radius) const override {
     return p(2) + height_ > radius;
   }
 
  private:
-  double height_;
+  Scalar height_;
 };
 
-struct BoxSDF : public PrimitiveSDFBase {
+template <typename Scalar>
+struct BoxSDF : public PrimitiveSDFBase<Scalar> {
   // should implement
   using Ptr = std::shared_ptr<BoxSDF>;
+  using Point = Eigen::Matrix<Scalar, 3, 1>;
+  using Points = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>;
+  using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Values = Eigen::Matrix<Scalar, 1, Eigen::Dynamic>;
+
   SDFType get_type() const override { return SDFType::BOX; }
-  BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
+  BoxSDF(const Vector3& width, const Pose<Scalar>& pose)
       : width_(width), half_width_(0.5 * width), pose_(pose) {
-    Eigen::Matrix3Xd local_vertices(3, 8);
+    Points local_vertices(3, 8);
     local_vertices.col(0) =
-        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
+        Vector3(-width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
     local_vertices.col(1) =
-        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
+        Vector3(width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
     local_vertices.col(2) =
-        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
+        Vector3(-width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
     local_vertices.col(3) =
-        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
+        Vector3(width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
     local_vertices.col(4) =
-        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
+        Vector3(-width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
     local_vertices.col(5) =
-        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
+        Vector3(width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
     local_vertices.col(6) =
-        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
+        Vector3(-width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
     local_vertices.col(7) =
-        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
+        Vector3(width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
     auto world_vertices = pose.inverse().transform_points(local_vertices);
-    lb = world_vertices.rowwise().minCoeff();
-    ub = world_vertices.rowwise().maxCoeff();
+    this->lb = world_vertices.rowwise().minCoeff();
+    this->ub = world_vertices.rowwise().maxCoeff();
   }
 
-  void set_width(const Eigen::Vector3d& width) {
+  void set_width(const Vector3& width) {
     width_ = width;
     half_width_ = 0.5 * width;
   }
 
-  const Eigen::Vector3d& get_width() const { return width_; }
+  const Vector3& get_width() const { return width_; }
 
-  double evaluate(const Point& p) const override {
-    Eigen::Vector3d sdists;
+  Scalar evaluate(const Point& p) const override {
+    Vector3 sdists;
     if (pose_.axis_aligned_) {
       sdists = (p - pose_.position_).array().abs() - half_width_.array();
     } else {
       sdists = (pose_.rot_inv_ * (p - pose_.position_)).array().abs() -
                half_width_.array();
     }
-    Eigen::Vector3d m = sdists.array().max(0.0);
-    double outside_distance = m.norm();
-    double inside_distance = (sdists.cwiseMin(0.0)).maxCoeff();
+    Vector3 m = sdists.array().max(0.0);
+    Scalar outside_distance = m.norm();
+    Scalar inside_distance = (sdists.cwiseMin(0.0)).maxCoeff();
     return outside_distance + inside_distance;
   }
 
-  bool is_outside(const Point& p, double radius) const override {
+  bool is_outside(const Point& p, Scalar radius) const override {
     // NOTE: you may think that the following code is more efficient than the
     // current implementation. However, the current implementation is way
     // faster than this code.
     /* >>>>>>>
     auto p_local = pose_.rot_.transpose() * (p - pose_.position_);
-    Eigen::Vector3d q = p_local.cwiseAbs() - half_width_;
+    Vector3 q = p_local.cwiseAbs() - half_width_;
     if (q.maxCoeff() < -radius) {
       return false;  // Completely inside
     }
@@ -236,7 +265,7 @@ struct BoxSDF : public PrimitiveSDFBase {
     return outside_distance > radius;
     <<<<<<< */
 
-    double x_signed_dist, y_signed_dist, z_signed_dist;
+    Scalar x_signed_dist, y_signed_dist, z_signed_dist;
     if (pose_.axis_aligned_) {
       x_signed_dist = abs(p(0) - pose_.position_(0)) - half_width_(0);
       if (x_signed_dist > radius) {
@@ -315,36 +344,41 @@ struct BoxSDF : public PrimitiveSDFBase {
   }
 
  private:
-  Eigen::Vector3d width_;
-  Eigen::Vector3d half_width_;
-  Pose pose_;
+  Vector3 width_;
+  Vector3 half_width_;
+  Pose<Scalar> pose_;
 };
 
-struct CylinderSDF : public PrimitiveSDFBase {
+template <typename Scalar>
+struct CylinderSDF : public PrimitiveSDFBase<Scalar> {
   using Ptr = std::shared_ptr<CylinderSDF>;
+  using Point = Eigen::Matrix<Scalar, 3, 1>;
+  using Points = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>;
+  using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Values = Eigen::Matrix<Scalar, 1, Eigen::Dynamic>;
   SDFType get_type() const override { return SDFType::CYLINDER; }
-  CylinderSDF(double radius, double height, const Pose& pose)
+  CylinderSDF(Scalar radius, Scalar height, const Pose<Scalar>& pose)
       : r_cylinder_(radius),
         rsq_cylinder_(radius * radius),
         height_(height),
         half_height_(0.5 * height),
         pose_(pose) {
-    Eigen::Matrix3Xd local_vertices(3, 8);
-    local_vertices.col(0) = Eigen::Vector3d(-radius, -radius, -height * 0.5);
-    local_vertices.col(1) = Eigen::Vector3d(radius, -radius, -height * 0.5);
-    local_vertices.col(2) = Eigen::Vector3d(-radius, radius, -height * 0.5);
-    local_vertices.col(3) = Eigen::Vector3d(radius, radius, -height * 0.5);
-    local_vertices.col(4) = Eigen::Vector3d(-radius, -radius, height * 0.5);
-    local_vertices.col(5) = Eigen::Vector3d(radius, -radius, height * 0.5);
-    local_vertices.col(6) = Eigen::Vector3d(-radius, radius, height * 0.5);
-    local_vertices.col(7) = Eigen::Vector3d(radius, radius, height * 0.5);
+    Points local_vertices(3, 8);
+    local_vertices.col(0) = Vector3(-radius, -radius, -height * 0.5);
+    local_vertices.col(1) = Vector3(radius, -radius, -height * 0.5);
+    local_vertices.col(2) = Vector3(-radius, radius, -height * 0.5);
+    local_vertices.col(3) = Vector3(radius, radius, -height * 0.5);
+    local_vertices.col(4) = Vector3(-radius, -radius, height * 0.5);
+    local_vertices.col(5) = Vector3(radius, -radius, height * 0.5);
+    local_vertices.col(6) = Vector3(-radius, radius, height * 0.5);
+    local_vertices.col(7) = Vector3(radius, radius, height * 0.5);
     auto world_vertices = pose.inverse().transform_points(local_vertices);
-    lb = world_vertices.rowwise().minCoeff();
-    ub = world_vertices.rowwise().maxCoeff();
+    this->lb = world_vertices.rowwise().minCoeff();
+    this->ub = world_vertices.rowwise().maxCoeff();
   }
 
-  double evaluate(const Point& p) const override {
-    double z_signed_dist, xdot_abs, ydot_abs;
+  Scalar evaluate(const Point& p) const override {
+    Scalar z_signed_dist, xdot_abs, ydot_abs;
     if (pose_.z_axis_aligned_) {
       z_signed_dist = abs(p(2) - pose_.position_(2)) - half_height_;
       xdot_abs = abs(p(0) - pose_.position_(0));
@@ -355,7 +389,7 @@ struct CylinderSDF : public PrimitiveSDFBase {
       xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
       ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
     }
-    double r_signed_dist =
+    Scalar r_signed_dist =
         sqrt(xdot_abs * xdot_abs + ydot_abs * ydot_abs) - r_cylinder_;
     Eigen::Vector2d d_2d(r_signed_dist, z_signed_dist);
     auto outside_distance = (d_2d.cwiseMax(0.0)).norm();
@@ -363,8 +397,8 @@ struct CylinderSDF : public PrimitiveSDFBase {
     return outside_distance + inside_distance;
   }
 
-  bool is_outside(const Point& p, double radius) const override {
-    double z_signed_dist, xdot_abs, ydot_abs;
+  bool is_outside(const Point& p, Scalar radius) const override {
+    Scalar z_signed_dist, xdot_abs, ydot_abs;
     if (pose_.z_axis_aligned_) {
       z_signed_dist = abs(p(2) - pose_.position_(2)) - half_height_;
       if (z_signed_dist > radius) {
@@ -381,7 +415,7 @@ struct CylinderSDF : public PrimitiveSDFBase {
       xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
       ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
     }
-    double dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
+    Scalar dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
     if (radius < 1e-6) {
       return dist_sq > rsq_cylinder_;
     }
@@ -392,7 +426,7 @@ struct CylinderSDF : public PrimitiveSDFBase {
     bool h_out = z_signed_dist > 0;
     bool r_out = dist_sq > rsq_cylinder_;
     if (h_out && r_out) {
-      double r_signed_dist = sqrt(dist_sq) - r_cylinder_;
+      Scalar r_signed_dist = sqrt(dist_sq) - r_cylinder_;
       return z_signed_dist * z_signed_dist + r_signed_dist * r_signed_dist >
              radius * radius;
     }
@@ -400,29 +434,34 @@ struct CylinderSDF : public PrimitiveSDFBase {
   }
 
  private:
-  double r_cylinder_;
-  double rsq_cylinder_;
-  double height_;
-  double half_height_;
-  Pose pose_;
+  Scalar r_cylinder_;
+  Scalar rsq_cylinder_;
+  Scalar height_;
+  Scalar half_height_;
+  Pose<Scalar> pose_;
 };
 
-struct SphereSDF : public PrimitiveSDFBase {
+template <typename Scalar>
+struct SphereSDF : public PrimitiveSDFBase<Scalar> {
   using Ptr = std::shared_ptr<SphereSDF>;
+  using Point = Eigen::Matrix<Scalar, 3, 1>;
+  using Points = Eigen::Matrix<Scalar, 3, Eigen::Dynamic>;
+  using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Values = Eigen::Matrix<Scalar, 1, Eigen::Dynamic>;
   SDFType get_type() const override { return SDFType::SPHERE; }
-  SphereSDF(double radius, const Pose& pose)
+  SphereSDF(Scalar radius, const Pose<Scalar>& pose)
       : r_sphere_(radius), rsq_sphere_(radius * radius), pose_(pose) {
-    lb = pose.position_ - Eigen::Vector3d(radius, radius, radius);
-    ub = pose.position_ + Eigen::Vector3d(radius, radius, radius);
+    this->lb = pose.position_ - Vector3(radius, radius, radius);
+    this->ub = pose.position_ + Vector3(radius, radius, radius);
   }
 
-  double evaluate(const Point& p) const override {
+  Scalar evaluate(const Point& p) const override {
     auto p_from_center = p - pose_.position_;
-    double dist = p_from_center.norm() - r_sphere_;
+    Scalar dist = p_from_center.norm() - r_sphere_;
     return dist;
   }
 
-  bool is_outside(const Point& p, double radius) const override {
+  bool is_outside(const Point& p, Scalar radius) const override {
     if (radius < 1e-6) {
       return (p - pose_.position_).squaredNorm() > rsq_sphere_;
     }
@@ -431,9 +470,9 @@ struct SphereSDF : public PrimitiveSDFBase {
   }
 
  private:
-  double r_sphere_;
-  double rsq_sphere_;
-  Pose pose_;
+  Scalar r_sphere_;
+  Scalar rsq_sphere_;
+  Pose<Scalar> pose_;
 };
 
 }  // namespace primitive_sdf

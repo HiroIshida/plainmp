@@ -60,7 +60,7 @@ void bind_collision_constraints(py::module& m) {
                     const std::vector<std::string>&, bool,
                     const std::vector<SphereAttachmentSpec>&,
                     const std::vector<std::pair<std::string, std::string>>&,
-                    std::optional<SDFBase::Ptr>>())
+                    std::optional<SDFBase<double>::Ptr>>())
       .def("set_sdf", &SphereCollisionCst::set_sdf)
       .def("get_sdf", &SphereCollisionCst::get_sdf)
       .def("update_kintree", &SphereCollisionCst::update_kintree)
@@ -78,7 +78,7 @@ void bind_collision_constraints(py::module& m) {
       cst_m, "ComInPolytopeCst")
       .def(py::init<std::shared_ptr<tinyfk::KinematicModel<double>>,
                     const std::vector<std::string>&, bool,
-                    primitive_sdf::BoxSDF::Ptr,
+                    primitive_sdf::BoxSDF<double>::Ptr,
                     const std::vector<AppliedForceSpec>&>())
       .def("update_kintree", &ComInPolytopeCst::update_kintree)
       .def("is_valid", &ComInPolytopeCst::is_valid)
