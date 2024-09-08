@@ -108,18 +108,15 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
   for (size_t i = 0; i < joint_ids.size(); i++) {
     int jid = joint_ids[i];
     if (rptable_.isRelevant(elink_id, jid)) {
-      const urdf::JointSharedPtr &hjoint = joints_[jid];
-      size_t type = hjoint->type;
-      urdf::LinkSharedPtr clink =
-          hjoint->getChildLink(); // rotation of clink and hlink is same. so
-                                  // clink is ok.
-
-      const auto& tf_rlink_to_clink = get_link_pose(clink->id);
+      auto jtype = joint_types_[jid];
+      auto clink_id = joint_child_link_ids_[jid];
+      auto& joint_axis = joint_axes_[jid];
+      const auto& tf_rlink_to_clink = get_link_pose(clink_id);
 
       auto &crot = tf_rlink_to_clink.quat();
-      auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
+      auto &&world_axis = crot * joint_axis; // axis w.r.t root link
       Vector3 dpos;
-      if (type == urdf::Joint::PRISMATIC) {
+      if (jtype == urdf::Joint::PRISMATIC) {
         dpos = world_axis;
       } else { // revolute or continuous
         auto &cpos = tf_rlink_to_clink.trans();
@@ -127,7 +124,7 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
         dpos = world_axis.cross(vec_clink_to_elink);
       }
       jacobian.template block<3, 1>(0, i) = dpos;
-      if (type == urdf::Joint::PRISMATIC) {
+      if (jtype == urdf::Joint::PRISMATIC) {
         // jacobian for rotation is all zero
       } else {
 
@@ -204,17 +201,15 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
   for (size_t i = 0; i < joint_ids.size(); i++) {
     int jid = joint_ids[i];
     if (rptable_.isRelevant(plink_id, jid)) {
-      const urdf::JointSharedPtr &hjoint = joints_[jid];
-      size_t type = hjoint->type;
-      urdf::LinkSharedPtr clink =
-          hjoint->getChildLink(); // rotation of clink and hlink is same. so
-                                  // clink is ok.
-      const auto& tf_rlink_to_clink = get_link_pose(clink->id);
+      auto jtype = joint_types_[jid];
+      auto clink_id = joint_child_link_ids_[jid];
+      auto& joint_axis = joint_axes_[jid];
+      const auto& tf_rlink_to_clink = get_link_pose(clink_id);
       auto &crot = tf_rlink_to_clink.quat();
-      auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
+      auto &&world_axis = crot * joint_axis; // axis w.r.t root link
 
       Vector3 dpos;
-      if (type == urdf::Joint::PRISMATIC) {
+      if (jtype == urdf::Joint::PRISMATIC) {
         dpos = world_axis;
       } else { // revolute or continuous
         auto &cpos = tf_rlink_to_clink.trans();

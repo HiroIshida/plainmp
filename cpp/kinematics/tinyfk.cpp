@@ -70,7 +70,6 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
 
   // allign joint ids
   std::unordered_map<std::string, int> joint_ids;
-  std::vector<urdf::JointSharedPtr> joints;
   std::vector<int> joint_types;
   std::vector<Vector3> joint_axes;
   std::vector<Vector3> joint_positions;
@@ -89,12 +88,22 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
     if (jtype == urdf::Joint::REVOLUTE || jtype == urdf::Joint::CONTINUOUS ||
         jtype == urdf::Joint::PRISMATIC) {
       joint->id = joint_counter;
-      joints.push_back(joint);
       joint_types.push_back(jtype);
       joint_axes.push_back(joint->axis);
       joint_positions.push_back(joint->parent_to_joint_origin_transform.trans());
       joint_child_link_ids.push_back(joint->getChildLink()->id);
       joint_ids[joint->name] = joint_counter;
+
+      Bound limit;
+      if(jtype == urdf::Joint::CONTINUOUS){
+        limit.first = -std::numeric_limits<Scalar>::infinity();
+        limit.second = std::numeric_limits<Scalar>::infinity();
+      }else{
+        limit.first = joint->limits->lower;
+        limit.second = joint->limits->upper;
+      }
+      joint_position_limits_.push_back(limit);
+
       joint_counter++;
     }
     if(joint->getChildLink() != nullptr) {
@@ -124,7 +133,6 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
   links_ = links;
   link_name_id_map_ = link_ids;
   link_parent_link_ids_ = link_parent_link_ids;
-  joints_ = joints;
   joint_types_ = joint_types;
   joint_axes_ = joint_axes;
   joint_positions_ = joint_positions;
@@ -261,40 +269,9 @@ std::vector<typename KinematicModel<Scalar>::Bound>
 KinematicModel<Scalar>::get_joint_position_limits(
     const std::vector<size_t> &joint_ids) const {
   const size_t n_joint = joint_ids.size();
-  std::vector<Bound> limits(n_joint, Bound());
+  std::vector<Bound> limits(n_joint);
   for (size_t i = 0; i < n_joint; i++) {
-    const auto &joint = joints_[joint_ids[i]];
-    if (joint->type == urdf::Joint::CONTINUOUS) {
-      limits[i].first = -std::numeric_limits<Scalar>::infinity();
-      limits[i].second = std::numeric_limits<Scalar>::infinity();
-    } else {
-      limits[i].first = joint->limits->lower;
-      limits[i].second = joint->limits->upper;
-    }
-  }
-  return limits;
-}
-
-template<typename Scalar>
-std::vector<double> KinematicModel<Scalar>::get_joint_velocity_limits(
-    const std::vector<size_t> &joint_ids) const {
-  const size_t n_joint = joint_ids.size();
-  std::vector<double> limits(n_joint);
-  for (size_t i = 0; i < n_joint; i++) {
-    const auto &joint = joints_[joint_ids[i]];
-    limits[i] = joint->limits->velocity;
-  }
-  return limits;
-}
-
-template<typename Scalar>
-std::vector<double> KinematicModel<Scalar>::get_joint_effort_limits(
-    const std::vector<size_t> &joint_ids) const {
-  const size_t n_joint = joint_ids.size();
-  std::vector<double> limits(n_joint);
-  for (size_t i = 0; i < n_joint; i++) {
-    const auto &joint = joints_[joint_ids[i]];
-    limits[i] = joint->limits->effort;
+    limits[i] = joint_position_limits_[joint_ids[i]];
   }
   return limits;
 }
@@ -391,11 +368,10 @@ void KinematicModel<Scalar>::update_rptable() {
   int n_dof = joint_name_id_map_.size();
   auto rptable = RelevancePredicateTable(n_link, n_dof);
 
-  for (urdf::JointSharedPtr joint : joints_) {
-    int joint_id = joint_name_id_map_.at(joint->name);
-    urdf::LinkSharedPtr clink = joint->getChildLink();
+  for(size_t joint_id = 0; joint_id < n_dof; joint_id++) {
+    auto clink_id = joint_child_link_ids_[joint_id];
     std::stack<urdf::LinkSharedPtr> link_stack;
-    link_stack.push(clink);
+    link_stack.push(links_[clink_id]);
     while (!link_stack.empty()) {
       auto here_link = link_stack.top();
       link_stack.pop();

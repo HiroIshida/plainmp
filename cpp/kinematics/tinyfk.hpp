@@ -54,11 +54,11 @@ public: // members
   std::vector<size_t> link_parent_link_ids_;
   std::vector<urdf::LinkSharedPtr> com_dummy_links_;
 
-  std::vector<urdf::JointSharedPtr> joints_;
   std::vector<int> joint_types_;
   std::vector<Vector3> joint_axes_;
   std::vector<Vector3> joint_positions_;
   std::vector<int> joint_child_link_ids_;
+  std::vector<Bound> joint_position_limits_;
 
   std::unordered_map<std::string, int> joint_name_id_map_;
   std::vector<Scalar> joint_angles_;
@@ -104,20 +104,6 @@ public: // functions
 
   std::vector<Bound>
   get_joint_position_limits(const std::vector<size_t> &joint_ids) const;
-
-  std::vector<double>
-  get_joint_velocity_limits(const std::vector<size_t> &joint_ids) const;
-
-  std::vector<double>
-  get_joint_effort_limits(const std::vector<size_t> &joint_ids) const;
-
-  std::vector<std::string> get_joint_names() const {
-    std::vector<std::string> joint_names;
-    for (auto &joint : joints_) {
-      joint_names.push_back(joint->name);
-    }
-    return joint_names;
-  }
 
   std::vector<size_t> get_link_ids(std::vector<std::string> link_names) const;
 
