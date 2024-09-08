@@ -161,7 +161,7 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
     // we resort to numerical method to base pose jacobian (just because I don't
     // have time)
     // TODO(HiroIshida): compute using analytical method.
-    constexpr double eps = 1e-7;
+    constexpr Scalar eps = 1e-7;
     for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
       const size_t idx_col = n_joint + 3 + rpy_idx;
 
@@ -243,7 +243,7 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
     // we resort to numerical method to base pose jacobian (just because I don't
     // have time)
     // TODO(HiroIshida): compute using analytical method.
-    constexpr double eps = 1e-7;
+    constexpr Scalar eps = 1e-7;
     for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
       const size_t idx_col = n_joint + 3 + rpy_idx;
 
@@ -266,7 +266,7 @@ template <typename Scalar>
 typename KinematicModel<Scalar>::Vector3
 KinematicModel<Scalar>::get_com() {
   Vector3 com_average = Vector3::Zero();
-  double mass_total = 0.0;
+  Scalar mass_total = 0.0;
   for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
     const auto& tf_base_to_link = get_link_pose(com_link_ids_[iter]);
     const Vector3&& tf_base_to_com_trans = tf_base_to_link.trans() + tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
@@ -284,7 +284,7 @@ KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t> &joint_ids,
   constexpr size_t jac_rank = 3;
   const size_t dim_dof = joint_ids.size() + with_base * 6;
   MatrixDynamic jac_average = MatrixDynamic::Zero(jac_rank, dim_dof);
-  double mass_total = 0.0;
+  Scalar mass_total = 0.0;
   for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
     const auto& tf_base_to_link = get_link_pose(com_link_ids_[iter]);
     const Vector3&& tf_base_to_com_trans = tf_base_to_link.trans() + tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
