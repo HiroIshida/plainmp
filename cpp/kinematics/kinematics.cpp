@@ -26,7 +26,8 @@ Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector
   return Eigen::Quaterniond(-dwdt, dxdt, dydt, dzdt);
 }
 
-void KinematicModel::build_cache_until(size_t link_id) const
+template <typename Scalar>
+void KinematicModel<Scalar>::build_cache_until(size_t link_id) const
 {
   if(links_[link_id]->consider_rotation) {
     this->build_cache_until_inner(link_id);
@@ -40,7 +41,7 @@ void KinematicModel::build_cache_until(size_t link_id) const
     }
     Transform& tf_rlink_to_plink = transform_cache_.data_[plink->id];
     auto&& rotmat = tf_rlink_to_plink.quat().toRotationMatrix();
-    Eigen::Vector3d&& pos = tf_rlink_to_plink.trans() + rotmat * pjoint->parent_to_joint_origin_transform.trans();
+    Vector3&& pos = tf_rlink_to_plink.trans() + rotmat * pjoint->parent_to_joint_origin_transform.trans();
     // HACK: we want to update the only position part
     // thus, we commented out the private: and directly access the data
     transform_cache_.cache_predicate_vector_[link_id] = true;
@@ -48,7 +49,8 @@ void KinematicModel::build_cache_until(size_t link_id) const
   }
 }
 
-void KinematicModel::build_cache_until_inner(size_t hlink_id) const {
+template <typename Scalar>
+void KinematicModel<Scalar>::build_cache_until_inner(size_t hlink_id) const {
   std::array<size_t, 64> id_stack_like;  // 64 is enough for almost all cases
   size_t idx = 0;
   while(!transform_cache_.is_cached(hlink_id)) {
@@ -76,8 +78,9 @@ void KinematicModel::build_cache_until_inner(size_t hlink_id) const {
   }
 }
 
-Eigen::MatrixXd
-KinematicModel::get_jacobian(size_t elink_id,
+template <typename Scalar>
+typename KinematicModel<Scalar>::MatrixDynamic
+KinematicModel<Scalar>::get_jacobian(size_t elink_id,
                              const std::vector<size_t> &joint_ids,
                              RotationType rot_type, bool with_base) {
   const size_t dim_jacobi = 3 + (rot_type == RotationType::RPY) * 3 +
@@ -88,8 +91,8 @@ KinematicModel::get_jacobian(size_t elink_id,
   auto &epos = tf_rlink_to_elink.trans();
   auto &erot = tf_rlink_to_elink.quat();
 
-  Eigen::Vector3d erpy;
-  Eigen::Quaterniond erot_inverse;
+  Vector3 erpy;
+  Quat erot_inverse;
   if (rot_type == RotationType::RPY) {
     erpy = tf_rlink_to_elink.getRPY();
   }
@@ -98,7 +101,7 @@ KinematicModel::get_jacobian(size_t elink_id,
   }
 
   // Jacobian computation
-  Eigen::MatrixXd jacobian = Eigen::MatrixXd::Zero(dim_jacobi, dim_dof);
+  MatrixDynamic jacobian = MatrixDynamic::Zero(dim_jacobi, dim_dof);
 
   for (size_t i = 0; i < joint_ids.size(); i++) {
     int jid = joint_ids[i];
@@ -113,7 +116,7 @@ KinematicModel::get_jacobian(size_t elink_id,
 
       auto &crot = tf_rlink_to_clink.quat();
       auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
-      Eigen::Vector3d dpos;
+      Vector3 dpos;
       if (type == urdf::Joint::PRISMATIC) {
         dpos = world_axis;
       } else { // revolute or continuous
@@ -140,7 +143,7 @@ KinematicModel::get_jacobian(size_t elink_id,
   }
 
   Transform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
-  Eigen::Vector3d rpy_rlink_to_blink;
+  Vector3 rpy_rlink_to_blink;
   if (with_base) {
     tf_rlink_to_blink = get_link_pose(root_link_id_);
     tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
@@ -185,13 +188,15 @@ KinematicModel::get_jacobian(size_t elink_id,
 }
 
 
-Eigen::MatrixXd KinematicModel::get_attached_point_jacobian(
+template <typename Scalar>
+typename KinematicModel<Scalar>::MatrixDynamic
+KinematicModel<Scalar>::get_attached_point_jacobian(
         size_t plink_id,
-        Eigen::Vector3d apoint_global_pos,
+        Vector3 apoint_global_pos,
         const std::vector<size_t>& joint_ids,
         bool with_base){
   const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
-  Eigen::MatrixXd jacobian = Eigen::MatrixXd::Zero(3, dim_dof);
+  MatrixDynamic jacobian = MatrixDynamic::Zero(3, dim_dof);
 
   // NOTE: the following logic is copied from get_jacobian()
   for (size_t i = 0; i < joint_ids.size(); i++) {
@@ -206,7 +211,7 @@ Eigen::MatrixXd KinematicModel::get_attached_point_jacobian(
       auto &crot = tf_rlink_to_clink.quat();
       auto &&world_axis = crot * hjoint->axis; // axis w.r.t root link
 
-      Eigen::Vector3d dpos;
+      Vector3 dpos;
       if (type == urdf::Joint::PRISMATIC) {
         dpos = world_axis;
       } else { // revolute or continuous
@@ -222,7 +227,7 @@ Eigen::MatrixXd KinematicModel::get_attached_point_jacobian(
   Transform tf_rlink_to_elink = Transform::Identity();
   tf_rlink_to_elink.trans() = apoint_global_pos;
   Transform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
-  Eigen::Vector3d rpy_rlink_to_blink;
+  Vector3 rpy_rlink_to_blink;
   if (with_base) {
     tf_rlink_to_blink = get_link_pose(root_link_id_);
     tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
@@ -258,8 +263,10 @@ Eigen::MatrixXd KinematicModel::get_attached_point_jacobian(
   return jacobian;
 }
 
-Eigen::Vector3d KinematicModel::get_com() {
-  Eigen::Vector3d com_average = Eigen::Vector3d::Zero();
+template <typename Scalar>
+typename KinematicModel<Scalar>::Vector3
+KinematicModel<Scalar>::get_com() {
+  Vector3 com_average = Vector3::Zero();
   double mass_total = 0.0;
   for (const auto &link : com_dummy_links_) {
     mass_total += link->inertial->mass;
@@ -270,12 +277,13 @@ Eigen::Vector3d KinematicModel::get_com() {
   return com_average;
 }
 
-Eigen::MatrixXd
-KinematicModel::get_com_jacobian(const std::vector<size_t> &joint_ids,
+template <typename Scalar>
+typename KinematicModel<Scalar>::MatrixDynamic
+KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t> &joint_ids,
                                  bool with_base) {
   constexpr size_t jac_rank = 3;
   const size_t dim_dof = joint_ids.size() + with_base * 6;
-  Eigen::MatrixXd jac_average = Eigen::MatrixXd::Zero(jac_rank, dim_dof);
+  MatrixDynamic jac_average = MatrixDynamic::Zero(jac_rank, dim_dof);
   double mass_total = 0.0;
   for (const auto &com_link : com_dummy_links_) {
     mass_total += com_link->inertial->mass;

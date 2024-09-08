@@ -11,7 +11,11 @@
 
 namespace tinyfk {
 
-KinematicModel::KinematicModel(const std::string &xml_string) {
+// template class KinematicModel<float>; // TODO: implement float version (currently compile error)
+template class KinematicModel<double>;
+
+template<typename Scalar>
+KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
   if (xml_string.empty()) {
     throw std::runtime_error("xml string is empty");
   }
@@ -49,7 +53,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   }
 
   // compute total mass
-  double total_mass = 0.0;
+  Scalar total_mass = 0.0;
   for (const auto &link : links) {
     if (link->inertial != nullptr) {
       total_mass += link->inertial->mass;
@@ -69,8 +73,8 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   std::unordered_map<std::string, int> joint_ids;
   std::vector<urdf::JointSharedPtr> joints;
   std::vector<int> joint_types;
-  std::vector<Eigen::Vector3d> joint_axes;
-  std::vector<Eigen::Vector3d> joint_positions;
+  std::vector<Vector3> joint_axes;
+  std::vector<Vector3> joint_positions;
   std::vector<int> joint_child_link_ids;
   auto root_link = links[root_link_id_];
   std::stack<urdf::JointSharedPtr> joint_stack;
@@ -102,7 +106,7 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   }
 
   int num_dof = joint_ids.size();
-  std::vector<double> joint_angles(num_dof, 0.0);
+  std::vector<Scalar> joint_angles(num_dof, 0.0);
 
   transform_cache_ = SizedCache<Transform>(N_link);
   tf_plink_to_hlink_cache_ = std::vector<Transform>(N_link);
@@ -155,8 +159,9 @@ KinematicModel::KinematicModel(const std::string &xml_string) {
   this->set_base_pose(Transform::Identity());
 }
 
-void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
-                                      const std::vector<double> &joint_angles,
+template<typename Scalar>
+void KinematicModel<Scalar>::set_joint_angles(const std::vector<size_t> &joint_ids,
+                                      const std::vector<Scalar> &joint_angles,
                                       bool high_accuracy) {
   for (size_t i = 0; i < joint_ids.size(); i++) {
     auto joint_id = joint_ids[i];
@@ -209,7 +214,7 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
       tf_plink_to_hlink.is_quat_identity_ = false;
     }else{
-      Eigen::Vector3d&& trans = joint_axes_[joint_id] * joint_angles[i];
+      Vector3&& trans = joint_axes_[joint_id] * joint_angles[i];
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans + trans;
       tf_plink_to_hlink.quat().setIdentity();
       tf_plink_to_hlink.is_quat_identity_ = true;
@@ -219,15 +224,17 @@ void KinematicModel::set_joint_angles(const std::vector<size_t> &joint_ids,
 }
 
 
-void KinematicModel::set_init_angles() {
-  std::vector<double> joint_angles(num_dof_, 0.0);
+template<typename Scalar>
+void KinematicModel<Scalar>::set_init_angles() {
+  std::vector<Scalar> joint_angles(num_dof_, 0.0);
   joint_angles_ = joint_angles;
   clear_cache();
 }
 
-std::vector<double>
-KinematicModel::get_joint_angles(const std::vector<size_t> &joint_ids) const {
-  std::vector<double> angles(joint_ids.size());
+template<typename Scalar>
+std::vector<Scalar>
+KinematicModel<Scalar>::get_joint_angles(const std::vector<size_t> &joint_ids) const {
+  std::vector<Scalar> angles(joint_ids.size());
   for (size_t i = 0; i < joint_ids.size(); i++) {
     int idx = joint_ids[i];
     angles[i] = joint_angles_[idx];
@@ -235,8 +242,9 @@ KinematicModel::get_joint_angles(const std::vector<size_t> &joint_ids) const {
   return angles;
 }
 
+template<typename Scalar>
 std::vector<size_t>
-KinematicModel::get_joint_ids(std::vector<std::string> joint_names) const {
+KinematicModel<Scalar>::get_joint_ids(std::vector<std::string> joint_names) const {
   int n_joint = joint_names.size();
   std::vector<size_t> joint_ids(n_joint);
   for (int i = 0; i < n_joint; i++) {
@@ -249,15 +257,17 @@ KinematicModel::get_joint_ids(std::vector<std::string> joint_names) const {
   return joint_ids;
 }
 
-std::vector<Bound> KinematicModel::get_joint_position_limits(
+template<typename Scalar>
+std::vector<typename KinematicModel<Scalar>::Bound>
+KinematicModel<Scalar>::get_joint_position_limits(
     const std::vector<size_t> &joint_ids) const {
   const size_t n_joint = joint_ids.size();
   std::vector<Bound> limits(n_joint, Bound());
   for (size_t i = 0; i < n_joint; i++) {
     const auto &joint = joints_[joint_ids[i]];
     if (joint->type == urdf::Joint::CONTINUOUS) {
-      limits[i].first = -std::numeric_limits<double>::infinity();
-      limits[i].second = std::numeric_limits<double>::infinity();
+      limits[i].first = -std::numeric_limits<Scalar>::infinity();
+      limits[i].second = std::numeric_limits<Scalar>::infinity();
     } else {
       limits[i].first = joint->limits->lower;
       limits[i].second = joint->limits->upper;
@@ -266,7 +276,8 @@ std::vector<Bound> KinematicModel::get_joint_position_limits(
   return limits;
 }
 
-std::vector<double> KinematicModel::get_joint_velocity_limits(
+template<typename Scalar>
+std::vector<double> KinematicModel<Scalar>::get_joint_velocity_limits(
     const std::vector<size_t> &joint_ids) const {
   const size_t n_joint = joint_ids.size();
   std::vector<double> limits(n_joint);
@@ -277,7 +288,8 @@ std::vector<double> KinematicModel::get_joint_velocity_limits(
   return limits;
 }
 
-std::vector<double> KinematicModel::get_joint_effort_limits(
+template<typename Scalar>
+std::vector<double> KinematicModel<Scalar>::get_joint_effort_limits(
     const std::vector<size_t> &joint_ids) const {
   const size_t n_joint = joint_ids.size();
   std::vector<double> limits(n_joint);
@@ -288,8 +300,9 @@ std::vector<double> KinematicModel::get_joint_effort_limits(
   return limits;
 }
 
+template<typename Scalar>
 std::vector<size_t>
-KinematicModel::get_link_ids(std::vector<std::string> link_names) const {
+KinematicModel<Scalar>::get_link_ids(std::vector<std::string> link_names) const {
   int n_link = link_names.size();
   std::vector<size_t> link_ids(n_link);
   for (int i = 0; i < n_link; i++) {
@@ -302,24 +315,26 @@ KinematicModel::get_link_ids(std::vector<std::string> link_names) const {
   return link_ids;
 }
 
-urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id,
-                                 const std::array<double, 3> &position,
-                                 const std::array<double, 3> &rpy,
+template<typename Scalar>
+urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id,
+                                 const std::array<Scalar, 3> &position,
+                                 const std::array<Scalar, 3> &rpy,
                                  bool consider_rotation,
                                  std::optional<std::string> link_name){
   Transform pose;
-  pose.trans()  = Eigen::Vector3d(position[0], position[1], position[2]);
+  pose.trans()  = Vector3(position[0], position[1], position[2]);
   pose.setQuaternionFromRPY(rpy[0], rpy[1], rpy[2]);
   return this->add_new_link(parent_id, pose, consider_rotation, link_name);
 }
 
-urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const Transform &pose,
+template<typename Scalar>
+urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id, const Transform &pose,
                                  bool consider_rotation,
                                  std::optional<std::string> link_name) {
 
   if(link_name == std::nullopt) {
     // if link_name is not given, generate a unique name
-    std::hash<double> hasher;
+    std::hash<Scalar> hasher;
     std::size_t hval = 0;
     hval ^= hasher(pose.trans()(0)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
     hval ^= hasher(pose.trans()(1)) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
@@ -368,7 +383,8 @@ urdf::LinkSharedPtr KinematicModel::add_new_link(size_t parent_id, const Transfo
   return new_link;
 }
 
-void KinematicModel::update_rptable() {
+template<typename Scalar>
+void KinematicModel<Scalar>::update_rptable() {
   // this function usually must come in the end of a function
 
   // we must recreate from scratch

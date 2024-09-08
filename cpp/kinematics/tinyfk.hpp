@@ -18,10 +18,6 @@
 
 namespace tinyfk {
 
-using Bound = std::pair<double, double>;
-using Transform = urdf::QuatTrans<double>;
-using Vector3 = urdf::Vector3;
-using Rotation = urdf::Rotation;
 
 struct RelevancePredicateTable {
   std::vector<std::vector<bool>> table_;
@@ -42,9 +38,14 @@ struct RelevancePredicateTable {
 
 enum class RotationType { IGNORE, RPY, XYZW };
 
+template <typename Scalar>
 class KinematicModel {
 public: // members
-  // change them all to private later
+  using Transform = urdf::QuatTrans<Scalar>;
+  using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Quat = Eigen::Quaternion<Scalar>;
+  using MatrixDynamic = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+  using Bound = std::pair<Scalar, Scalar>;
   urdf::ModelInterfaceSharedPtr robot_urdf_interface_;
 
   size_t root_link_id_;
@@ -55,17 +56,17 @@ public: // members
 
   std::vector<urdf::JointSharedPtr> joints_;
   std::vector<int> joint_types_;
-  std::vector<Eigen::Vector3d> joint_axes_;
-  std::vector<Eigen::Vector3d> joint_positions_;
+  std::vector<Vector3> joint_axes_;
+  std::vector<Vector3> joint_positions_;
   std::vector<int> joint_child_link_ids_;
 
   std::unordered_map<std::string, int> joint_ids_;
-  std::vector<double> joint_angles_;
+  std::vector<Scalar> joint_angles_;
   Transform base_pose_;
 
   RelevancePredicateTable rptable_;
   int num_dof_;
-  double total_mass_;
+  Scalar total_mass_;
 
   mutable SizedCache<Transform> transform_cache_;
   mutable std::vector<Transform> tf_plink_to_hlink_cache_;
@@ -77,7 +78,7 @@ public: // functions
 
   void set_joint_angles(
       const std::vector<size_t> &joint_ids,
-      const std::vector<double> &joint_angles,
+      const std::vector<Scalar> &joint_angles,
       bool high_accuracy = true);
 
   inline Transform get_base_pose() const {
@@ -96,7 +97,7 @@ public: // functions
 
   void set_init_angles();
 
-  std::vector<double>
+  std::vector<Scalar>
   get_joint_angles(const std::vector<size_t> &joint_ids) const;
 
   std::vector<size_t> get_joint_ids(std::vector<std::string> joint_names) const;
@@ -135,30 +136,30 @@ public: // functions
     return transform_cache_.data_[link_id];
   }
 
-  Eigen::MatrixXd get_jacobian(size_t elink_id,
+  MatrixDynamic get_jacobian(size_t elink_id,
                                const std::vector<size_t> &joint_ids,
                                RotationType rot_type = RotationType::IGNORE,
                                bool with_base = false);
 
-  Eigen::MatrixXd get_attached_point_jacobian(
+  MatrixDynamic get_attached_point_jacobian(
           size_t plink_id,
-          Eigen::Vector3d global_pos, // TODO: provide relative pos is clearner though
+          Vector3 global_pos, // TODO: provide relative pos is clearner though
           const std::vector<size_t>& joint_ids,
           bool with_base = false);
 
 
-  Eigen::Vector3d get_com();
+  Vector3 get_com();
 
-  Eigen::MatrixXd get_com_jacobian(const std::vector<size_t> &joint_ids,
+  MatrixDynamic get_com_jacobian(const std::vector<size_t> &joint_ids,
                                    bool with_base);
 
-  void set_joint_angle(size_t joint_id, double angle) {
+  void set_joint_angle(size_t joint_id, Scalar angle) {
     joint_angles_[joint_id] = angle;
   }
 
   urdf::LinkSharedPtr add_new_link(size_t parent_id,
-                                   const std::array<double, 3> &position,
-                                   const std::array<double, 3> &rpy,
+                                   const std::array<Scalar, 3> &position,
+                                   const std::array<Scalar, 3> &rpy,
                                    bool consider_rotation,
                                    std::optional<std::string> link_name = std::nullopt);
 
