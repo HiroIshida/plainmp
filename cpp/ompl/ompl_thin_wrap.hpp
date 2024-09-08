@@ -1,15 +1,9 @@
-#include <ompl/base/ConstrainedSpaceInformation.h>
-#include <ompl/base/Constraint.h>
 #include <ompl/base/PlannerTerminationCondition.h>
 #include <ompl/base/State.h>
 #include <ompl/base/StateSampler.h>
 #include <ompl/base/StateSpace.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
-#include <ompl/base/spaces/constraint/AtlasStateSpace.h>
-#include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
-#include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
-#include <ompl/base/spaces/constraint/TangentBundleStateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/experience/ERTConnect.h>
@@ -78,17 +72,10 @@ std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si, std::optio
   return algo;
 }
 
-template <bool Constrained>
 inline void state_to_vec(const ob::State* state, std::vector<double>& vec)
 {
   const ob::RealVectorStateSpace::StateType* rs;
-  if constexpr (Constrained) {
-    rs = state->as<ompl::base::ConstrainedStateSpace::StateType>()
-             ->getState()
-             ->as<ob::RealVectorStateSpace::StateType>();
-  } else {
-    rs = state->as<ob::RealVectorStateSpace::StateType>();
-  }
+  rs = state->as<ob::RealVectorStateSpace::StateType>();
   std::memcpy(vec.data(), rs->values, vec.size() * sizeof(double));
 };
 
@@ -106,20 +93,6 @@ og::PathGeometric points_to_pathgeometric(const std::vector<std::vector<double>>
   }
   return pg;
 }
-
-class AllPassMotionValidator : public ob::MotionValidator
-{
- public:
-  using ob::MotionValidator::MotionValidator;
-  bool checkMotion(const ob::State* s1, const ob::State* s2) const { return true; }
-
-  bool checkMotion(const ob::State* s1,
-                   const ob::State* s2,
-                   std::pair<ob::State*, double>& lastValid) const
-  {
-    return true;
-  }
-};
 
 class BoxMotionValidator : public ob::MotionValidator
 {
@@ -184,157 +157,6 @@ class BoxMotionValidator : public ob::MotionValidator
   std::vector<double> inv_width_;
 };
 
-std::optional<std::vector<double>> split_geodesic_with_box(const ob::State* s1,
-                                                           const ob::State* s2,
-                                                           const ob::SpaceInformation* si,
-                                                           const std::vector<double>& width)
-{
-  // returns list of states if all states are valid, otherwise return std::nulopt
-
-  // this function involves a lot of dynamic allocation (e.g. stack, hashmap, vector, state)
-  // but compard to collision detection cost, it should be negligible.
-  // TODO: do performance profiling later
-  // unlike non-constrianed case, the constrained case traverse on manifold
-  const auto space = si->getStateSpace();
-  const size_t dim = space->getDimension();
-
-  const auto is_state_pair_inside_box = [&](const ob::State* s1, const ob::State* s2) -> bool {
-    std::vector<double> vec_left(dim);
-    std::vector<double> vec_right(dim);
-    state_to_vec<true>(s1, vec_left);
-    state_to_vec<true>(s2, vec_right);
-
-    for (size_t i = 0; i < dim; ++i) {
-      const double&& abs_diff_i = std::abs(vec_left[i] - vec_right[i]);
-      if (abs_diff_i > width[i]) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  std::stack<std::pair<double, double>> range_stack;
-  range_stack.push({0.0, 1.0});
-
-  std::unordered_map<double, ob::State*> fraction_to_state_table;
-  std::set<double> fraction_set;
-
-  // adaptively divide the path
-  while (!range_stack.empty()) {
-    const auto range_pair = range_stack.top();
-    range_stack.pop();
-    const double left = range_pair.first;
-    const double right = range_pair.second;
-
-    fraction_set.insert(left);
-    fraction_set.insert(right);
-
-    bool is_too_small_interval = (right - left) < 1e-5;
-    if (is_too_small_interval) {
-      // note: although this error can be avoided by manualy setting smaller delta size, it
-      // usually deteriorate the performance a lot. So, I want to stick to the default ompl
-      // pamater. (default is almost always right)
-      std::string message =
-          "seems that css->delta (step size to traverse geodestic) is too large for the box "
-          "width";
-      throw std::runtime_error(message);
-    }
-
-    // interpolate state given fraction if not interpolate yet
-    // note that as well as interpolation we check if the interpolated state is valid or not
-    // and if not valid, returning false.
-    for (double fraction : std::array<double, 2>{left, right}) {
-      const bool not_evaluated_yet =
-          fraction_to_state_table.find(fraction) == fraction_to_state_table.end();
-      if (not_evaluated_yet) {
-        const auto s_new = si->allocState();
-        space->interpolate(s1, s2, fraction, s_new);
-        if (!si->isValid(s_new)) {
-          return {};
-        }
-        fraction_to_state_table.insert({fraction, s_new});
-      }
-    }
-    assert(fraction_to_state_table.find(left) != fraction_to_state_table.end());
-    assert(fraction_to_state_table.find(right) != fraction_to_state_table.end());
-
-    // check if two states are inside the constraint box
-    const ob::State* s_left = fraction_to_state_table.find(left)->second;
-    const ob::State* s_right = fraction_to_state_table.find(right)->second;
-
-    const bool require_split = !is_state_pair_inside_box(s_left, s_right);
-    if (require_split) {
-      const double middle = 0.5 * (left + right);
-      range_stack.push({left, middle});
-      range_stack.push({middle, right});
-    }
-  }
-
-  std::vector<double> fractions(fraction_set.size());
-  std::copy(fraction_set.begin(), fraction_set.end(), fractions.begin());
-  return fractions;
-}
-
-class GeodesicBoxMotionValidator : public ob::MotionValidator
-{
- public:
-  GeodesicBoxMotionValidator(const ob::SpaceInformationPtr& si, std::vector<double> width)
-      : ob::MotionValidator(si), width_(width)
-  {
-  }
-
-  bool checkMotion(const ob::State* s1, const ob::State* s2) const
-  {
-    const auto states = split_geodesic_with_box(s1, s2, si_, width_);
-    return (states != std::nullopt);
-  }
-
-  bool checkMotion(const ob::State* s1,
-                   const ob::State* s2,
-                   std::pair<ob::State*, double>& lastValid) const
-  {
-    return checkMotion(s1, s2);
-  }
-
- private:
-  std::vector<double> width_;
-};
-
-class ConstraintWrap : public ob::Constraint
-{
- public:
-  ConstraintWrap(const ConstFn& f, const ConstJacFn& jac, size_t dim_ambient, size_t dim_constraint)
-      : ob::Constraint(dim_ambient, dim_constraint), f_(f), jac_(jac)
-  {
-  }
-
-  void function(const Eigen::Ref<const Eigen::VectorXd>& x,
-                Eigen::Ref<Eigen::VectorXd> out) const override
-  {
-    std::vector<double> xvec(x.data(), x.data() + x.size());
-    const auto yvec = f_(xvec);
-    for (size_t i = 0; i < yvec.size(); ++i) {
-      out[i] = yvec[i];
-    }
-  }
-
-  void jacobian(const Eigen::Ref<const Eigen::VectorXd>& x,
-                Eigen::Ref<Eigen::MatrixXd> out) const override
-  {
-    std::vector<double> xvec(x.data(), x.data() + x.size());
-    const auto yvecvec = jac_(xvec);
-    for (size_t i = 0; i < yvecvec.size(); ++i) {
-      for (size_t j = 0; j < yvecvec.front().size(); ++j) {
-        out(i, j) = yvecvec[i][j];
-      }
-    }
-  }
-
-  ConstFn f_;
-  ConstJacFn jac_;
-};
-
-template <bool Constrained>
 struct CollisionAwareSpaceInformation {
   void resetCount() { this->is_valid_call_count_ = 0; }
 
@@ -356,7 +178,7 @@ struct CollisionAwareSpaceInformation {
   bool is_valid(const ob::State* state)
   {
     const size_t dim = si_->getStateDimension();
-    state_to_vec<Constrained>(state, tmp_vec_);
+    state_to_vec(state, tmp_vec_);
     this->is_valid_call_count_++;
     return ineq_cst_->is_valid(tmp_vec_);
   }
@@ -369,14 +191,14 @@ struct CollisionAwareSpaceInformation {
   std::vector<double> tmp_vec_; // to avoid dynamic allocation (used in is_valid)
 };
 
-struct UnconstrianedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInformation<false> {
+struct UnconstrianedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInformation {
   UnconstrianedCollisoinAwareSpaceInformation(
       const std::vector<double>& lb,
       const std::vector<double>& ub,
       cst::IneqConstraintBase::Ptr ineq_cst,
       size_t max_is_valid_call,
       const std::vector<double>& box_width)
-      : CollisionAwareSpaceInformation<false>{nullptr, ineq_cst, 0, max_is_valid_call, box_width, std::vector<double>(box_width.size())}
+      : CollisionAwareSpaceInformation{nullptr, ineq_cst, 0, max_is_valid_call, box_width, std::vector<double>(box_width.size())}
   {
     const auto space = bound2space(lb, ub);
     si_ = std::make_shared<ob::SpaceInformation>(space);
@@ -388,42 +210,7 @@ struct UnconstrianedCollisoinAwareSpaceInformation : public CollisionAwareSpaceI
   }
 };
 
-enum ConstStateType { PROJECTION, ATLAS, TANGENT };
 
-struct ConstrainedCollisoinAwareSpaceInformation : public CollisionAwareSpaceInformation<true> {
-  ConstrainedCollisoinAwareSpaceInformation(
-      const ConstFn& f_const,
-      const ConstJacFn& jac_const,
-      const std::vector<double>& lb,
-      const std::vector<double>& ub,
-      cst::IneqConstraintBase::Ptr ineq_cst,
-      size_t max_is_valid_call,
-      const std::vector<double>& box_width,
-      ConstStateType cs_type = ConstStateType::PROJECTION)
-      : CollisionAwareSpaceInformation<true>{nullptr, ineq_cst, 0, max_is_valid_call, box_width, std::vector<double>(box_width.size())}
-  {
-    size_t dim_ambient = lb.size();
-    size_t dim_constraint = f_const(lb).size();  // detect by dummy input
-    std::shared_ptr<ob::Constraint> constraint =
-        std::make_shared<ConstraintWrap>(f_const, jac_const, dim_ambient, dim_constraint);
-    const auto space = bound2space(lb, ub);
-
-    ob::ConstrainedStateSpacePtr css;
-    if (cs_type == ConstStateType::PROJECTION) {
-      css = std::make_shared<ob::ProjectedStateSpace>(space, constraint);
-    } else if (cs_type == ConstStateType::ATLAS) {
-      css = std::make_shared<ob::AtlasStateSpace>(space, constraint);
-    } else if (cs_type == ConstStateType::TANGENT) {
-      css = std::make_shared<ob::TangentBundleStateSpace>(space, constraint);
-    }
-    const auto csi = std::make_shared<ob::ConstrainedSpaceInformation>(css);
-    si_ = std::static_pointer_cast<ob::SpaceInformation>(csi);
-    si_->setMotionValidator(std::make_shared<GeodesicBoxMotionValidator>(si_, box_width));
-    si_->setup();
-  }
-};
-
-template <bool Constrained>
 struct PlannerBase {
   std::optional<std::vector<std::vector<double>>> solve(const std::vector<double>& start,
                                                         const std::vector<double>& goal,
@@ -439,15 +226,10 @@ struct PlannerBase {
     ob::ScopedState<> sstart(csi_->si_->getStateSpace());
     ob::ScopedState<> sgoal(csi_->si_->getStateSpace());
 
-    if constexpr (Constrained) {
-      sstart->as<ob::ConstrainedStateSpace::StateType>()->copy(vec_start);
-      sgoal->as<ob::ConstrainedStateSpace::StateType>()->copy(vec_goal);
-    } else {
-      auto rstart = sstart->as<ob::RealVectorStateSpace::StateType>();
-      auto rgoal = sgoal->as<ob::RealVectorStateSpace::StateType>();
-      std::copy(start.begin(), start.end(), rstart->values);
-      std::copy(goal.begin(), goal.end(), rgoal->values);
-    }
+    auto rstart = sstart->as<ob::RealVectorStateSpace::StateType>();
+    auto rgoal = sgoal->as<ob::RealVectorStateSpace::StateType>();
+    std::copy(start.begin(), start.end(), rstart->values);
+    std::copy(goal.begin(), goal.end(), rgoal->values);
     setup_->setStartAndGoalStates(sstart, sgoal);
 
     std::function<bool()> fn = [this]() { return csi_->is_terminatable(); };
@@ -460,9 +242,6 @@ struct PlannerBase {
       return {};
     }
     if (simplify) {
-      if constexpr (Constrained) {
-        std::runtime_error("simplify does not seem to work well in constrinaed case");
-      }
       setup_->simplifySolution(fn);
     }
     const auto p = setup_->getSolutionPath().as<og::PathGeometric>();
@@ -473,31 +252,9 @@ struct PlannerBase {
     auto trajectory = std::vector<std::vector<double>>();
 
   std::vector<double> tmp_vec(dim);
-    if constexpr (Constrained) {
-      state_to_vec<Constrained>(states[0], tmp_vec);
+    for (const auto& state : states) {
+      state_to_vec(state, tmp_vec);
       trajectory.push_back(tmp_vec);
-
-      for (size_t i = 0; i < states.size() - 1; ++i) {
-        const ob::SpaceInformation* si = csi_->si_.get();
-        const auto fractions =
-            split_geodesic_with_box(states.at(i), states.at(i + 1), si, csi_->box_width_);
-
-        const auto space = csi_->si_->getStateSpace();
-        for (size_t j = 0; j < fractions->size(); ++j) {
-          const auto s_new = si->allocState();
-          space->interpolate(states.at(i), states.at(i + 1), fractions->at(j), s_new);
-          state_to_vec<Constrained>(s_new, tmp_vec);
-          trajectory.push_back(tmp_vec);
-        }
-      }
-      OMPL_INFORM("interpolate trajectory. original %d points => interped %d points",
-                  states.size(),
-                  trajectory.size());
-    } else {
-      for (const auto& state : states) {
-        state_to_vec<Constrained>(state, tmp_vec);
-        trajectory.push_back(tmp_vec);
-      }
     }
     return trajectory;
   }
@@ -522,44 +279,17 @@ struct PlannerBase {
   size_t getCallCount() const {
     return csi_->is_valid_call_count_;
   }
-
-  typedef typename std::conditional<Constrained,
-                                    ConstrainedCollisoinAwareSpaceInformation,
-                                    UnconstrianedCollisoinAwareSpaceInformation>::type CsiType;
-  std::unique_ptr<CsiType> csi_;
+  std::unique_ptr<UnconstrianedCollisoinAwareSpaceInformation> csi_;
   std::unique_ptr<og::SimpleSetup> setup_;
 };
 
-// struct ConstrainedPlanner : public PlannerBase<true> {
-//   ConstrainedPlanner(const ConstFn& f_const,
-//                      const ConstJacFn& jac_const,
-//                      const std::vector<double>& lb,
-//                      const std::vector<double>& ub,
-//                      const std::function<bool(std::vector<double>)>& is_valid,
-//                      size_t max_is_valid_call,
-//                      const std::vector<double>& box_width,
-//                      const std::string& algo_name,
-//                      std::optional<double> range,
-//                      ConstStateType cs_type = ConstStateType::PROJECTION)
-//       : PlannerBase<true>{nullptr, nullptr}
-//   {
-//     csi_ = std::make_unique<ConstrainedCollisoinAwareSpaceInformation>(
-//         f_const, jac_const, lb, ub, is_valid, max_is_valid_call, box_width, cs_type);
-//     const auto algo = get_algorithm(algo_name, range);
-// 
-//     setup_ = std::make_unique<og::SimpleSetup>(csi_->si_);
-//     setup_->setPlanner(algo);
-//     setup_->setStateValidityChecker([this](const ob::State* s) { return this->csi_->is_valid(s); });
-//   }
-// };
-
-struct UnconstrainedPlannerBase : public PlannerBase<false> {
+struct UnconstrainedPlannerBase : public PlannerBase {
   UnconstrainedPlannerBase(const std::vector<double>& lb,
                            const std::vector<double>& ub,
                            cst::IneqConstraintBase::Ptr ineq_cst,
                            size_t max_is_valid_call,
                            const std::vector<double>& box_width)
-      : PlannerBase<false>{nullptr, nullptr}
+      : PlannerBase{nullptr, nullptr}
   {
     csi_ = std::make_unique<UnconstrianedCollisoinAwareSpaceInformation>(
         lb, ub, ineq_cst, max_is_valid_call, box_width);
@@ -582,94 +312,6 @@ struct OMPLPlanner : public UnconstrainedPlannerBase {
     setup_->setPlanner(algo);
   }
 };
-
-// struct LightningDBWrap {
-//   LightningDBWrap(size_t n_dim)
-//   {
-//     auto space = ob::StateSpacePtr(new ob::RealVectorStateSpace(n_dim));
-//     si = std::make_shared<ob::SpaceInformation>(space);
-//     db = std::make_shared<ot::LightningDB>(space);
-//   }
-// 
-//   void addExperience(const std::vector<std::vector<double>>& points)
-//   {
-//     auto pg = points_to_pathgeometric(points, si);
-//     double insertion_time;
-//     db->addPath(pg, insertion_time);
-//   }
-// 
-//   std::vector<std::vector<std::vector<double>>> getExperiencedPaths()
-//   {
-//     const auto dim = si->getStateSpace()->getDimension();
-// 
-//     std::vector<std::vector<std::vector<double>>> paths;
-// 
-//     std::vector<ob::PlannerDataPtr> datas;
-//     db->getAllPlannerDatas(datas);
-//     for (const auto& data : datas) {
-//       std::vector<std::vector<double>> path;
-//       for (std::size_t i = 0; i < data->numVertices(); ++i) {
-//         const auto vert = data->getVertex(i);
-//         path.push_back(state_to_vec<false>(vert.getState(), dim));
-//       }
-//       paths.push_back(path);
-//     }
-//     return paths;
-//   }
-// 
-//   size_t getExperiencesCount() { return db->getExperiencesCount(); }
-// 
-//   void save(const std::string& fileName) { db->save(fileName); }
-// 
-//   void load(const std::string& fileName) { db->load(fileName); }
-// 
-//   ob::SpaceInformationPtr si;
-//   ot::LightningDBPtr db;
-// };
-// 
-// struct LightningPlanner : public UnconstrainedPlannerBase {
-//   LightningPlanner(const LightningDBWrap& dbwrap,
-//                    const std::vector<double>& lb,
-//                    const std::vector<double>& ub,
-//                    const std::function<bool(std::vector<double>)>& is_valid,
-//                    size_t max_is_valid_call,
-//                    const std::vector<double>& box_width,
-//                    const std::string& algo_name,
-//                    std::optional<double> range)
-//       : UnconstrainedPlannerBase(lb, ub, is_valid, max_is_valid_call, box_width)
-//   {
-//     auto repair_planner = std::make_shared<og::LightningRetrieveRepair>(csi_->si_, dbwrap.db);
-//     setup_->setPlanner(repair_planner);
-//   }
-// };
-// 
-// struct LightningRepairPlanner : public UnconstrainedPlannerBase {
-//   // a variant of lightning that does not use dabase. Rather, user must
-//   // give the trajectory before solve() explicitely as the heuristic.
-// 
-//   LightningRepairPlanner(const std::vector<double>& lb,
-//                          const std::vector<double>& ub,
-//                          const std::function<bool(std::vector<double>)>& is_valid,
-//                          size_t max_is_valid_call,
-//                          const std::vector<double>& box_width,
-//                          const std::string& algo_name,
-//                          std::optional<double> range)
-//       : UnconstrainedPlannerBase(lb, ub, is_valid, max_is_valid_call, box_width)
-//   {
-//     ot::LightningDBPtr db = nullptr;  // we dont use database
-//     auto repair_planner = std::make_shared<LightningRetrieveRepairWrap>(csi_->si_, db);
-//     repair_planner_ = repair_planner;
-//     setup_->setPlanner(repair_planner);
-//   }
-// 
-//   void set_heuristic(const std::vector<std::vector<double>>& points)
-//   {
-//     repair_planner_->trajectory_heuristic_ = points_to_pathgeometric(points, this->csi_->si_);
-//   }
-// 
-//  protected:
-//   std::shared_ptr<LightningRetrieveRepairWrap> repair_planner_;
-// };
  
 struct ERTConnectPlanner : public UnconstrainedPlannerBase {
   ERTConnectPlanner(const std::vector<double>& lb,
