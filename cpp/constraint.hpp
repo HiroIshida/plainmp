@@ -17,7 +17,8 @@ using namespace primitive_sdf;
 class ConstraintBase {
  public:
   using Ptr = std::shared_ptr<ConstraintBase>;
-  ConstraintBase(std::shared_ptr<tinyfk::KinematicModel> kin,
+  using Transform = tinyfk::KinematicModel<double>::Transform;
+  ConstraintBase(std::shared_ptr<tinyfk::KinematicModel<double>> kin,
                  const std::vector<std::string>& control_joint_names,
                  bool with_base)
       : kin_(kin),
@@ -30,7 +31,7 @@ class ConstraintBase {
       std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
                 q_head.begin());
       kin_->set_joint_angles(control_joint_ids_, q_head);
-      tinyfk::Transform pose;
+      Transform pose;
       size_t head = control_joint_ids_.size();
       pose.trans().x() = q[head];
       pose.trans().y() = q[head + 1];
@@ -66,7 +67,7 @@ class ConstraintBase {
  public:
   // want to make these protected, but will be used in CompositeConstraintBase
   // making this friend is also an option, but it's too complicated
-  std::shared_ptr<tinyfk::KinematicModel> kin_;
+  std::shared_ptr<tinyfk::KinematicModel<double>> kin_;
 
  protected:
   std::vector<size_t> control_joint_ids_;
@@ -96,7 +97,7 @@ class IneqConstraintBase : public ConstraintBase {
 class ConfigPointCst : public EqConstraintBase {
  public:
   using Ptr = std::shared_ptr<ConfigPointCst>;
-  ConfigPointCst(std::shared_ptr<tinyfk::KinematicModel> kin,
+  ConfigPointCst(std::shared_ptr<tinyfk::KinematicModel<double>> kin,
                  const std::vector<std::string>& control_joint_names,
                  bool with_base,
                  const Eigen::VectorXd& q)
@@ -139,7 +140,7 @@ class ConfigPointCst : public EqConstraintBase {
 class LinkPoseCst : public EqConstraintBase {
  public:
   using Ptr = std::shared_ptr<LinkPoseCst>;
-  LinkPoseCst(std::shared_ptr<tinyfk::KinematicModel> kin,
+  LinkPoseCst(std::shared_ptr<tinyfk::KinematicModel<double>> kin,
               const std::vector<std::string>& control_joint_names,
               bool with_base,
               const std::vector<std::string>& link_names,
@@ -171,7 +172,7 @@ class LinkPoseCst : public EqConstraintBase {
 class RelativePoseCst : public EqConstraintBase {
  public:
   using Ptr = std::shared_ptr<RelativePoseCst>;
-  RelativePoseCst(std::shared_ptr<tinyfk::KinematicModel> kin,
+  RelativePoseCst(std::shared_ptr<tinyfk::KinematicModel<double>> kin,
                   const std::vector<std::string>& control_joint_names,
                   bool with_base,
                   const std::string& link_name1,
@@ -181,7 +182,7 @@ class RelativePoseCst : public EqConstraintBase {
         link_id2_(kin_->get_link_ids({link_name2})[0]),
         relative_pose_(relative_pose) {
     // TODO: because name is hard-coded, we cannot create two RelativePoseCst...
-    auto pose = tinyfk::Transform::Identity();
+    auto pose = Transform::Identity();
     pose.trans() = relative_pose;
     size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
     auto new_link = kin_->add_new_link(link_id1_, pose, true);
@@ -201,7 +202,7 @@ class RelativePoseCst : public EqConstraintBase {
 class FixedZAxisCst : public EqConstraintBase {
  public:
   using Ptr = std::shared_ptr<FixedZAxisCst>;
-  FixedZAxisCst(std::shared_ptr<tinyfk::KinematicModel> kin,
+  FixedZAxisCst(std::shared_ptr<tinyfk::KinematicModel<double>> kin,
                 const std::vector<std::string>& control_joint_names,
                 bool with_base,
                 const std::string& link_name);
@@ -250,7 +251,7 @@ struct SphereGroup {
   }
 
   void create_group_sphere_position_cache(
-      const std::shared_ptr<tinyfk::KinematicModel>& kin) {
+      const std::shared_ptr<tinyfk::KinematicModel<double>>& kin) {
     auto plink_pose = kin->get_link_pose(parent_link_id);
     // The code below is "safe" but not efficient so see the HACK below
     // if (is_rot_mat_dirty) {
@@ -265,7 +266,7 @@ struct SphereGroup {
   }
 
   void create_sphere_position_cache(
-      const std::shared_ptr<tinyfk::KinematicModel>& kin) {
+      const std::shared_ptr<tinyfk::KinematicModel<double>>& kin) {
     // The code below is "safe" but not efficient so see the HACK below
     // auto plink_pose = kin->get_link_pose(parent_link_id);
     // if (is_rot_mat_dirty) {
@@ -290,7 +291,7 @@ class SphereCollisionCst : public IneqConstraintBase {
  public:
   using Ptr = std::shared_ptr<SphereCollisionCst>;
   SphereCollisionCst(
-      std::shared_ptr<tinyfk::KinematicModel> kin,
+      std::shared_ptr<tinyfk::KinematicModel<double>> kin,
       const std::vector<std::string>& control_joint_names,
       bool with_base,
       const std::vector<SphereAttachmentSpec>& sphere_specs,
@@ -345,7 +346,7 @@ struct AppliedForceSpec {
 class ComInPolytopeCst : public IneqConstraintBase {
  public:
   using Ptr = std::shared_ptr<ComInPolytopeCst>;
-  ComInPolytopeCst(std::shared_ptr<tinyfk::KinematicModel> kin,
+  ComInPolytopeCst(std::shared_ptr<tinyfk::KinematicModel<double>> kin,
                    const std::vector<std::string>& control_joint_names,
                    bool with_base,
                    BoxSDF::Ptr polytope_sdf,

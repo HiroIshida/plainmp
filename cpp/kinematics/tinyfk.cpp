@@ -11,7 +11,6 @@
 
 namespace tinyfk {
 
-// template class KinematicModel<float>; // TODO: implement float version (currently compile error)
 template class KinematicModel<double>;
 
 template<typename Scalar>

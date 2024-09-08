@@ -26,6 +26,8 @@ Eigen::Quaterniond q_derivative(const Eigen::Quaterniond &q, const Eigen::Vector
   return Eigen::Quaterniond(-dwdt, dxdt, dydt, dzdt);
 }
 
+template class KinematicModel<double>;
+
 template <typename Scalar>
 void KinematicModel<Scalar>::build_cache_until(size_t link_id) const
 {
@@ -124,19 +126,19 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
         auto vec_clink_to_elink = epos - cpos;
         dpos = world_axis.cross(vec_clink_to_elink);
       }
-      jacobian.block<3, 1>(0, i) = dpos;
+      jacobian.template block<3, 1>(0, i) = dpos;
       if (type == urdf::Joint::PRISMATIC) {
         // jacobian for rotation is all zero
       } else {
 
         if (rot_type == RotationType::RPY) { // (compute rpy jacobian)
           auto drpy_dt = rpy_derivative(erpy, world_axis);
-          jacobian.block<3, 1>(3, i) = drpy_dt;
+          jacobian.template block<3, 1>(3, i) = drpy_dt;
         }
 
         if (rot_type == RotationType::XYZW) { // (compute quat jacobian)
           auto dq_dt = q_derivative(erot_inverse, world_axis);
-          jacobian.block<4, 1>(3, i) = dq_dt.coeffs();
+          jacobian.template block<4, 1>(3, i) = dq_dt.coeffs();
         }
       }
     }
@@ -173,14 +175,14 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
       auto pose_out = tf_rlink_to_elink_tweaked;
 
       const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
-      jacobian.block<3, 1>(0, idx_col) = pos_diff / eps;
+      jacobian.template block<3, 1>(0, idx_col) = pos_diff / eps;
       if (rot_type == RotationType::RPY) {
         auto erpy_tweaked = pose_out.getRPY();
-        jacobian.block<3, 1>(3, idx_col) = (erpy_tweaked - erpy) / eps;
+        jacobian.template block<3, 1>(3, idx_col) = (erpy_tweaked - erpy) / eps;
       }
       if (rot_type == RotationType::XYZW) {
-        // jacobian.block<4, 1>(3, idx_col) = (pose_out.q.coeffs() - erot).toEigen() / eps;
-        jacobian.block<4, 1>(3, idx_col) = (pose_out.quat().coeffs() - erot.coeffs()) / eps;
+        // jacobian.template block<4, 1>(3, idx_col) = (pose_out.q.coeffs() - erot).toEigen() / eps;
+        jacobian.template block<4, 1>(3, idx_col) = (pose_out.quat().coeffs() - erot.coeffs()) / eps;
       }
     }
   }
@@ -219,7 +221,7 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
         auto vec_clink_to_elink = apoint_global_pos - cpos;
         dpos = world_axis.cross(vec_clink_to_elink);
       }
-      jacobian.block<3, 1>(0, i) = dpos;
+      jacobian.template block<3, 1>(0, i) = dpos;
     }
   }
 
@@ -257,7 +259,7 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
       auto pose_out = tf_rlink_to_elink_tweaked;
 
       const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
-      jacobian.block<3, 1>(0, idx_col) = pos_diff / eps;
+      jacobian.template block<3, 1>(0, idx_col) = pos_diff / eps;
     }
   }
   return jacobian;
@@ -294,5 +296,6 @@ KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t> &joint_ids,
   jac_average /= mass_total;
   return jac_average;
 }
+
 
 }; // namespace tinyfk

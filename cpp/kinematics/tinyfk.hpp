@@ -173,6 +173,7 @@ private:
   void update_rptable();
 };
 
+
 std::string load_urdf(const std::string &urdf_path);
 }; // namespace tinyfk
 
