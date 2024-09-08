@@ -122,14 +122,14 @@ KinematicModel<Scalar>::KinematicModel(const std::string &xml_string) {
   }
 
   links_ = links;
-  link_ids_ = link_ids;
+  link_name_id_map_ = link_ids;
   link_parent_link_ids_ = link_parent_link_ids;
   joints_ = joints;
   joint_types_ = joint_types;
   joint_axes_ = joint_axes;
   joint_positions_ = joint_positions;
   joint_child_link_ids_ = joint_child_link_ids;
-  joint_ids_ = joint_ids;
+  joint_name_id_map_ = joint_ids;
   num_dof_ = num_dof;
   total_mass_ = total_mass;
   joint_angles_ = joint_angles;
@@ -247,8 +247,8 @@ KinematicModel<Scalar>::get_joint_ids(std::vector<std::string> joint_names) cons
   int n_joint = joint_names.size();
   std::vector<size_t> joint_ids(n_joint);
   for (int i = 0; i < n_joint; i++) {
-    auto iter = joint_ids_.find(joint_names[i]);
-    if (iter == joint_ids_.end()) {
+    auto iter = joint_name_id_map_.find(joint_names[i]);
+    if (iter == joint_name_id_map_.end()) {
       throw std::invalid_argument("no joint named " + joint_names[i]);
     }
     joint_ids[i] = iter->second;
@@ -305,8 +305,8 @@ KinematicModel<Scalar>::get_link_ids(std::vector<std::string> link_names) const 
   int n_link = link_names.size();
   std::vector<size_t> link_ids(n_link);
   for (int i = 0; i < n_link; i++) {
-    auto iter = link_ids_.find(link_names[i]);
-    if (iter == link_ids_.end()) {
+    auto iter = link_name_id_map_.find(link_names[i]);
+    if (iter == link_name_id_map_.end()) {
       throw std::invalid_argument("no link named " + link_names[i]);
     }
     link_ids[i] = iter->second;
@@ -343,12 +343,12 @@ urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id, const
     hval ^= hasher(pose.quat().z()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
     hval ^= hasher(pose.quat().w()) + 0x9e3779b9 + (hval << 6) + (hval >> 2);
     link_name = "hash_" + std::to_string(hval) + "_" + std::to_string(parent_id) + "_" + std::to_string(consider_rotation);
-    bool link_name_exists = (link_ids_.find(link_name.value()) != link_ids_.end());
+    bool link_name_exists = (link_name_id_map_.find(link_name.value()) != link_name_id_map_.end());
     if (link_name_exists) {
-      return links_[link_ids_[link_name.value()]];
+      return links_[link_name_id_map_[link_name.value()]];
     }
   }else{
-    bool link_name_exists = (link_ids_.find(link_name.value()) != link_ids_.end());
+    bool link_name_exists = (link_name_id_map_.find(link_name.value()) != link_name_id_map_.end());
     if (link_name_exists) {
       std::string message = "link name " + link_name.value() + " already exists";
       throw std::runtime_error("link name : " + link_name.value() + " already exists");
@@ -368,7 +368,7 @@ urdf::LinkSharedPtr KinematicModel<Scalar>::add_new_link(size_t parent_id, const
   new_link->id = link_id;
   new_link->consider_rotation = consider_rotation;
 
-  link_ids_[link_name.value()] = link_id;
+  link_name_id_map_[link_name.value()] = link_id;
   links_.push_back(new_link);
   links_[parent_id]->child_links.push_back(new_link);
   links_[parent_id]->child_joints.push_back(fixed_joint);
@@ -387,12 +387,12 @@ void KinematicModel<Scalar>::update_rptable() {
   // this function usually must come in the end of a function
 
   // we must recreate from scratch
-  int n_link = link_ids_.size();
-  int n_dof = joint_ids_.size();
+  int n_link = link_name_id_map_.size();
+  int n_dof = joint_name_id_map_.size();
   auto rptable = RelevancePredicateTable(n_link, n_dof);
 
   for (urdf::JointSharedPtr joint : joints_) {
-    int joint_id = joint_ids_.at(joint->name);
+    int joint_id = joint_name_id_map_.at(joint->name);
     urdf::LinkSharedPtr clink = joint->getChildLink();
     std::stack<urdf::LinkSharedPtr> link_stack;
     link_stack.push(clink);

@@ -50,7 +50,7 @@ public: // members
 
   size_t root_link_id_;
   std::vector<urdf::LinkSharedPtr> links_;
-  std::unordered_map<std::string, int> link_ids_;
+  std::unordered_map<std::string, int> link_name_id_map_;
   std::vector<size_t> link_parent_link_ids_;
   std::vector<urdf::LinkSharedPtr> com_dummy_links_;
 
@@ -60,7 +60,7 @@ public: // members
   std::vector<Vector3> joint_positions_;
   std::vector<int> joint_child_link_ids_;
 
-  std::unordered_map<std::string, int> joint_ids_;
+  std::unordered_map<std::string, int> joint_name_id_map_;
   std::vector<Scalar> joint_angles_;
   Transform base_pose_;
 
