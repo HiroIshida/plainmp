@@ -12,8 +12,6 @@
 
 namespace cst {
 
-using namespace primitive_sdf;
-
 class ConstraintBase {
  public:
   using Ptr = std::shared_ptr<ConstraintBase>;

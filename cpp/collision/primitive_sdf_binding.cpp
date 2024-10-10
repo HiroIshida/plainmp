@@ -5,8 +5,6 @@
 #include "kdtree.hpp"
 #include "primitive_sdf.hpp"
 
-namespace primitive_sdf {
-
 namespace py = pybind11;
 
 void bind_kdtree(py::module& m) {
@@ -61,4 +59,3 @@ void bind_primitive_sdf(py::module& m) {
       .def("evaluate", &SphereSDF::evaluate)
       .def("is_outside", &SphereSDF::is_outside);
 }
-}  // namespace primitive_sdf

@@ -77,8 +77,7 @@ void bind_collision_constraints(py::module& m) {
   py::class_<ComInPolytopeCst, ComInPolytopeCst::Ptr, IneqConstraintBase>(
       cst_m, "ComInPolytopeCst")
       .def(py::init<std::shared_ptr<tinyfk::KinematicModel<double>>,
-                    const std::vector<std::string>&, bool,
-                    primitive_sdf::BoxSDF::Ptr,
+                    const std::vector<std::string>&, bool, BoxSDF::Ptr,
                     const std::vector<AppliedForceSpec>&>())
       .def("update_kintree", &ComInPolytopeCst::update_kintree)
       .def("is_valid", &ComInPolytopeCst::is_valid)

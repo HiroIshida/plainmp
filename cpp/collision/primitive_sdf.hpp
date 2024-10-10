@@ -9,8 +9,6 @@
 #include <optional>
 #include <vector>
 
-namespace primitive_sdf {
-
 using Point = Eigen::Vector3d;
 using Points = Eigen::Matrix3Xd;
 using Values = Eigen::VectorXd;
@@ -435,5 +433,3 @@ struct SphereSDF : public PrimitiveSDFBase {
   double rsq_sphere_;
   Pose pose_;
 };
-
-}  // namespace primitive_sdf
