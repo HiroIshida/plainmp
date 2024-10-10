@@ -2,11 +2,19 @@
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include "kdtree.hpp"
 #include "primitive_sdf.hpp"
 
 namespace primitive_sdf {
 
 namespace py = pybind11;
+
+void bind_kdtree(py::module& m) {
+  auto m_kdtree = m.def_submodule("kdtree");
+  py::class_<KDTree>(m_kdtree, "KDTree")
+      .def(py::init<const std::vector<Eigen::Vector3d>&>())
+      .def("query", &KDTree::query);
+}
 
 void bind_primitive_sdf(py::module& m) {
   auto m_psdf = m.def_submodule("primitive_sdf");

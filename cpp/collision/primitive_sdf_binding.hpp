@@ -6,5 +6,6 @@
 
 namespace primitive_sdf {
 namespace py = pybind11;
+void bind_kdtree(py::module& m);
 void bind_primitive_sdf(py::module& m);
 }  // namespace primitive_sdf
