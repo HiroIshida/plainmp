@@ -1,5 +1,5 @@
 #include <pybind11/pybind11.h>
-#include "collision/primitive_sdf_binding.hpp"
+#include "collision/binding.hpp"
 #include "constraint_binding.hpp"
 #include "kinematics/tinyfk_binding.hpp"
 #include "ompl/ompl_binding.hpp"
