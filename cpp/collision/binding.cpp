@@ -10,8 +10,10 @@ namespace py = pybind11;
 void bind_kdtree(py::module& m) {
   auto m_kdtree = m.def_submodule("kdtree");
   py::class_<KDTree>(m_kdtree, "KDTree")
-      .def(py::init<const std::vector<Eigen::Vector3d>&>())
+      .def(py::init<const std::vector<Eigen::Vector3d>&, double>())
       .def("query", &KDTree::query)
+      .def("check_point_collision", &KDTree::check_point_collision)
+      .def("check_sphere_collision", &KDTree::check_sphere_collision)
       .def("sqdist", &KDTree::sqdist);
 }
 

@@ -5,24 +5,42 @@
 #include <random>
 #include <vector>
 
-KDTree::KDTree(const std::vector<Eigen::Vector3d>& points) {
-  nodes.reserve(points.size());
+KDTree::KDTree(const std::vector<Eigen::Vector3d>& points, double margin)
+    : margin_(margin), margin_squared_(margin * margin) {
+  nodes_.reserve(points.size());
   std::vector<Eigen::Vector3d> points_copy = points;
-  root_index = build(points_copy.begin(), points_copy.end(), 0);
+  root_index_ = build(points_copy.begin(), points_copy.end(), 0);
 }
 
 Eigen::Vector3d KDTree::query(const Eigen::Vector3d& target) const {
   Eigen::Vector3d best_point;
   double best_sqdist = std::numeric_limits<double>::max();
-  nearest(root_index, target, best_sqdist, best_point);
+  nearest(root_index_, target, best_sqdist, best_point);
   return best_point;
 }
 
 double KDTree::sqdist(const Eigen::Vector3d& target) const {
   Eigen::Vector3d best_point;
   double best_sqdist = std::numeric_limits<double>::max();
-  nearest(root_index, target, best_sqdist, best_point);
+  nearest(root_index_, target, best_sqdist, best_point);
   return best_sqdist;
+}
+
+bool KDTree::check_point_collision(const Eigen::Vector3d& target) const {
+  Eigen::Vector3d best_point;
+  double best_sqdist = std::numeric_limits<double>::max();
+  nearest(root_index_, target, best_sqdist, best_point);
+  return best_sqdist < margin_squared_;
+}
+
+bool KDTree::check_sphere_collision(const Eigen::Vector3d& target,
+                                    double sphere_radius) const {
+  double rpR = sphere_radius + margin_;
+  double rpR_squared = rpR * rpR;
+  Eigen::Vector3d best_point;
+  double best_sqdist = std::numeric_limits<double>::max();
+  nearest(root_index_, target, best_sqdist, best_point);
+  return best_sqdist < rpR_squared;
 }
 
 int KDTree::build(std::vector<Eigen::Vector3d>::iterator begin,
@@ -42,12 +60,12 @@ int KDTree::build(std::vector<Eigen::Vector3d>::iterator begin,
   std::nth_element(begin, median_it, end, comparator);
   const Eigen::Vector3d& median_point = *median_it;
 
-  nodes.emplace_back(median_point, axis);
-  int node_index = static_cast<int>(nodes.size() - 1);
+  nodes_.emplace_back(median_point, axis);
+  int node_index = static_cast<int>(nodes_.size() - 1);
 
   // Recursively build left and right subtrees and store their indices
-  nodes[node_index].left = build(begin, median_it, depth + 1);
-  nodes[node_index].right = build(median_it + 1, end, depth + 1);
+  nodes_[node_index].left = build(begin, median_it, depth + 1);
+  nodes_[node_index].right = build(median_it + 1, end, depth + 1);
 
   return node_index;
 }
@@ -59,7 +77,7 @@ void KDTree::nearest(int node_index,
   if (node_index == -1)
     return;
 
-  const KDNode& node = nodes[node_index];
+  const KDNode& node = nodes_[node_index];
 
   double sqdist = (node.point - target).squaredNorm();
   if (sqdist < best_sqdist) {
