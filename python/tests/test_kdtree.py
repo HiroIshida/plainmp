@@ -13,4 +13,8 @@ def test_kdtree():
 
     for _ in range(1000):
         query = np.random.randn(3)
-        assert np.allclose(tree.query(query), blute_force(points, query))
+        nearest = tree.query(query)
+        assert np.allclose(nearest, blute_force(points, query))
+
+        gt_sqdist_to_nearest = np.sum((nearest - query) ** 2)
+        assert np.allclose(gt_sqdist_to_nearest, tree.sqdist(query))

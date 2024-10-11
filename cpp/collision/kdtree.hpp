@@ -15,6 +15,7 @@ class KDTree {
  public:
   KDTree(const std::vector<Eigen::Vector3d>& points);
   Eigen::Vector3d query(const Eigen::Vector3d& target) const;
+  double sqdist(const Eigen::Vector3d& target) const;
 
  private:
   std::vector<KDNode> nodes;

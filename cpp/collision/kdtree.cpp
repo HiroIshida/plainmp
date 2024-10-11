@@ -13,9 +13,16 @@ KDTree::KDTree(const std::vector<Eigen::Vector3d>& points) {
 
 Eigen::Vector3d KDTree::query(const Eigen::Vector3d& target) const {
   Eigen::Vector3d best_point;
-  double best_dist = std::numeric_limits<double>::max();
-  nearest(root_index, target, best_dist, best_point);
+  double best_sqdist = std::numeric_limits<double>::max();
+  nearest(root_index, target, best_sqdist, best_point);
   return best_point;
+}
+
+double KDTree::sqdist(const Eigen::Vector3d& target) const {
+  Eigen::Vector3d best_point;
+  double best_sqdist = std::numeric_limits<double>::max();
+  nearest(root_index, target, best_sqdist, best_point);
+  return best_sqdist;
 }
 
 int KDTree::build(std::vector<Eigen::Vector3d>::iterator begin,
@@ -47,16 +54,16 @@ int KDTree::build(std::vector<Eigen::Vector3d>::iterator begin,
 
 void KDTree::nearest(int node_index,
                      const Eigen::Vector3d& target,
-                     double& best_dist,
+                     double& best_sqdist,
                      Eigen::Vector3d& best_point) const {
   if (node_index == -1)
     return;
 
   const KDNode& node = nodes[node_index];
 
-  double dist = (node.point - target).squaredNorm();
-  if (dist < best_dist) {
-    best_dist = dist;
+  double sqdist = (node.point - target).squaredNorm();
+  if (sqdist < best_sqdist) {
+    best_sqdist = sqdist;
     best_point = node.point;
   }
 
@@ -67,11 +74,11 @@ void KDTree::nearest(int node_index,
   int second_index = (diff < 0) ? node.right : node.left;
 
   // Explore the side of the split where the target lies
-  nearest(first_index, target, best_dist, best_point);
+  nearest(first_index, target, best_sqdist, best_point);
 
   // If there's a possibility that the other side could contain a closer
   // point, explore it
-  if (diff * diff < best_dist) {
-    nearest(second_index, target, best_dist, best_point);
+  if (diff * diff < best_sqdist) {
+    nearest(second_index, target, best_sqdist, best_point);
   }
 }

@@ -11,7 +11,8 @@ void bind_kdtree(py::module& m) {
   auto m_kdtree = m.def_submodule("kdtree");
   py::class_<KDTree>(m_kdtree, "KDTree")
       .def(py::init<const std::vector<Eigen::Vector3d>&>())
-      .def("query", &KDTree::query);
+      .def("query", &KDTree::query)
+      .def("sqdist", &KDTree::sqdist);
 }
 
 void bind_primitive_sdf(py::module& m) {
