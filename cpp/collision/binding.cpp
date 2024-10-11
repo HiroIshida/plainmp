@@ -2,11 +2,18 @@
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include "kdtree.hpp"
 #include "primitive_sdf.hpp"
 
-namespace primitive_sdf {
-
 namespace py = pybind11;
+
+void bind_kdtree(py::module& m) {
+  auto m_kdtree = m.def_submodule("kdtree");
+  py::class_<KDTree>(m_kdtree, "KDTree")
+      .def(py::init<const std::vector<Eigen::Vector3d>&>())
+      .def("query", &KDTree::query)
+      .def("sqdist", &KDTree::sqdist);
+}
 
 void bind_primitive_sdf(py::module& m) {
   auto m_psdf = m.def_submodule("primitive_sdf");
@@ -52,5 +59,11 @@ void bind_primitive_sdf(py::module& m) {
       .def("evaluate_batch", &SphereSDF::evaluate_batch)
       .def("evaluate", &SphereSDF::evaluate)
       .def("is_outside", &SphereSDF::is_outside);
+
+  py::class_<CloudSDF, CloudSDF::Ptr, PrimitiveSDFBase>(m_psdf, "CloudSDF",
+                                                        py::module_local())
+      .def(py::init<std::vector<Eigen::Vector3d>&, double>())
+      .def("evaluate_batch", &CloudSDF::evaluate_batch)
+      .def("evaluate", &CloudSDF::evaluate)
+      .def("is_outside", &CloudSDF::is_outside);
 }
-}  // namespace primitive_sdf

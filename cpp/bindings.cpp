@@ -1,5 +1,5 @@
 #include <pybind11/pybind11.h>
-#include "collision/primitive_sdf_binding.hpp"
+#include "collision/binding.hpp"
 #include "constraint_binding.hpp"
 #include "kinematics/tinyfk_binding.hpp"
 #include "ompl/ompl_binding.hpp"
@@ -26,7 +26,8 @@ void stop_profiling() {
 }
 
 PYBIND11_MODULE(_plainmp, m) {
-  primitive_sdf::bind_primitive_sdf(m);
+  bind_primitive_sdf(m);
+  bind_kdtree(m);
   cst::bind_collision_constraints(m);
   tinyfk::bind_tinyfk(m);
   bind_ompl(m);

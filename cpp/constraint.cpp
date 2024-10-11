@@ -174,6 +174,7 @@ bool SphereCollisionCst::check_ext_collision() {
       group.create_group_sphere_position_cache(kin_);
     }
 
+    // check against all SDFs
     for (auto& sdf : all_sdfs_cache_) {
       if (!sdf->is_outside_aabb(group.group_sphere_position_cache,
                                 group.group_radius)) {
@@ -241,161 +242,164 @@ bool SphereCollisionCst::check_self_collision() {
   return true;
 }
 
+double SphereCollisionCst::evaluate_ext_collision(
+    Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad_out) {
+  double min_val_other = cutoff_dist_;
+  std::optional<size_t> min_sphere_idx = std::nullopt;
+  std::optional<size_t> min_group_idx = std::nullopt;
+  std::optional<size_t> min_sdf_idx = std::nullopt;
+  for (size_t i = 0; i < sphere_groups_.size(); i++) {
+    auto& group = sphere_groups_[i];
+    if (group.ignore_collision) {
+      continue;
+    }
+
+    // filter out groups that are not colliding with margin of cutoff
+    if (group.is_group_sphere_position_dirty) {
+      group.create_group_sphere_position_cache(kin_);
+    }
+    for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
+      auto& sdf = all_sdfs_cache_[j];
+      if (!sdf->is_outside_aabb(group.group_sphere_position_cache,
+                                group.group_radius + cutoff_dist_)) {
+        if (!sdf->is_outside(group.group_sphere_position_cache,
+                             group.group_radius + cutoff_dist_)) {
+          // if broad collision with sdf-j detected
+          if (group.is_sphere_positions_dirty) {
+            group.create_sphere_position_cache(kin_);
+          }
+          for (size_t k = 0; k < group.radii.size(); k++) {
+            auto sphere_center = group.sphere_positions_cache.col(k);
+            if (sdf->is_outside_aabb(sphere_center,
+                                     group.radii[k] + cutoff_dist_)) {
+              continue;
+            }
+            double val = sdf->evaluate(sphere_center) - group.radii[k];
+            if (val < min_val_other) {
+              min_val_other = val;
+              min_group_idx = i;
+              min_sdf_idx = j;
+              min_sphere_idx = k;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (min_sphere_idx == std::nullopt) {
+    // cutoff case
+    grad_out.setConstant(0.);
+    return min_val_other;
+  } else {
+    // HACK: we already know that the sphere position cache is
+    // already created
+    const auto& min_sphere_trans =
+        sphere_groups_[*min_group_idx].sphere_positions_cache.col(
+            *min_sphere_idx);
+    double r = sphere_groups_[*min_group_idx].radii[*min_sphere_idx];
+    Eigen::Vector3d grad;
+    for (size_t i = 0; i < 3; i++) {
+      Eigen::Vector3d perturbed_center = min_sphere_trans;
+      perturbed_center[i] += 1e-6;
+      double val =
+          all_sdfs_cache_[*min_sdf_idx]->evaluate(perturbed_center) - r;
+      grad[i] = (val - min_val_other) / 1e-6;
+    }
+    auto&& sphere_jac = kin_->get_attached_point_jacobian(
+        sphere_groups_[*min_group_idx].parent_link_id, min_sphere_trans,
+        control_joint_ids_, with_base_);
+    grad_out = sphere_jac.transpose() * grad;
+    return min_val_other;
+  }
+}
+
+double SphereCollisionCst::evaluate_self_collision(
+    Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad) {
+  std::optional<std::array<size_t, 4>> min_pairs =
+      std::nullopt;  // (group_i, sphere_i, group_j, sphere_j)
+  double dist_min = cutoff_dist_;
+  for (auto& group_id_pair : selcol_group_id_pairs_) {
+    auto& group1 = sphere_groups_[group_id_pair.first];
+    auto& group2 = sphere_groups_[group_id_pair.second];
+
+    if (group1.is_group_sphere_position_dirty) {
+      group1.create_group_sphere_position_cache(kin_);
+    }
+    if (group2.is_group_sphere_position_dirty) {
+      group2.create_group_sphere_position_cache(kin_);
+    }
+
+    double outer_sqdist = (group1.group_sphere_position_cache -
+                           group2.group_sphere_position_cache)
+                              .squaredNorm();
+    double outer_r_sum_with_margin =
+        group1.group_radius + group2.group_radius + cutoff_dist_;
+    if (outer_sqdist > outer_r_sum_with_margin * outer_r_sum_with_margin) {
+      continue;
+    }
+
+    // narrow phase
+    if (group1.is_sphere_positions_dirty) {
+      group1.create_sphere_position_cache(kin_);
+    }
+    if (group2.is_sphere_positions_dirty) {
+      group2.create_sphere_position_cache(kin_);
+    }
+
+    for (size_t i = 0; i < group1.radii.size(); i++) {
+      for (size_t j = 0; j < group2.radii.size(); j++) {
+        const auto& sphere1_center = group1.sphere_positions_cache.col(i);
+        const auto& sphere2_center = group2.sphere_positions_cache.col(j);
+        double dist = (sphere1_center - sphere2_center).norm() -
+                      (group1.radii[i] + group2.radii[j]);
+        if (dist < dist_min) {
+          dist_min = dist;
+          min_pairs = {group_id_pair.first, i, group_id_pair.second, j};
+        }
+      }
+    }
+  }
+
+  if (min_pairs == std::nullopt) {
+    grad.setConstant(0.);
+    return dist_min;
+  } else {
+    // HACK: we know that in the non-gradient evaluation the cache
+    // is already created
+    auto& group1 = sphere_groups_[min_pairs->at(0)];
+    const auto& center1 = group1.sphere_positions_cache.col(min_pairs->at(1));
+    auto& group2 = sphere_groups_[min_pairs->at(2)];
+    const auto& center2 = group2.sphere_positions_cache.col(min_pairs->at(3));
+
+    Eigen::Vector3d center_diff = center1 - center2;
+    auto&& jac1 = kin_->get_attached_point_jacobian(
+        group1.parent_link_id, center1, control_joint_ids_, with_base_);
+    auto&& jac2 = kin_->get_attached_point_jacobian(
+        group2.parent_link_id, center2, control_joint_ids_, with_base_);
+    double norminv = 1.0 / center_diff.norm();
+    grad = norminv * center_diff.transpose() * (jac1 - jac2);
+    return dist_min;
+  }
+}
+
 std::pair<Eigen::VectorXd, Eigen::MatrixXd>
 SphereCollisionCst::evaluate_dirty() {
   if (all_sdfs_cache_.size() == 0) {
     throw std::runtime_error("(cpp) No SDFs are set");
   }
-
-  // collision vs outers
-  Eigen::VectorXd grad_in_cspace_other(q_dim());
-  double min_val_other = cutoff_dist_;
-  std::optional<size_t> min_sphere_idx = std::nullopt;
-  std::optional<size_t> min_group_idx = std::nullopt;
-  std::optional<size_t> min_sdf_idx = std::nullopt;
-  {
-    for (size_t i = 0; i < sphere_groups_.size(); i++) {
-      auto& group = sphere_groups_[i];
-      if (group.ignore_collision) {
-        continue;
-      }
-
-      // filter out groups that are not colliding with margin of cutoff
-      if (group.is_group_sphere_position_dirty) {
-        group.create_group_sphere_position_cache(kin_);
-      }
-      for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
-        auto& sdf = all_sdfs_cache_[j];
-        if (!sdf->is_outside_aabb(group.group_sphere_position_cache,
-                                  group.group_radius + cutoff_dist_)) {
-          if (!sdf->is_outside(group.group_sphere_position_cache,
-                               group.group_radius + cutoff_dist_)) {
-            // if broad collision with sdf-j detected
-            if (group.is_sphere_positions_dirty) {
-              group.create_sphere_position_cache(kin_);
-            }
-            for (size_t k = 0; k < group.radii.size(); k++) {
-              auto sphere_center = group.sphere_positions_cache.col(k);
-              if (sdf->is_outside_aabb(sphere_center,
-                                       group.radii[k] + cutoff_dist_)) {
-                continue;
-              }
-              double val = sdf->evaluate(sphere_center) - group.radii[k];
-              if (val < min_val_other) {
-                min_val_other = val;
-                min_group_idx = i;
-                min_sdf_idx = j;
-                min_sphere_idx = k;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (min_sphere_idx == std::nullopt) {
-      // cutoff case
-      grad_in_cspace_other.setConstant(0.);
-    } else {
-      // HACK: we already know that the sphere position cache is
-      // already created
-      const auto& min_sphere_trans =
-          sphere_groups_[*min_group_idx].sphere_positions_cache.col(
-              *min_sphere_idx);
-      double r = sphere_groups_[*min_group_idx].radii[*min_sphere_idx];
-      Eigen::Vector3d grad;
-      for (size_t i = 0; i < 3; i++) {
-        Eigen::Vector3d perturbed_center = min_sphere_trans;
-        perturbed_center[i] += 1e-6;
-        double val =
-            all_sdfs_cache_[*min_sdf_idx]->evaluate(perturbed_center) - r;
-        grad[i] = (val - min_val_other) / 1e-6;
-      }
-      auto&& sphere_jac = kin_->get_attached_point_jacobian(
-          sphere_groups_[*min_group_idx].parent_link_id, min_sphere_trans,
-          control_joint_ids_, with_base_);
-      grad_in_cspace_other = sphere_jac.transpose() * grad;
-    }
-  }
-  if (selcol_group_id_pairs_.size() == 0) {
-    Eigen::MatrixXd jac(1, grad_in_cspace_other.size());
-    jac.row(0) = grad_in_cspace_other;
-    return {Eigen::VectorXd::Constant(1, min_val_other), jac};
+  Eigen::MatrixXd jac(cst_dim(), q_dim());
+  Eigen::VectorXd vals(cst_dim());
+  if (selcol_group_id_pairs_.size() > 0) {
+    double val_ext = evaluate_ext_collision(jac.row(0));
+    vals[0] = val_ext;
+    double val_self = evaluate_self_collision(jac.row(1));
+    vals[1] = val_self;
   } else {
-    // collision vs inners (self collision)
-    std::optional<std::array<size_t, 4>> min_pairs =
-        std::nullopt;  // (group_i, sphere_i, group_j, sphere_j)
-    double dist_min = cutoff_dist_;
-    for (auto& group_id_pair : selcol_group_id_pairs_) {
-      auto& group1 = sphere_groups_[group_id_pair.first];
-      auto& group2 = sphere_groups_[group_id_pair.second];
-
-      if (group1.is_group_sphere_position_dirty) {
-        group1.create_group_sphere_position_cache(kin_);
-      }
-      if (group2.is_group_sphere_position_dirty) {
-        group2.create_group_sphere_position_cache(kin_);
-      }
-
-      double outer_sqdist = (group1.group_sphere_position_cache -
-                             group2.group_sphere_position_cache)
-                                .squaredNorm();
-      double outer_r_sum_with_margin =
-          group1.group_radius + group2.group_radius + cutoff_dist_;
-      if (outer_sqdist > outer_r_sum_with_margin * outer_r_sum_with_margin) {
-        continue;
-      }
-
-      // narrow phase
-      if (group1.is_sphere_positions_dirty) {
-        group1.create_sphere_position_cache(kin_);
-      }
-      if (group2.is_sphere_positions_dirty) {
-        group2.create_sphere_position_cache(kin_);
-      }
-
-      for (size_t i = 0; i < group1.radii.size(); i++) {
-        for (size_t j = 0; j < group2.radii.size(); j++) {
-          const auto& sphere1_center = group1.sphere_positions_cache.col(i);
-          const auto& sphere2_center = group2.sphere_positions_cache.col(j);
-          double dist = (sphere1_center - sphere2_center).norm() -
-                        (group1.radii[i] + group2.radii[j]);
-          if (dist < dist_min) {
-            dist_min = dist;
-            min_pairs = {group_id_pair.first, i, group_id_pair.second, j};
-          }
-        }
-      }
-    }
-
-    // compute gradient
-    if (min_pairs == std::nullopt) {
-      Eigen::MatrixXd jac(2, grad_in_cspace_other.size());
-      jac.row(0) = grad_in_cspace_other;
-      jac.row(1).setConstant(0.);
-      return {Eigen::Vector2d(min_val_other, dist_min), jac};
-    } else {
-      // HACK: we know that in the non-gradient evaluation the cache
-      // is already created
-      auto& group1 = sphere_groups_[min_pairs->at(0)];
-      const auto& center1 = group1.sphere_positions_cache.col(min_pairs->at(1));
-      auto& group2 = sphere_groups_[min_pairs->at(2)];
-      const auto& center2 = group2.sphere_positions_cache.col(min_pairs->at(3));
-
-      Eigen::Vector3d center_diff = center1 - center2;
-      auto&& jac1 = kin_->get_attached_point_jacobian(
-          group1.parent_link_id, center1, control_joint_ids_, with_base_);
-      auto&& jac2 = kin_->get_attached_point_jacobian(
-          group2.parent_link_id, center2, control_joint_ids_, with_base_);
-      double norminv = 1.0 / center_diff.norm();
-      Eigen::VectorXd&& grad_in_cspace_self =
-          norminv * center_diff.transpose() * (jac1 - jac2);
-      Eigen::MatrixXd jac(2, grad_in_cspace_other.size());
-      jac.row(0) = grad_in_cspace_other;
-      jac.row(1) = grad_in_cspace_self;
-      return {Eigen::Vector2d(min_val_other, dist_min), jac};
-    }
+    double val = evaluate_ext_collision(jac.row(0));
+    vals[0] = val;
   }
+  return {vals, jac};
 }
 
 std::vector<std::pair<Eigen::Vector3d, double>>

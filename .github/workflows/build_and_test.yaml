@@ -15,10 +15,10 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v2
 
-            - name: Set up Python 3.8
+            - name: Set up Python 3.10
               uses: actions/setup-python@v1
               with:
-                python-version: 3.8.18
+                python-version: 3.10.15
 
             - name: update submodule
               run: git submodule update --init --recursive
@@ -43,7 +43,9 @@ jobs:
             - name: Run examples
               run: |
                 for i in {1..3}; do python3 example/fetch_ik.py && break || echo "fetch_ik.py failed... retrying ($i)"; done
+                for i in {1..3}; do python3 example/fetch_ik.py --pcloud && break || echo "fetch_ik.py with pcloud failed... retrying ($i)"; done
                 for i in {1..3}; do python3 example/fetch_plan.py && break || echo "fetch_plan.py failed... retrying ($i)"; done
+                for i in {1..3}; do python3 example/fetch_plan.py --pcloud && break || echo "fetch_plan.py with pcloud failed... retrying ($i)"; done
                 for i in {1..3}; do python3 example/humanoid_planning.py && break || echo "humanoid_planning.py failed... retrying ($i)"; done
                 for i in {1..3}; do python3 example/humanoid_lift_and_place_box.py && break || echo "humanoid_lift_and_place_box.py failed... retrying ($i)"; done
               timeout-minutes: 10

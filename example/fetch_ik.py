@@ -1,23 +1,34 @@
 import argparse
 import time
 
-from skrobot.model.primitives import Box
+import numpy as np
+from skrobot.model.primitives import Box, PointCloudLink
 from skrobot.models.fetch import Fetch
 from skrobot.viewers import PyrenderViewer
 
 from plainmp.ik import solve_ik
+from plainmp.psdf import CloudSDF
 from plainmp.robot_spec import FetchSpec
 from plainmp.utils import set_robot_state, sksdf_to_cppsdf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--visualize", action="store_true", help="visualize the result")
+    parser.add_argument("--pcloud", action="store_true", help="use point cloud for collision check")
     args = parser.parse_args()
 
     # create table sdf
-    table = Box([1.0, 2.0, 0.05], with_sdf=True)
-    table.translate([1.0, 0.0, 0.8])
-    sdf = sksdf_to_cppsdf(table.sdf, False)
+    if args.pcloud:
+        table_points = np.random.rand(1000, 3) * np.array([1.0, 2.0, 0.05]) - np.array(
+            [0.5, 1.0, 0.025]
+        )
+        table_points += np.array([1.0, 0.0, 0.8])
+        table = PointCloudLink(table_points)
+        sdf = CloudSDF(table_points, 0.002)
+    else:
+        table = Box([1.0, 2.0, 0.05], with_sdf=True)
+        table.translate([1.0, 0.0, 0.8])
+        sdf = sksdf_to_cppsdf(table.sdf, False)
 
     # create problem
     fs = FetchSpec()
