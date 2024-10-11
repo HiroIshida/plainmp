@@ -317,6 +317,11 @@ class SphereCollisionCst : public IneqConstraintBase {
   bool check_ext_collision();
   bool check_self_collision();
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
+  // retrun double and take block of eigen matrix
+  double evaluate_ext_collision(
+      Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad);
+  double evaluate_self_collision(
+      Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad);
 
   size_t cst_dim() const override {
     if (selcol_group_id_pairs_.size() == 0) {
