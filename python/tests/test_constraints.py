@@ -34,13 +34,22 @@ def jac_numerical(const, q0: np.ndarray, eps: float) -> np.ndarray:
 
 def check_jacobian(const, dim: int, eps: float = 1e-7, decimal: int = 4, std: float = 1.0):
     # check single jacobian
-    for _ in range(10):
+    for _ in range(100):
         q_test = np.random.randn(dim) * std
         _, jac_anal = const.evaluate(q_test)
         if isinstance(jac_anal, csc_matrix):
             jac_anal = jac_anal.todense()
         jac_numel = jac_numerical(const, q_test, eps)
         np.testing.assert_almost_equal(jac_anal, jac_numel, decimal=decimal)
+
+
+def check_eval_is_valid_consistency(const, dim: int, std: float = 1.0):
+    for _ in range(100):
+        q_test = np.random.randn(dim) * std
+        values, _ = const.evaluate(q_test)
+        is_valid_by_evaluation = np.all(values > 0)
+        is_valid_by_is_valid = const.is_valid(q_test)
+        assert is_valid_by_evaluation == is_valid_by_is_valid
 
 
 def check_sparse_structure(
@@ -125,8 +134,10 @@ def test_collision_free_constraint(with_base):
         cst.set_sdf(sdf)
         if with_base:
             check_jacobian(cst, 8 + 6, std=0.1)
+            check_eval_is_valid_consistency(cst, 8 + 6, std=0.1)
         else:
             check_jacobian(cst, 8)
+            check_eval_is_valid_consistency(cst, 8)
 
 
 @pytest.mark.parametrize("with_base", [False, True])
@@ -140,8 +151,10 @@ def test_com_in_polytope_constraint(with_base, with_force: bool):
     cst = ComInPolytopeCst(fs.get_kin(), fs.control_joint_names, with_base, sdf, afspecs)
     if with_base:
         check_jacobian(cst, 8 + 6, std=0.1)
+        check_eval_is_valid_consistency(cst, 8 + 6, std=0.1)
     else:
         check_jacobian(cst, 8)
+        check_eval_is_valid_consistency(cst, 8)
 
 
 def test_eq_composite_constraint():
