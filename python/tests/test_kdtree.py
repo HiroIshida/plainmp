@@ -18,21 +18,3 @@ def test_kdtree():
 
         gt_sqdist_to_nearest = np.sum((nearest - query) ** 2)
         assert np.allclose(gt_sqdist_to_nearest, tree.sqdist(query))
-
-
-def test_kdtree_collision():
-    margin = 0.1
-    sphere_radius = 0.1
-    for _ in range(10):
-        points = np.random.rand(50, 3)
-        tree = KDTree(points, margin)
-
-        for _ in range(100):
-            query = np.random.rand(3)
-            collide = tree.check_point_collision(query)
-            assert collide == np.any(np.sum((points - query) ** 2, axis=1) < margin**2)
-
-            collide = tree.check_sphere_collision(query, sphere_radius)
-            assert collide == np.any(
-                np.sum((points - query) ** 2, axis=1) < (margin + sphere_radius) ** 2
-            )

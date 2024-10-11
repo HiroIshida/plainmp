@@ -196,23 +196,6 @@ bool SphereCollisionCst::check_ext_collision() {
         }
       }
     }
-
-    // check against kdtree
-    if (cloud_kdtree_ != nullptr) {
-      if (cloud_kdtree_->check_sphere_collision(
-              group.group_sphere_position_cache, group.group_radius)) {
-        // narrow phase collision checking
-        if (group.is_sphere_positions_dirty) {
-          group.create_sphere_position_cache(kin_);
-        }
-        for (size_t i = 0; i < group.radii.size(); i++) {
-          if (cloud_kdtree_->check_sphere_collision(
-                  group.sphere_positions_cache.col(i), group.radii[i])) {
-            return false;
-          }
-        }
-      }
-    }
   }
   return true;
 }

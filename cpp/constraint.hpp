@@ -7,7 +7,6 @@
 #include <memory>
 #include <optional>
 #include <utility>
-#include "collision/kdtree.hpp"
 #include "collision/primitive_sdf.hpp"
 #include "kinematics/tinyfk.hpp"
 
@@ -307,10 +306,6 @@ class SphereCollisionCst : public IneqConstraintBase {
     set_all_sdfs();
   }
 
-  void set_cloud(const std::vector<Eigen::Vector3d>& cloud, double margin) {
-    cloud_kdtree_ = std::make_shared<KDTree>(cloud, margin);
-  }
-
   SDFBase::Ptr get_sdf() const { return sdf_; }
 
   bool is_valid_dirty() override;
@@ -341,8 +336,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<SphereGroup> sphere_groups_;
   std::vector<std::pair<size_t, size_t>> selcol_group_id_pairs_;
   SDFBase::Ptr fixed_sdf_;
-  SDFBase::Ptr sdf_;          // set later by user
-  KDTree::Ptr cloud_kdtree_;  // set later by user (point cloud)
+  SDFBase::Ptr sdf_;  // set later by user
   std::vector<PrimitiveSDFBase::Ptr> all_sdfs_cache_;
   double cutoff_dist_ = 0.1;
 };

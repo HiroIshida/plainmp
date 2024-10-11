@@ -440,7 +440,7 @@ struct CloudSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<CloudSDF>;
   SDFType get_type() const override { return SDFType::CLOUD; }
   CloudSDF(const std::vector<Eigen::Vector3d>& points, double radius)
-      : kdtree_(std::make_shared<KDTree>(points, radius)), radius_(radius) {
+      : kdtree_(std::make_shared<KDTree>(points)), radius_(radius) {
     lb.setConstant(std::numeric_limits<double>::infinity());
     ub.setConstant(-std::numeric_limits<double>::infinity());
     for (size_t i = 0; i < points.size(); i++) {

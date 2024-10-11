@@ -5,8 +5,7 @@
 #include <random>
 #include <vector>
 
-KDTree::KDTree(const std::vector<Eigen::Vector3d>& points, double margin)
-    : margin_(margin), margin_squared_(margin * margin) {
+KDTree::KDTree(const std::vector<Eigen::Vector3d>& points) {
   nodes_.reserve(points.size());
   std::vector<Eigen::Vector3d> points_copy = points;
   root_index_ = build(points_copy.begin(), points_copy.end(), 0);
@@ -24,23 +23,6 @@ double KDTree::sqdist(const Eigen::Vector3d& target) const {
   double best_sqdist = std::numeric_limits<double>::max();
   nearest(root_index_, target, best_sqdist, best_point);
   return best_sqdist;
-}
-
-bool KDTree::check_point_collision(const Eigen::Vector3d& target) const {
-  Eigen::Vector3d best_point;
-  double best_sqdist = std::numeric_limits<double>::max();
-  nearest(root_index_, target, best_sqdist, best_point);
-  return best_sqdist < margin_squared_;
-}
-
-bool KDTree::check_sphere_collision(const Eigen::Vector3d& target,
-                                    double sphere_radius) const {
-  double rpR = sphere_radius + margin_;
-  double rpR_squared = rpR * rpR;
-  Eigen::Vector3d best_point;
-  double best_sqdist = std::numeric_limits<double>::max();
-  nearest(root_index_, target, best_sqdist, best_point);
-  return best_sqdist < rpR_squared;
 }
 
 int KDTree::build(std::vector<Eigen::Vector3d>::iterator begin,
