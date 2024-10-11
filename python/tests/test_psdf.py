@@ -120,6 +120,14 @@ def test_ground_sdf():
     check_is_outside_consistency(sdf, np.random.randn(100, 3) * 3)
 
 
+def test_cloud_sdf():
+    obstacles = np.random.rand(100, 3)
+    sdf = psdf.CloudSDF(obstacles, 0.1)
+    eval_points = np.random.randn(1000, 3) * 1.5
+    check_single_batch_consistency(sdf, eval_points)
+    check_is_outside_consistency(sdf, eval_points)
+
+
 def test_union_sdf():
 
     for _ in range(10):

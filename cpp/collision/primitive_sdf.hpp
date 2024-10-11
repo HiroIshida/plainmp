@@ -9,6 +9,8 @@
 #include <optional>
 #include <vector>
 
+#include "kdtree.hpp"
+
 using Point = Eigen::Vector3d;
 using Points = Eigen::Matrix3Xd;
 using Values = Eigen::VectorXd;
@@ -47,7 +49,7 @@ struct Pose {
   bool z_axis_aligned_;
 };
 
-enum SDFType { UNION, BOX, CYLINDER, SPHERE, GROUND };
+enum SDFType { UNION, BOX, CYLINDER, SPHERE, GROUND, CLOUD };
 
 class SDFBase {
  public:
@@ -432,4 +434,34 @@ struct SphereSDF : public PrimitiveSDFBase {
   double r_sphere_;
   double rsq_sphere_;
   Pose pose_;
+};
+
+struct CloudSDF : public PrimitiveSDFBase {
+  using Ptr = std::shared_ptr<CloudSDF>;
+  SDFType get_type() const override { return SDFType::CLOUD; }
+  CloudSDF(const std::vector<Eigen::Vector3d>& points, double radius)
+      : kdtree_(std::make_shared<KDTree>(points, radius)), radius_(radius) {
+    lb.setConstant(std::numeric_limits<double>::infinity());
+    ub.setConstant(-std::numeric_limits<double>::infinity());
+    for (size_t i = 0; i < points.size(); i++) {
+      for (int j = 0; j < 3; j++) {
+        lb(j) = std::min(lb(j), points[i](j));
+        ub(j) = std::max(ub(j), points[i](j));
+      }
+    }
+    lb.array() -= radius;
+    ub.array() += radius;
+  }
+
+  inline double evaluate(const Point& p) const override {
+    return std::sqrt(kdtree_->sqdist(p)) - radius_;
+  }
+
+  inline bool is_outside(const Point& p, double radius) const override {
+    return this->evaluate(p) > radius;
+  }
+
+ private:
+  KDTree::Ptr kdtree_;
+  double radius_;
 };

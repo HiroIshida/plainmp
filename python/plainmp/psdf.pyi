@@ -54,3 +54,6 @@ class CylinderSDF(ClosedPrimitiveSDFBase):
 
 class SphereSDF(ClosedPrimitiveSDFBase):
     def __init__(self, radius: float, pose: Pose) -> None: ...
+
+class CloudSDF(PrimitiveSDFBase):
+    def __init__(self, points: np.ndarray, radius: float) -> None: ...

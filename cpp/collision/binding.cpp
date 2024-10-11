@@ -61,4 +61,11 @@ void bind_primitive_sdf(py::module& m) {
       .def("evaluate_batch", &SphereSDF::evaluate_batch)
       .def("evaluate", &SphereSDF::evaluate)
       .def("is_outside", &SphereSDF::is_outside);
+
+  py::class_<CloudSDF, CloudSDF::Ptr, PrimitiveSDFBase>(m_psdf, "CloudSDF",
+                                                        py::module_local())
+      .def(py::init<std::vector<Eigen::Vector3d>&, double>())
+      .def("evaluate_batch", &CloudSDF::evaluate_batch)
+      .def("evaluate", &CloudSDF::evaluate)
+      .def("is_outside", &CloudSDF::is_outside);
 }
