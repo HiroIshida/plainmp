@@ -1,5 +1,7 @@
+#include <optional>
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 
 #include "ompl_thin_wrap.hpp"
@@ -42,7 +44,7 @@ void bind_ompl(py::module &m)
                     std::string,
                     std::optional<double>>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
-      .def("solve", &OMPLPlanner::solve);
+      .def("solve", &OMPLPlanner::solve, py::arg("start"), py::arg("goal"), py::arg("simplify"), py::arg("timeout") = py::none());
 
   // py::class_<LightningDBWrap>(m, "_LightningDB")
   //     .def(py::init<size_t>())
@@ -83,7 +85,7 @@ void bind_ompl(py::module &m)
                     size_t,
                     std::vector<double>>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
-      .def("solve", &ERTConnectPlanner::solve)
+      .def("solve", &ERTConnectPlanner::solve, py::arg("start"), py::arg("goal"), py::arg("simplify"), py::arg("timeout") = py::none())
       .def("set_parameters", &ERTConnectPlanner::set_parameters)
       .def("set_heuristic", &ERTConnectPlanner::set_heuristic);
 }

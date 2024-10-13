@@ -224,7 +224,8 @@ struct PlannerBase {
   }
   std::optional<std::vector<std::vector<double>>> solve(const std::vector<double>& start,
                                                         const std::vector<double>& goal,
-                                                        bool simplify)
+                                                        bool simplify,
+                                                        std::optional<double> timeout)
   {
     setup_->clear();
     csi_->resetCount();
@@ -243,7 +244,11 @@ struct PlannerBase {
     setup_->setStartAndGoalStates(sstart, sgoal);
 
     std::function<bool()> fn = [this]() { return csi_->is_terminatable(); };
-    const auto result = setup_->solve(fn);
+    ob::PlannerTerminationCondition ptc = ob::PlannerTerminationCondition(fn);
+    if(timeout){ // override
+        ptc = ob::timedPlannerTerminationCondition(*timeout);
+    }
+    const auto result = setup_->solve(ptc);
     if (not result) {
       return {};
     }
@@ -252,7 +257,7 @@ struct PlannerBase {
       return {};
     }
     if (simplify) {
-      setup_->simplifySolution(fn);
+      setup_->simplifySolution(ptc);
     }
     const auto p = setup_->getSolutionPath().as<og::PathGeometric>();
     auto& states = p->getStates();

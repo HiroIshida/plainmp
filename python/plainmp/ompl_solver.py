@@ -33,6 +33,7 @@ class OMPLSolverConfig:
     algorithm_range: Optional[float] = 2.0
     simplify: bool = False
     ertconnect_eps: float = 5.0  # used only when ertconnect is selected
+    timeout: Optional[float] = None
 
 
 class TerminateState(Enum):
@@ -127,7 +128,7 @@ class OMPLSolver:
                 planner.solve(problem.start, q_goal, self.config.simplify)
             print(f"ms per solve() = {(time.time() - ts) / 10000 * 1000:.3f} ms")
 
-        result = planner.solve(problem.start, q_goal, self.config.simplify)
+        result = planner.solve(problem.start, q_goal, self.config.simplify, self.config.timeout)
         if result is None:
             return OMPLSolverResult(None, None, -1, TerminateState.FAIL_PLANNING)
         else:
