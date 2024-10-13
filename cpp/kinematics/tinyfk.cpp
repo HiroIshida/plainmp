@@ -5,9 +5,6 @@
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
-#define VCL_NAMESPACE vcl
-#include <vectorclass.h>
-#include <vectormath_lib.h>
 
 namespace tinyfk {
 
