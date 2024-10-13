@@ -95,11 +95,15 @@ def solve_ik(
             options=slsqp_option,
         )
 
-        # check additional success condition
+        # the following is to ignore local minima
+        solved = True
         if eq_const is not None:
-            is_ik_actually_solved = res.fun < config.acceptable_error  # ensure not in local optima
-            if is_ik_actually_solved:
-                return IKResult(res.x, time.time() - ts, res.success, i + 1)
-        # if not solved, try again without any initial guess
+            if res.fun > config.acceptable_error:
+                solved = False
+        if ineq_const is not None:
+            if not ineq_const.is_valid(res.x):
+                solved = False
+        if solved:
+            return IKResult(res.x, time.time() - ts, res.success, i + 1)
         q_seed = np.random.uniform(lb, ub)
     return IKResult(np.empty([0]), time.time() - ts, False, max_trial)
