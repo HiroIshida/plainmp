@@ -1,3 +1,4 @@
+import signal
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -91,12 +92,26 @@ class OMPLSolver:
     def solve(
         self, problem: Problem, guess: Optional[Trajectory] = None, bench: bool = False
     ) -> OMPLSolverResult:
+
         ts = time.time()
         assert problem.global_eq_const is None, "not supported by OMPL"
         if isinstance(problem.goal_const, np.ndarray):
             q_goal = problem.goal_const
         else:
-            ik_ret = self.solve_ik(problem, guess)
+            if self.config.timeout is not None:
+
+                def handler(sig, frame):
+                    raise TimeoutError
+
+                signal.signal(signal.SIGALRM, handler)
+                signal.setitimer(signal.ITIMER_REAL, self.config.timeout)
+            try:
+                ik_ret = self.solve_ik(problem, guess)
+            except TimeoutError:
+                return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
+            if self.config.timeout is not None:
+                signal.setitimer(signal.ITIMER_REAL, 0)
+
             if not ik_ret.success:
                 return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
             q_goal = ik_ret.q
@@ -128,7 +143,10 @@ class OMPLSolver:
                 planner.solve(problem.start, q_goal, self.config.simplify)
             print(f"ms per solve() = {(time.time() - ts) / 10000 * 1000:.3f} ms")
 
-        result = planner.solve(problem.start, q_goal, self.config.simplify, self.config.timeout)
+        timeout_remain = (
+            None if (self.config.timeout is None) else self.config.timeout - (time.time() - ts)
+        )
+        result = planner.solve(problem.start, q_goal, self.config.simplify, timeout_remain)
         if result is None:
             return OMPLSolverResult(None, None, -1, TerminateState.FAIL_PLANNING)
         else:

@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pytest
 from skrobot.model.primitives import Box
@@ -44,3 +46,24 @@ def test_ompl_solver(goal_is_pose: bool):
             assert cst.is_valid(q)
         assert ret_replan.n_call < ret.n_call  # re-planning should be faster
         print(f"n_call: {ret.n_call} -> {ret_replan.n_call}")
+
+
+def test_timeout():
+    fetch = FetchSpec()
+    cst = fetch.create_collision_const()
+    obstacle = Box([0.1, 0.1, 0.1], with_sdf=True)
+    obstacle.translate([0.7, 0.0, 0.9])  # overlap with the goal to make problem infeasible
+    sdf = UnionSDF([sksdf_to_cppsdf(obstacle.sdf)], False)
+    cst.set_sdf(sdf)
+    lb, ub = fetch.angle_bounds()
+    start = np.array([0.0, 1.31999949, 1.40000015, -0.20000077, 1.71999929, 0.0, 1.6600001, 0.0])
+    goal_cst = fetch.create_gripper_pose_const(np.array([0.7, 0.0, 0.9, 0.0, 0.0, 0.0]))
+    msbox = np.array([0.05, 0.05, 0.05, 0.1, 0.1, 0.1, 0.2, 0.2])
+    problem = Problem(start, lb, ub, goal_cst, cst, None, msbox)
+    conf = OMPLSolverConfig(timeout=3.0, n_max_ik_trial=10000000000, n_max_call=10000000000)
+    solver = OMPLSolver(conf)
+    ts = time.time()
+    ret = solver.solve(problem)
+    elapsed = time.time() - ts
+    assert 2.9 < elapsed < 3.1
+    assert ret.traj is None
