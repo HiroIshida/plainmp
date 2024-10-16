@@ -4,15 +4,18 @@ import numpy as np
 import pytest
 from skrobot.model.primitives import Box
 
-from plainmp.ompl_solver import OMPLSolver, OMPLSolverConfig
+from plainmp.ompl_solver import Algorithm, OMPLSolver, OMPLSolverConfig
 from plainmp.problem import Problem
 from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import FetchSpec
 from plainmp.utils import sksdf_to_cppsdf
 
+algos = (Algorithm.RRTConnect, Algorithm.KPIECE1, Algorithm.BITstarStop)
+test_conditions = [(True, algo) for algo in algos] + [(False, algo) for algo in algos]
 
-@pytest.mark.parametrize("goal_is_pose", [True, False])
-def test_ompl_solver(goal_is_pose: bool):
+
+@pytest.mark.parametrize("goal_is_pose,algo", test_conditions)
+def test_ompl_solver(goal_is_pose: bool, algo: Algorithm):
     fetch = FetchSpec()
     cst = fetch.create_collision_const()
 
@@ -31,7 +34,7 @@ def test_ompl_solver(goal_is_pose: bool):
     problem = Problem(start, lb, ub, goal_cst, cst, None, msbox)
 
     for _ in range(20):
-        solver = OMPLSolver()
+        solver = OMPLSolver(OMPLSolverConfig(algorithm=algo))
         ret = solver.solve(problem)
         assert ret.traj is not None
 

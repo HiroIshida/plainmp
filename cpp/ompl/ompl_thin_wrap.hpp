@@ -13,6 +13,7 @@
 #include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/informedtrees/BITstar.h>
 #include <ompl/tools/experience/ExperienceSetup.h>
 #include <ompl/tools/lightning/Lightning.h>
 #include <ompl/tools/lightning/LightningDB.h>
@@ -287,6 +288,12 @@ struct PlannerBase {
       return create_algorithm<og::RRTConnect>(space_info, range);
     } else if (name.compare("RRTstar") == 0) {
       return create_algorithm<og::RRTstar>(space_info, range);
+    } else if (name.compare("BITstar") == 0) {
+      return std::make_shared<og::BITstar>(space_info);
+    } else if (name.compare("BITstarStop") == 0) {
+      auto bit = std::make_shared<og::BITstar>(space_info);
+      bit->setStopOnSolnImprovement(true);
+      return bit;
     }
     throw std::runtime_error("algorithm " + name + " is not supported");
   }
