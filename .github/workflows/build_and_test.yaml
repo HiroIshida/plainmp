@@ -1,52 +1,70 @@
 name: build_and_test
 
 on:
-    push:
-        branches:
-            - master
-    pull_request:
-        branches:
-            - master
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Code
-              uses: actions/checkout@v2
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
-            - name: Set up Python 3.10
-              uses: actions/setup-python@v1
-              with:
-                python-version: 3.10.15
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.10.15
 
-            - name: update submodule
-              run: git submodule update --init --recursive
+      - name: Update Submodules
+        run: git submodule update --init --recursive
 
-            - name: install scikit-robot
-              run: |
-                sudo apt-get update
-                sudo apt-get install libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev
-                pip install scikit-robot
+      - name: Install scikit-robot
+        run: |
+          sudo apt-get update
+          sudo apt-get install libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev
+          pip install scikit-robot
 
-            - name: Install this package
-              run: |
-                  sudo apt-get install libeigen3-dev libboost-all-dev
-                  pip install scikit-build
-                  MAKEFLAGS="-j$(nproc)" pip install -e . -v
+      - name: Install This Package
+        run: |
+          sudo apt-get install libeigen3-dev libboost-all-dev
+          pip install scikit-build
+          MAKEFLAGS="-j$(nproc)" pip install -e . -v
 
-            - name: Test
-              run: |
-                pip install pytest
-                for i in {1..3}; do pytest python && break || echo "Test failed... retrying ($i)"; done
-              timeout-minutes: 5
+      - name: Test
+        run: |
+          pip install pytest
+          for i in {1..3}; do
+            if pytest python; then
+              exit 0
+            fi
+            echo "Test failed... retrying ($i)"
+          done
+          echo "All test attempts failed"
+          exit 1
+        timeout-minutes: 5
 
-            - name: Run examples
-              run: |
-                for i in {1..3}; do python3 example/fetch_ik.py && break || echo "fetch_ik.py failed... retrying ($i)"; done
-                for i in {1..3}; do python3 example/fetch_ik.py --pcloud && break || echo "fetch_ik.py with pcloud failed... retrying ($i)"; done
-                for i in {1..3}; do python3 example/fetch_plan.py && break || echo "fetch_plan.py failed... retrying ($i)"; done
-                for i in {1..3}; do python3 example/fetch_plan.py --pcloud && break || echo "fetch_plan.py with pcloud failed... retrying ($i)"; done
-                for i in {1..3}; do python3 example/humanoid_planning.py && break || echo "humanoid_planning.py failed... retrying ($i)"; done
-                for i in {1..3}; do python3 example/humanoid_lift_and_place_box.py && break || echo "humanoid_lift_and_place_box.py failed... retrying ($i)"; done
-              timeout-minutes: 10
+      - name: Run Examples
+        run: |
+          run_example() {
+            for i in {1..3}; do
+              if python3 "$1" $2; then
+                return 0
+              fi
+              echo "$1 failed... retrying ($i)"
+            done
+            echo "All attempts for $1 failed"
+            return 1
+          }
+
+          run_example "example/fetch_ik.py" || exit 1
+          run_example "example/fetch_ik.py" "--pcloud" || exit 1
+          run_example "example/fetch_plan.py" || exit 1
+          run_example "example/fetch_plan.py" "--pcloud" || exit 1
+          run_example "example/humanoid_planning.py" || exit 1
+          run_example "example/humanoid_lift_and_place_box.py" || exit 1
+        timeout-minutes: 10
