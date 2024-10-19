@@ -31,7 +31,29 @@ control_joint_names:
   - CHEST_JOINT0
   - CHEST_JOINT1
   - CHEST_JOINT2
-      
+
+end_effectors:
+  rarm_end_coords:
+    parent_link: RARM_LINK7
+    position: [0, 0, -0.220]
+    rpy: [0.0, 0.0, 1.57079633]
+  rarm_tip_coords:
+    parent_link: RARM_LINK7
+    position: [0, 0, -0.3]
+    rpy: [0.0, 0.0, 1.57079633]
+  larm_end_coords:
+    parent_link: LARM_LINK7
+    position: [0, 0, -0.220]
+    rpy: [0.0, 0.0, 1.57079633]
+  rleg_end_coords:
+    parent_link: RLEG_LINK5
+    position: [0, 0, -0.1]
+    rpy: [0.0, 0.0, 0.0]
+  lleg_end_coords:
+    parent_link: LLEG_LINK5
+    position: [0, 0, -0.1]
+    rpy: [0.0, 0.0, 0.0]
+
 collision_spheres:
   RLEG_LINK5:
     ignore_collision: false

@@ -9,12 +9,7 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import yaml
 from skrobot.coordinates import CascadedCoords, Coordinates
-from skrobot.coordinates.math import (
-    matrix2quaternion,
-    rotation_matrix,
-    rpy_angle,
-    wxyz2xyzw,
-)
+from skrobot.coordinates.math import matrix2quaternion, rpy_angle, wxyz2xyzw
 from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
 from skrobot.models.urdf import RobotModelFromURDF
@@ -87,11 +82,37 @@ class RobotSpec(ABC):
             if len(_loaded_kin) > (N_MAX_CACHE - 1):
                 _loaded_kin.popitem(last=False)
             _loaded_kin[self_id] = kin
+
+        # For each of the end effectors defined in the conf file
+        # Add it as a link to the kinematic chain if it is not present in the chain.
+        for name in self.conf_dict["end_effectors"].keys():
+            try:
+                # Pass if end effector link is already in the kinematic chain.
+                _loaded_kin[self_id].get_link_ids([name])
+            except ValueError:
+                # Add the unfound end effector link to the kinematic chain.
+                _loaded_kin[self_id].add_new_link(
+                    name,
+                    self.conf_dict["end_effectors"][name]["parent_link"],
+                    np.array(self.conf_dict["end_effectors"][name]["position"]),
+                    np.array(self.conf_dict["end_effectors"][name]["rpy"]),
+                )
         return _loaded_kin[self_id]
 
-    @abstractmethod
     def get_robot_model(self) -> RobotModel:
-        ...
+        model = load_urdf_model_using_cache(self.urdf_path)
+        # Add end effectors defined in conf to the robot model as CascadedCoords
+        for name in self.conf_dict["end_effectors"].keys():
+            parent_link = self.conf_dict["end_effectors"][name]["parent_link"]
+            pos = np.array(self.conf_dict["end_effectors"][name]["position"])
+            rpy = np.array(self.conf_dict["end_effectors"][name]["rpy"])
+            setattr(model, name, CascadedCoords(getattr(model, parent_link), name=name))
+            link = getattr(model, name)
+            link.rotate(rpy[0], "x")
+            link.rotate(rpy[1], "y")
+            link.rotate(rpy[2], "z")
+            link.translate(pos)
+        return model
 
     @property
     def urdf_path(self) -> Path:
@@ -177,6 +198,14 @@ class RobotSpec(ABC):
     def crate_pose_const_from_coords(
         self, link_names: List[str], link_poses: List[Coordinates], rot_types: List[RotType]
     ) -> LinkPoseCst:
+        print(
+            "\033[93m[Warning] crate_pose_const_from_coords is deprecated, please use create_pose_const_from_coords.\033[0m"
+        )
+        return self.create_pose_const_from_coords(link_names, link_poses, rot_types)
+
+    def create_pose_const_from_coords(
+        self, link_names: List[str], link_poses: List[Coordinates], rot_types: List[RotType]
+    ) -> LinkPoseCst:
         pose_list = []
         for co, rt in zip(link_poses, rot_types):
             pos = co.worldpos()
@@ -250,9 +279,6 @@ class FetchSpec(RobotSpec):
 
             Fetch()
 
-    def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
-        return load_urdf_model_using_cache(self.urdf_path)
-
     @property
     def control_joint_names(self) -> List[str]:
         return self.conf_dict["control_joint_names"]
@@ -322,51 +348,6 @@ class JaxonSpec(RobotSpec):
 
         if not self.urdf_path.exists():
             from robot_descriptions.jaxon_description import URDF_PATH  # noqa
-
-    def get_kin(self):
-        kin = super().get_kin()
-        # the below is a workaround.
-        try:
-            # this raise error is those links are not attached.
-            kin.get_link_ids(
-                ["rarm_end_coords", "larm_end_coords", "rleg_end_coords", "lleg_end_coords"]
-            )
-        except ValueError:
-            # so in the only first call of get_kin() the following code is executed.
-            matrix = rotation_matrix(np.pi * 0.5, [0, 0, 1.0])
-            rpy = np.flip(rpy_angle(matrix)[0])
-            kin.add_new_link("rarm_end_coords", "RARM_LINK7", np.array([0, 0, -0.220]), rpy, True)
-            kin.add_new_link("larm_end_coords", "LARM_LINK7", np.array([0, 0, -0.220]), rpy, True)
-            kin.add_new_link(
-                "rleg_end_coords", "RLEG_LINK5", np.array([0, 0, -0.1]), np.zeros(3), True
-            )
-            kin.add_new_link(
-                "lleg_end_coords", "LLEG_LINK5", np.array([0, 0, -0.1]), np.zeros(3), True
-            )
-        return kin
-
-    def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
-        matrix = rotation_matrix(np.pi * 0.5, [0, 0, 1.0])
-        model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
-
-        model.rarm_end_coords = CascadedCoords(model.RARM_LINK7, name="rarm_end_coords")
-        model.rarm_end_coords.translate([0, 0, -0.220])
-        model.rarm_end_coords.rotate_with_matrix(matrix, wrt="local")
-
-        model.rarm_tip_coords = CascadedCoords(model.RARM_LINK7, name="rarm_end_coords")
-        model.rarm_tip_coords.translate([0, 0, -0.3])
-        model.rarm_tip_coords.rotate_with_matrix(matrix, wrt="local")
-
-        model.larm_end_coords = CascadedCoords(model.LARM_LINK7, name="larm_end_coords")
-        model.larm_end_coords.translate([0, 0, -0.220])
-        model.larm_end_coords.rotate_with_matrix(matrix, wrt="local")
-
-        model.rleg_end_coords = CascadedCoords(model.RLEG_LINK5, name="rleg_end_coords")
-        model.rleg_end_coords.translate([0, 0, -0.1])
-
-        model.lleg_end_coords = CascadedCoords(model.LLEG_LINK5, name="lleg_end_coords")
-        model.lleg_end_coords.translate([0, 0, -0.1])
-        return model
 
     @property
     def control_joint_names(self) -> List[str]:

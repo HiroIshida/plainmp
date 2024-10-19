@@ -10,6 +10,12 @@ control_joint_names:
   - wrist_flex_joint
   - wrist_roll_joint
 
+end_effectors:
+  rarm_end_coords:
+    parent_link: gripper_link
+    position: [0, 0, 0]
+    rpy: [0.0, 0.0, 0.0]
+
 self_collision_pairs:
   - [head_pan_link,   upperarm_roll_link]
   - [head_pan_link,   elbow_flex_link]
