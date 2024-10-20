@@ -111,8 +111,9 @@ class OMPLSolver:
                 ik_ret = self.solve_ik(problem, guess)
             except TimeoutError:
                 return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
-            if self.config.timeout is not None:
-                signal.setitimer(signal.ITIMER_REAL, 0)
+            finally:
+                if self.config.timeout is not None:
+                    signal.setitimer(signal.ITIMER_REAL, 0)
 
             if not ik_ret.success:
                 return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
