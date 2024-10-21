@@ -28,6 +28,7 @@ class IKConfig:
     disp: bool = False
     n_max_eval: int = 200
     acceptable_error: float = 1e-6
+    timeout: float = 10.0
 
 
 @dataclass
@@ -52,10 +53,16 @@ def solve_ik(
     if config is None:
         config = IKConfig()
 
+    ts = time.time()  # adhoc
+
     def objective_fun(q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         vals, jac = eq_const.evaluate(q)
         f = vals.dot(vals)
         grad = 2 * vals.dot(jac)
+        if config.timeout is not None:
+            elapsed = time.time() - ts
+            if elapsed > config.timeout:
+                raise TimeoutError
         return f, grad
 
     f, jac = scipinize(objective_fun)

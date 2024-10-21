@@ -6,7 +6,7 @@ from typing import Optional, TypeVar
 
 import numpy as np
 
-from plainmp.ik import IKResult, solve_ik
+from plainmp.ik import IKConfig, IKResult, solve_ik
 from plainmp.problem import Problem
 from plainmp.trajectory import Trajectory
 
@@ -65,6 +65,10 @@ class OMPLSolver:
         self.config = config
 
     def solve_ik(self, problem: Problem, guess: Optional[Trajectory] = None) -> IKResult:
+        # IK is supposed to stop within the timeout but somehow it does not work well
+        # so we set...
+        config = IKConfig(timeout=self.config.timeout)
+
         if guess is not None:
             assert (
                 self.config.n_max_ik_trial == 1
@@ -77,6 +81,7 @@ class OMPLSolver:
                 problem.lb,
                 problem.ub,
                 q_seed=q_guess,
+                config=config,
             )
             return ret
         else:
@@ -86,6 +91,7 @@ class OMPLSolver:
                 problem.lb,
                 problem.ub,
                 max_trial=self.config.n_max_ik_trial,
+                config=config,
             )
             if ret.success:
                 return ret
