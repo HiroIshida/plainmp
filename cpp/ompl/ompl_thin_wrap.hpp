@@ -69,14 +69,38 @@ using GoalSamplerFn = std::function<std::vector<double>()>;
 class CustomGoalSamplableRegion : public ob::GoalSampleableRegion {
  public:
   using Ptr = std::shared_ptr<CustomGoalSamplableRegion>;
-  using ob::GoalSampleableRegion::GoalSampleableRegion;
-
-  void setSampler(GoalSamplerFn sampler) { sampler_ = sampler; }
+  CustomGoalSamplableRegion(
+      const ob::SpaceInformationPtr& si,
+      const GoalSamplerFn& sampler,
+      std::optional<size_t> max_sample_count = std::nullopt)
+      : ob::GoalSampleableRegion(si),
+        sampler_(sampler),
+        max_sample_count_(max_sample_count),
+        sample_count_(0),
+        round_robin_idx_(0) {
+    if (max_sample_count_) {
+      size_t n_dof = si->getStateSpace()->getDimension();
+      past_samples_ = std::vector<double>(n_dof * *max_sample_count_);
+    }
+  }
 
   void sampleGoal(ob::State* st) const override {
-    std::vector<double> vec = sampler_();
-    auto rs = st->as<ob::RealVectorStateSpace::StateType>();
-    std::copy(vec.begin(), vec.end(), rs->values);
+    size_t n_dof = si_->getStateSpace()->getDimension();
+    if (max_sample_count_ && sample_count_ >= *max_sample_count_) {
+      const double* begin = past_samples_.data() + n_dof * round_robin_idx_;
+      std::copy(begin, begin + n_dof,
+                st->as<ob::RealVectorStateSpace::StateType>()->values);
+      round_robin_idx_ = (round_robin_idx_ + 1) % *max_sample_count_;
+    } else {
+      std::vector<double> vec = sampler_();
+      auto rs = st->as<ob::RealVectorStateSpace::StateType>();
+      std::copy(vec.begin(), vec.end(), rs->values);
+      if (max_sample_count_) {
+        std::copy(vec.begin(), vec.end(),
+                  past_samples_.data() + n_dof * sample_count_);
+      }
+      sample_count_++;
+    }
   }
 
   unsigned int maxSampleCount() const override {
@@ -92,6 +116,10 @@ class CustomGoalSamplableRegion : public ob::GoalSampleableRegion {
 
  private:
   GoalSamplerFn sampler_;
+  std::optional<size_t> max_sample_count_;
+  mutable size_t sample_count_;
+  mutable std::vector<double> past_samples_;  // note: contiguous memory
+  mutable size_t round_robin_idx_;
 };
 
 template <typename T>
@@ -261,7 +289,8 @@ struct PlannerBase {
       const std::optional<std::vector<double>>& goal,
       bool simplify,
       std::optional<double> timeout,
-      const std::optional<GoalSamplerFn>& goal_sampler) {
+      const std::optional<GoalSamplerFn>& goal_sampler,
+      std::optional<size_t> max_goal_sample_count = std::nullopt) {
     setup_->clear();
     csi_->resetCount();
 
@@ -277,8 +306,8 @@ struct PlannerBase {
       throw std::runtime_error("goal and goal_sampler should be exclusive");
     }
     if (goal_sampler) {
-      auto goal_region = std::make_shared<CustomGoalSamplableRegion>(csi_->si_);
-      goal_region->setSampler(*goal_sampler);
+      auto goal_region = std::make_shared<CustomGoalSamplableRegion>(
+          csi_->si_, *goal_sampler, max_goal_sample_count);
       setup_->setGoal(goal_region);
     } else {
       Eigen::VectorXd vec_goal =

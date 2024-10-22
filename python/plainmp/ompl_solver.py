@@ -43,6 +43,7 @@ class OMPLSolverConfig:
     use_goal_sampler: bool = (
         False  # use goal sampler in unidirectional planner. Use only when the goal is not a point
     )
+    max_goal_sampler_count: int = 100
 
 
 class TerminateState(Enum):
@@ -172,7 +173,12 @@ class OMPLSolver:
             None if (self.config.timeout is None) else self.config.timeout - (time.time() - ts)
         )
         result = planner.solve(
-            problem.start, q_goal, self.config.simplify, timeout_remain, goal_sampler
+            problem.start,
+            q_goal,
+            self.config.simplify,
+            timeout_remain,
+            goal_sampler,
+            self.config.max_goal_sampler_count,
         )
         if result is None:
             return OMPLSolverResult(None, None, -1, TerminateState.FAIL_PLANNING)

@@ -41,7 +41,8 @@ void bind_ompl(py::module& m) {
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("solve", &OMPLPlanner::solve, py::arg("start"), py::arg("goal"),
            py::arg("simplify"), py::arg("timeout") = py::none(),
-           py::arg("goal_sampler") = py::none());
+           py::arg("goal_sampler") = py::none(),
+           py::arg("max_goal_sample_count") = py::none());
 
   // py::class_<LightningDBWrap>(m, "_LightningDB")
   //     .def(py::init<size_t>())
@@ -83,7 +84,8 @@ void bind_ompl(py::module& m) {
       .def("solve", &ERTConnectPlanner::solve, py::arg("start"),
            py::arg("goal"), py::arg("simplify"),
            py::arg("timeout") = py::none(),
-           py::arg("goal_sampler") = py::none())
+           py::arg("goal_sampler") = py::none(),
+           py::arg("max_goal_sample_count") = py::none())
       .def("set_parameters", &ERTConnectPlanner::set_parameters)
       .def("set_heuristic", &ERTConnectPlanner::set_heuristic);
 }
