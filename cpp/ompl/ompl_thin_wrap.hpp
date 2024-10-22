@@ -8,9 +8,8 @@
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/experience/ERTConnect.h>
 #include <ompl/geometric/planners/kpiece/BKPIECE1.h>
-#include <ompl/geometric/planners/kpiece/KPIECE1.h>
-#include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
-#include <ompl/geometric/planners/rrt/RRT.h>
+// #include <ompl/geometric/planners/kpiece/KPIECE1.h>
+// #include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/geometric/planners/informedtrees/BITstar.h>
@@ -46,6 +45,7 @@
 #include "ompl/base/StateValidityChecker.h"
 #include "repair_planner.hpp"
 #include "constraint.hpp"
+#include "unidirectional_modified.hpp"
 
 #define STRING(str) #str
 #define ALLOCATE_ALGO(ALGO)                                   \
@@ -54,6 +54,7 @@
     return std::static_pointer_cast<ob::Planner>(algo);       \
   }
 
+namespace ocustom = ompl::custom;
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 namespace ot = ompl::tools;
@@ -62,6 +63,37 @@ namespace ot = ompl::tools;
 // pybind fail to convert numpy to eigen in callback case
 using ConstFn = std::function<std::vector<double>(std::vector<double>)>;
 using ConstJacFn = std::function<std::vector<std::vector<double>>(std::vector<double>)>;
+using GoalSamplerFn = std::function<std::vector<double>()>;
+
+class CustomGoalSamplableRegion : public ob::GoalSampleableRegion {
+    public:
+    using Ptr = std::shared_ptr<CustomGoalSamplableRegion>;
+    using ob::GoalSampleableRegion::GoalSampleableRegion;
+
+    void setSampler(GoalSamplerFn sampler) {
+        sampler_ = sampler;
+    }
+
+    void sampleGoal(ob::State *st) const override {
+        std::vector<double> vec = sampler_();
+        auto rs = st->as<ob::RealVectorStateSpace::StateType>();
+        std::copy(vec.begin(), vec.end(), rs->values);
+    }
+
+    unsigned int maxSampleCount() const override {
+        return std::numeric_limits<unsigned int>::max();
+    }
+
+    double distanceGoal(const ob::State *st) const override {
+        // NOTE: distnace goal is 0.0 because we assume that
+        // the sample solve the collision free IK with joint limit
+        // in python side and the goal is the solution
+        return 0.0;
+    }
+
+    private:
+    GoalSamplerFn sampler_;
+};
 
 template <typename T>
 std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si, std::optional<double> range)
@@ -224,25 +256,35 @@ struct PlannerBase {
     setup_->setStateValidityChecker([this](const ob::State* s) { return this->csi_->is_valid(s); });
   }
   std::optional<std::vector<std::vector<double>>> solve(const std::vector<double>& start,
-                                                        const std::vector<double>& goal,
+                                                        const std::optional<std::vector<double>>& goal,
                                                         bool simplify,
-                                                        std::optional<double> timeout)
+                                                        std::optional<double> timeout,
+                                                        const std::optional<GoalSamplerFn>& goal_sampler)
   {
     setup_->clear();
     csi_->resetCount();
 
     // args shold be eigen maybe?
     Eigen::VectorXd vec_start = Eigen::Map<const Eigen::VectorXd>(&start[0], start.size());
-    Eigen::VectorXd vec_goal = Eigen::Map<const Eigen::VectorXd>(&goal[0], goal.size());
-
     ob::ScopedState<> sstart(csi_->si_->getStateSpace());
-    ob::ScopedState<> sgoal(csi_->si_->getStateSpace());
-
     auto rstart = sstart->as<ob::RealVectorStateSpace::StateType>();
-    auto rgoal = sgoal->as<ob::RealVectorStateSpace::StateType>();
     std::copy(start.begin(), start.end(), rstart->values);
-    std::copy(goal.begin(), goal.end(), rgoal->values);
-    setup_->setStartAndGoalStates(sstart, sgoal);
+    setup_->setStartState(sstart);
+
+    if (goal.has_value() == goal_sampler.has_value()) { // xor
+      throw std::runtime_error("goal and goal_sampler should be exclusive");
+    }
+    if(goal_sampler) {
+        auto goal_region = std::make_shared<CustomGoalSamplableRegion>(csi_->si_);
+        goal_region->setSampler(*goal_sampler);
+        setup_->setGoal(goal_region);
+    }else{
+        Eigen::VectorXd vec_goal = Eigen::Map<const Eigen::VectorXd>(&goal->at(0), goal->size());
+        ob::ScopedState<> sgoal(csi_->si_->getStateSpace());
+        auto rgoal = sgoal->as<ob::RealVectorStateSpace::StateType>();
+        std::copy(goal->begin(), goal->end(), rgoal->values);
+        setup_->setGoalState(sgoal);
+    }
 
     std::function<bool()> fn = [this]() { return csi_->is_terminatable(); };
     ob::PlannerTerminationCondition ptc = ob::PlannerTerminationCondition(fn);
@@ -281,9 +323,9 @@ struct PlannerBase {
     if (name.compare("BKPIECE1") == 0) {
       return create_algorithm<og::BKPIECE1>(space_info, range);
     } else if (name.compare("KPIECE1") == 0) {
-      return create_algorithm<og::KPIECE1>(space_info, range);
+      return create_algorithm<ocustom::KPIECE1Modified>(space_info, range);
     } else if (name.compare("RRT") == 0) {
-      return create_algorithm<og::RRT>(space_info, range);
+      return create_algorithm<ocustom::RRTModified>(space_info, range);
     } else if (name.compare("RRTConnect") == 0) {
       return create_algorithm<og::RRTConnect>(space_info, range);
     } else if (name.compare("RRTstar") == 0) {

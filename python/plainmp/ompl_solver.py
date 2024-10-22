@@ -27,16 +27,22 @@ class Algorithm(Enum):
     BITstar = "BITstar"
     BITstarStop = "BITstarStop"  # stop after first solution
 
+    def is_unidirectional(self) -> bool:
+        return self in [Algorithm.RRT, Algorithm.KPIECE1, Algorithm.LBKPIECE1]
+
 
 @dataclass
 class OMPLSolverConfig:
-    n_max_call: int = 100000
+    n_max_call: int = 1000000
     n_max_ik_trial: int = 100
     algorithm: Algorithm = Algorithm.RRTConnect
     algorithm_range: Optional[float] = 2.0
     simplify: bool = False
     ertconnect_eps: float = 5.0  # used only when ertconnect is selected
     timeout: Optional[float] = None
+    use_goal_sampler: bool = (
+        False  # use goal sampler in unidirectional planner. Use only when the goal is not a point
+    )
 
 
 class TerminateState(Enum):
@@ -103,6 +109,17 @@ class OMPLSolver:
         assert problem.global_eq_const is None, "not supported by OMPL"
         if isinstance(problem.goal_const, np.ndarray):
             q_goal = problem.goal_const
+            goal_sampler = None
+        elif self.config.use_goal_sampler:
+            assert (
+                self.config.algorithm.is_unidirectional()
+            ), "goal sampler is used only for unidirectional planner"
+            assert guess is None, "goal sampler is used only when guess is None"
+            q_goal = None
+
+            def goal_sampler():
+                return self.solve_ik(problem).q
+
         else:
             if self.config.timeout is not None:
 
@@ -122,6 +139,7 @@ class OMPLSolver:
             if not ik_ret.success:
                 return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
             q_goal = ik_ret.q
+            goal_sampler = None
 
         if guess is not None:
             planner = ERTConnectPlanner(
@@ -153,7 +171,9 @@ class OMPLSolver:
         timeout_remain = (
             None if (self.config.timeout is None) else self.config.timeout - (time.time() - ts)
         )
-        result = planner.solve(problem.start, q_goal, self.config.simplify, timeout_remain)
+        result = planner.solve(
+            problem.start, q_goal, self.config.simplify, timeout_remain, goal_sampler
+        )
         if result is None:
             return OMPLSolverResult(None, None, -1, TerminateState.FAIL_PLANNING)
         else:

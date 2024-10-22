@@ -11,11 +11,13 @@ from plainmp.robot_spec import FetchSpec
 from plainmp.utils import sksdf_to_cppsdf
 
 algos = (Algorithm.RRTConnect, Algorithm.KPIECE1, Algorithm.BITstarStop)
-test_conditions = [(True, algo) for algo in algos] + [(False, algo) for algo in algos]
+test_conditions = [(True, algo, False) for algo in algos] + [(False, algo, False) for algo in algos]
+test_conditions.append((True, Algorithm.KPIECE1, True))
+test_conditions.append((True, Algorithm.RRT, True))
 
 
-@pytest.mark.parametrize("goal_is_pose,algo", test_conditions)
-def test_ompl_solver(goal_is_pose: bool, algo: Algorithm):
+@pytest.mark.parametrize("goal_is_pose,algo,use_goal_sampler", test_conditions)
+def test_ompl_solver(goal_is_pose: bool, algo: Algorithm, use_goal_sampler: bool):
     fetch = FetchSpec()
     cst = fetch.create_collision_const()
 
@@ -32,9 +34,10 @@ def test_ompl_solver(goal_is_pose: bool, algo: Algorithm):
         goal_cst = np.array([0.386, 0.20565, 1.41370, 0.30791, -1.82230, 0.24521, 0.41718, 6.01064])
     msbox = np.array([0.05, 0.05, 0.05, 0.1, 0.1, 0.1, 0.2, 0.2])
     problem = Problem(start, lb, ub, goal_cst, cst, None, msbox)
+    config = OMPLSolverConfig(algorithm=algo, use_goal_sampler=use_goal_sampler)
 
     for _ in range(20):
-        solver = OMPLSolver(OMPLSolverConfig(algorithm=algo))
+        solver = OMPLSolver(config)
         ret = solver.solve(problem)
         assert ret.traj is not None
 
