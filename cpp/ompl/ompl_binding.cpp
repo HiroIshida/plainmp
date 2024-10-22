@@ -1,17 +1,16 @@
-#include <optional>
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
+#include <optional>
 
-#include "ompl_thin_wrap.hpp"
 #include "constraint.hpp"
 #include "ompl_binding.hpp"
+#include "ompl_thin_wrap.hpp"
 
 namespace py = pybind11;
 
-void bind_ompl(py::module &m)
-{
+void bind_ompl(py::module& m) {
   auto ompl_m = m.def_submodule("ompl");
   ompl_m.def("set_random_seed", &setGlobalSeed);
   ompl_m.def("set_log_level_none", &setLogLevelNone);
@@ -36,20 +35,13 @@ void bind_ompl(py::module &m)
   //     .def("solve", &ConstrainedPlanner::solve);
 
   py::class_<OMPLPlanner>(ompl_m, "OMPLPlanner", py::module_local())
-      .def(py::init<std::vector<double>&,
-                    std::vector<double>&,
-                    cst::IneqConstraintBase::Ptr,
-                    size_t,
-                    std::vector<double>,
-                    std::string,
-                    std::optional<double>>())
+      .def(py::init<std::vector<double>&, std::vector<double>&,
+                    cst::IneqConstraintBase::Ptr, size_t, std::vector<double>,
+                    std::string, std::optional<double>>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
-      .def("solve", &OMPLPlanner::solve,
-          py::arg("start"),
-          py::arg("goal"),
-          py::arg("simplify"),
-          py::arg("timeout") = py::none(),
-          py::arg("goal_sampler") = py::none());
+      .def("solve", &OMPLPlanner::solve, py::arg("start"), py::arg("goal"),
+           py::arg("simplify"), py::arg("timeout") = py::none(),
+           py::arg("goal_sampler") = py::none());
 
   // py::class_<LightningDBWrap>(m, "_LightningDB")
   //     .def(py::init<size_t>())
@@ -84,13 +76,14 @@ void bind_ompl(py::module &m)
   //     .def("set_heuristic", &LightningRepairPlanner::set_heuristic);
 
   py::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner", py::module_local())
-      .def(py::init<std::vector<double>,
-                    std::vector<double>,
-                    cst::IneqConstraintBase::Ptr,
-                    size_t,
-                    std::vector<double>>())
+      .def(
+          py::init<std::vector<double>, std::vector<double>,
+                   cst::IneqConstraintBase::Ptr, size_t, std::vector<double>>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
-      .def("solve", &ERTConnectPlanner::solve, py::arg("start"), py::arg("goal"), py::arg("simplify"), py::arg("timeout") = py::none(), py::arg("goal_sampler") = py::none())
+      .def("solve", &ERTConnectPlanner::solve, py::arg("start"),
+           py::arg("goal"), py::arg("simplify"),
+           py::arg("timeout") = py::none(),
+           py::arg("goal_sampler") = py::none())
       .def("set_parameters", &ERTConnectPlanner::set_parameters)
       .def("set_heuristic", &ERTConnectPlanner::set_heuristic);
 }

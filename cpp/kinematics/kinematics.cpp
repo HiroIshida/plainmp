@@ -1,30 +1,38 @@
-#include "tinyfk.hpp"
-#include "urdf_model/pose.h"
 #include <Eigen/Dense>
 #include <cmath>
 #include <stack>
 #include <stdexcept>
+#include "tinyfk.hpp"
+#include "urdf_model/pose.h"
 
 namespace tinyfk {
 
 template <typename Scalar>
-Eigen::Matrix<Scalar, 3, 1> rpy_derivative(const Eigen::Matrix<Scalar, 3, 1> &rpy, const Eigen::Matrix<Scalar, 3, 1> &axis) {
+Eigen::Matrix<Scalar, 3, 1> rpy_derivative(
+    const Eigen::Matrix<Scalar, 3, 1>& rpy,
+    const Eigen::Matrix<Scalar, 3, 1>& axis) {
   Eigen::Matrix<Scalar, 3, 1> drpy_dt;
   Scalar a2 = -rpy.y();
   Scalar a3 = -rpy.z();
-  drpy_dt.x() = cos(a3) / cos(a2) * axis.x ()- sin(a3) / cos(a2) * axis.y();
+  drpy_dt.x() = cos(a3) / cos(a2) * axis.x() - sin(a3) / cos(a2) * axis.y();
   drpy_dt.y() = sin(a3) * axis.x() + cos(a3) * axis.y();
   drpy_dt.z() = -cos(a3) * sin(a2) / cos(a2) * axis.x() +
-              sin(a3) * sin(a2) / cos(a2) * axis.y() + axis.z();
+                sin(a3) * sin(a2) / cos(a2) * axis.y() + axis.z();
   return drpy_dt;
 }
 
 template <typename Scalar>
-Eigen::Quaternion<Scalar> q_derivative(const Eigen::Quaternion<Scalar> &q, const Eigen::Matrix<Scalar, 3, 1> &omega) {
-  const Scalar dxdt = 0.5 * (omega.z() * q.y() - omega.y() * q.z() + omega.x() * q.w());
-  const Scalar dydt = 0.5 * (-omega.z() * q.x() + 0 * q.y() + omega.x() * q.z() + omega.y() * q.w());
-  const Scalar dzdt = 0.5 * (omega.y() * q.x() - omega.x() * q.y() + 0 * q.z() + omega.z() * q.w());
-  const Scalar dwdt = 0.5 * (-omega.x() * q.x() - omega.y() * q.y() - omega.z() * q.z() + 0 * q.w());
+Eigen::Quaternion<Scalar> q_derivative(
+    const Eigen::Quaternion<Scalar>& q,
+    const Eigen::Matrix<Scalar, 3, 1>& omega) {
+  const Scalar dxdt =
+      0.5 * (omega.z() * q.y() - omega.y() * q.z() + omega.x() * q.w());
+  const Scalar dydt = 0.5 * (-omega.z() * q.x() + 0 * q.y() +
+                             omega.x() * q.z() + omega.y() * q.w());
+  const Scalar dzdt = 0.5 * (omega.y() * q.x() - omega.x() * q.y() + 0 * q.z() +
+                             omega.z() * q.w());
+  const Scalar dwdt = 0.5 * (-omega.x() * q.x() - omega.y() * q.y() -
+                             omega.z() * q.z() + 0 * q.w());
   return Eigen::Quaternion<Scalar>(-dwdt, dxdt, dydt, dzdt);
 }
 
@@ -32,14 +40,13 @@ template class KinematicModel<double>;
 template class KinematicModel<float>;
 
 template <typename Scalar>
-void KinematicModel<Scalar>::build_cache_until(size_t link_id) const
-{
-  if(link_consider_rotation_[link_id]) {
+void KinematicModel<Scalar>::build_cache_until(size_t link_id) const {
+  if (link_consider_rotation_[link_id]) {
     this->build_cache_until_inner(link_id);
   } else {
     // TODO: we should remove this!
     auto plink_id = link_parent_link_ids_[link_id];
-    if(!transform_cache_.is_cached(plink_id)) {
+    if (!transform_cache_.is_cached(plink_id)) {
       build_cache_until_inner(plink_id);
     }
     Transform& tf_rlink_to_plink = transform_cache_.data_[plink_id];
@@ -57,7 +64,7 @@ template <typename Scalar>
 void KinematicModel<Scalar>::build_cache_until_inner(size_t hlink_id) const {
   std::array<size_t, 64> id_stack_like;  // 64 is enough for almost all cases
   size_t idx = 0;
-  while(!transform_cache_.is_cached(hlink_id)) {
+  while (!transform_cache_.is_cached(hlink_id)) {
     id_stack_like[idx++] = hlink_id;
     hlink_id = link_parent_link_ids_[hlink_id];
   }
@@ -66,7 +73,8 @@ void KinematicModel<Scalar>::build_cache_until_inner(size_t hlink_id) const {
   // Transform tf_rlink_to_plink = transform_cache_.data_[hlink_id];
   // while(idx > 0) {
   //   size_t hid = id_stack_like[--idx];
-  //   Transform tf_rlink_to_hlink = tf_rlink_to_plink.quat_identity_sensitive_mul(tf_plink_to_hlink_cache_[hid]);
+  //   Transform tf_rlink_to_hlink =
+  //   tf_rlink_to_plink.quat_identity_sensitive_mul(tf_plink_to_hlink_cache_[hid]);
   //   transform_cache_.set_cache(hid, tf_rlink_to_hlink);
   //   tf_rlink_to_plink = std::move(tf_rlink_to_hlink);
   // }
@@ -74,10 +82,11 @@ void KinematicModel<Scalar>::build_cache_until_inner(size_t hlink_id) const {
 
   // >> LESS STACK ALLOCATION CODE
   size_t hid = hlink_id;
-  while(idx > 0) {
+  while (idx > 0) {
     size_t hid_prev = hid;
     hid = id_stack_like[--idx];
-    transform_cache_.data_[hid_prev].quat_identity_sensitive_mult_and_assign(tf_plink_to_hlink_cache_[hid], transform_cache_.data_[hid]);
+    transform_cache_.data_[hid_prev].quat_identity_sensitive_mult_and_assign(
+        tf_plink_to_hlink_cache_[hid], transform_cache_.data_[hid]);
     transform_cache_.cache_predicate_vector_[hid] = true;
   }
 }
@@ -85,15 +94,16 @@ void KinematicModel<Scalar>::build_cache_until_inner(size_t hlink_id) const {
 template <typename Scalar>
 typename KinematicModel<Scalar>::MatrixDynamic
 KinematicModel<Scalar>::get_jacobian(size_t elink_id,
-                             const std::vector<size_t> &joint_ids,
-                             RotationType rot_type, bool with_base) {
+                                     const std::vector<size_t>& joint_ids,
+                                     RotationType rot_type,
+                                     bool with_base) {
   const size_t dim_jacobi = 3 + (rot_type == RotationType::RPY) * 3 +
                             (rot_type == RotationType::XYZW) * 4;
   const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
 
   const auto& tf_rlink_to_elink = get_link_pose(elink_id);
-  auto &epos = tf_rlink_to_elink.trans();
-  auto &erot = tf_rlink_to_elink.quat();
+  auto& epos = tf_rlink_to_elink.trans();
+  auto& erot = tf_rlink_to_elink.quat();
 
   Vector3 erpy;
   Quat erot_inverse;
@@ -115,13 +125,13 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
       auto& joint_axis = joint_axes_[jid];
       const auto& tf_rlink_to_clink = get_link_pose(clink_id);
 
-      auto &crot = tf_rlink_to_clink.quat();
-      auto &&world_axis = crot * joint_axis; // axis w.r.t root link
+      auto& crot = tf_rlink_to_clink.quat();
+      auto&& world_axis = crot * joint_axis;  // axis w.r.t root link
       Vector3 dpos;
       if (jtype == urdf::Joint::PRISMATIC) {
         dpos = world_axis;
-      } else { // revolute or continuous
-        auto &cpos = tf_rlink_to_clink.trans();
+      } else {  // revolute or continuous
+        auto& cpos = tf_rlink_to_clink.trans();
         auto vec_clink_to_elink = epos - cpos;
         dpos = world_axis.cross(vec_clink_to_elink);
       }
@@ -129,13 +139,12 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
       if (jtype == urdf::Joint::PRISMATIC) {
         // jacobian for rotation is all zero
       } else {
-
-        if (rot_type == RotationType::RPY) { // (compute rpy jacobian)
+        if (rot_type == RotationType::RPY) {  // (compute rpy jacobian)
           auto drpy_dt = rpy_derivative<Scalar>(erpy, world_axis);
           jacobian.template block<3, 1>(3, i) = drpy_dt;
         }
 
-        if (rot_type == RotationType::XYZW) { // (compute quat jacobian)
+        if (rot_type == RotationType::XYZW) {  // (compute quat jacobian)
           auto dq_dt = q_derivative<Scalar>(erot_inverse, world_axis);
           jacobian.template block<4, 1>(3, i) = dq_dt.coeffs();
         }
@@ -170,7 +179,8 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
 
       Transform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
       tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
-      Transform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
+      Transform tf_rlink_to_elink_tweaked =
+          tf_rlink_to_blink_tweaked * tf_blink_to_elink;
       auto pose_out = tf_rlink_to_elink_tweaked;
 
       const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
@@ -180,22 +190,23 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
         jacobian.template block<3, 1>(3, idx_col) = (erpy_tweaked - erpy) / eps;
       }
       if (rot_type == RotationType::XYZW) {
-        // jacobian.template block<4, 1>(3, idx_col) = (pose_out.q.coeffs() - erot).toEigen() / eps;
-        jacobian.template block<4, 1>(3, idx_col) = (pose_out.quat().coeffs() - erot.coeffs()) / eps;
+        // jacobian.template block<4, 1>(3, idx_col) = (pose_out.q.coeffs() -
+        // erot).toEigen() / eps;
+        jacobian.template block<4, 1>(3, idx_col) =
+            (pose_out.quat().coeffs() - erot.coeffs()) / eps;
       }
     }
   }
   return jacobian;
 }
 
-
 template <typename Scalar>
 typename KinematicModel<Scalar>::MatrixDynamic
 KinematicModel<Scalar>::get_attached_point_jacobian(
-        size_t plink_id,
-        Vector3 apoint_global_pos,
-        const std::vector<size_t>& joint_ids,
-        bool with_base){
+    size_t plink_id,
+    Vector3 apoint_global_pos,
+    const std::vector<size_t>& joint_ids,
+    bool with_base) {
   const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
   MatrixDynamic jacobian = MatrixDynamic::Zero(3, dim_dof);
 
@@ -207,14 +218,14 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
       auto clink_id = joint_child_link_ids_[jid];
       auto& joint_axis = joint_axes_[jid];
       const auto& tf_rlink_to_clink = get_link_pose(clink_id);
-      auto &crot = tf_rlink_to_clink.quat();
-      auto &&world_axis = crot * joint_axis; // axis w.r.t root link
+      auto& crot = tf_rlink_to_clink.quat();
+      auto&& world_axis = crot * joint_axis;  // axis w.r.t root link
 
       Vector3 dpos;
       if (jtype == urdf::Joint::PRISMATIC) {
         dpos = world_axis;
-      } else { // revolute or continuous
-        auto &cpos = tf_rlink_to_clink.trans();
+      } else {  // revolute or continuous
+        auto& cpos = tf_rlink_to_clink.trans();
         auto vec_clink_to_elink = apoint_global_pos - cpos;
         dpos = world_axis.cross(vec_clink_to_elink);
       }
@@ -252,7 +263,8 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
 
       Transform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
       tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
-      Transform tf_rlink_to_elink_tweaked = tf_rlink_to_blink_tweaked * tf_blink_to_elink;
+      Transform tf_rlink_to_elink_tweaked =
+          tf_rlink_to_blink_tweaked * tf_blink_to_elink;
       auto pose_out = tf_rlink_to_elink_tweaked;
 
       const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
@@ -263,13 +275,14 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
 }
 
 template <typename Scalar>
-typename KinematicModel<Scalar>::Vector3
-KinematicModel<Scalar>::get_com() {
+typename KinematicModel<Scalar>::Vector3 KinematicModel<Scalar>::get_com() {
   Vector3 com_average = Vector3::Zero();
   Scalar mass_total = 0.0;
   for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
     const auto& tf_base_to_link = get_link_pose(com_link_ids_[iter]);
-    const Vector3&& tf_base_to_com_trans = tf_base_to_link.trans() + tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
+    const Vector3&& tf_base_to_com_trans =
+        tf_base_to_link.trans() +
+        tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
     com_average += link_masses_[iter] * tf_base_to_com_trans;
     mass_total += link_masses_[iter];
   }
@@ -279,16 +292,19 @@ KinematicModel<Scalar>::get_com() {
 
 template <typename Scalar>
 typename KinematicModel<Scalar>::MatrixDynamic
-KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t> &joint_ids,
-                                 bool with_base) {
+KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t>& joint_ids,
+                                         bool with_base) {
   constexpr size_t jac_rank = 3;
   const size_t dim_dof = joint_ids.size() + with_base * 6;
   MatrixDynamic jac_average = MatrixDynamic::Zero(jac_rank, dim_dof);
   Scalar mass_total = 0.0;
   for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
     const auto& tf_base_to_link = get_link_pose(com_link_ids_[iter]);
-    const Vector3&& tf_base_to_com_trans = tf_base_to_link.trans() + tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
-    auto jac = this->get_attached_point_jacobian(com_link_ids_[iter], tf_base_to_com_trans, joint_ids, with_base);
+    const Vector3&& tf_base_to_com_trans =
+        tf_base_to_link.trans() +
+        tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
+    auto jac = this->get_attached_point_jacobian(
+        com_link_ids_[iter], tf_base_to_com_trans, joint_ids, with_base);
     mass_total += link_masses_[iter];
     jac_average += link_masses_[iter] * jac;
   }
@@ -296,5 +312,4 @@ KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t> &joint_ids,
   return jac_average;
 }
 
-
-}; // namespace tinyfk
+};  // namespace tinyfk

@@ -1,17 +1,19 @@
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 namespace tinyfk {
 
-template <class DataT> class SizedCache {
-public:
+template <class DataT>
+class SizedCache {
+ public:
   explicit SizedCache(size_t cache_size)
-      : cache_size_(cache_size), data_(std::vector<DataT>(cache_size)),
+      : cache_size_(cache_size),
+        data_(std::vector<DataT>(cache_size)),
         cache_predicate_vector_(std::vector<std::uint8_t>(cache_size, 0)) {}
 
   SizedCache() : SizedCache(0) {}
 
-  inline void set_cache(size_t id, const DataT &data) {
+  inline void set_cache(size_t id, const DataT& data) {
     cache_predicate_vector_[id] = 1;
     data_[id] = data;
   }
@@ -27,7 +29,10 @@ public:
     this->clear();
   }
 
-  inline void clear() { std::fill(cache_predicate_vector_.begin(), cache_predicate_vector_.end(), 0); }
+  inline void clear() {
+    std::fill(cache_predicate_vector_.begin(), cache_predicate_vector_.end(),
+              0);
+  }
 
   int cache_size_;
   std::vector<DataT> data_;
@@ -35,8 +40,9 @@ public:
   std::vector<std::uint8_t> cache_predicate_vector_;
 };
 
-template <class ElementT> class SizedStack {
-public:
+template <class ElementT>
+class SizedStack {
+ public:
   SizedStack() : SizedStack(0) {}
   SizedStack(size_t max_stack_size)
       : data_(std::vector<ElementT>(max_stack_size)), current_idx_(0) {}
@@ -44,21 +50,19 @@ public:
   inline size_t size() const { return current_idx_; }
   inline bool empty() const { return current_idx_ == 0; }
   inline void reset() { current_idx_ = 0; }
-  inline void push(const ElementT &elem) {
+  inline void push(const ElementT& elem) {
     data_[current_idx_] = elem;
     current_idx_++;
   }
-  inline ElementT &top() const {
-    return const_cast<ElementT &>(data_[current_idx_ - 1]);
+  inline ElementT& top() const {
+    return const_cast<ElementT&>(data_[current_idx_ - 1]);
   }
   inline void pop() { current_idx_--; }
-  void extend() {
-    data_.push_back(ElementT());
-  }
+  void extend() { data_.push_back(ElementT()); }
 
-private:
+ private:
   std::vector<ElementT> data_;
   size_t current_idx_;
 };
 
-} // namespace tinyfk
+}  // namespace tinyfk
