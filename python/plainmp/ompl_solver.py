@@ -70,9 +70,6 @@ class OMPLSolver:
         config = IKConfig(timeout=self.config.timeout)
 
         if guess is not None:
-            assert (
-                self.config.n_max_ik_trial == 1
-            ), "not supported. please configure n_max_ik_trial=1"
             # If guess is provided, use the last element of the trajectory as the initial guess
             q_guess = guess.numpy()[-1]
             ret = solve_ik(
@@ -81,6 +78,7 @@ class OMPLSolver:
                 problem.lb,
                 problem.ub,
                 q_seed=q_guess,
+                max_trial=self.config.n_max_ik_trial,
                 config=config,
             )
             return ret
