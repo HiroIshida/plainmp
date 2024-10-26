@@ -169,19 +169,16 @@ class RobotSpec(ABC):
 
     def create_collision_const(self, self_collision: bool = True) -> SphereCollisionCst:
         sphere_specs = self.get_sphere_specs()
-
-        if ("self_collision_pairs" not in self.conf_dict) and len(
-            self.self_body_collision_primitives()
-        ) == 0:
-            self_collision = False
-
+        self_collision_pairs = []
+        robot_anchor_cppsdf = None
         if self_collision:
-            self_collision_pairs = self.conf_dict["self_collision_pairs"]
-            sksdf = UnionSDF([p.sdf for p in self.self_body_collision_primitives()])
-            cppsdf = sksdf_to_cppsdf(sksdf, create_bvh=False)
-        else:
-            self_collision_pairs = []
-            cppsdf = None
+            # Add self_collision_pairs only if exist in the conf file
+            if "self_collision_pairs" in self.conf_dict:
+                self_collision_pairs = self.conf_dict["self_collision_pairs"]
+            # Add self_body_collision_primitives only if exist
+            if len(self.self_body_collision_primitives()) > 0:
+                robot_anchor_sksdf = UnionSDF([p.sdf for p in self.self_body_collision_primitives()])
+                robot_anchor_cppsdf = sksdf_to_cppsdf(robot_anchor_sksdf, create_bvh=False)
         with open(self.urdf_path, "r") as f:
             f.read()
         kin = self.get_kin()
@@ -191,7 +188,7 @@ class RobotSpec(ABC):
             self.with_base,
             sphere_specs,
             self_collision_pairs,
-            cppsdf,
+            robot_anchor_cppsdf,
         )
         return cst
 
