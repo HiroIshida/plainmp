@@ -8,8 +8,11 @@
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/experience/ERTConnect.h>
 #include <ompl/geometric/planners/kpiece/BKPIECE1.h>
+#include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 // #include <ompl/geometric/planners/kpiece/KPIECE1.h>
 // #include <ompl/geometric/planners/rrt/RRT.h>
+#include <ompl/geometric/planners/est/BiEST.h>
+#include <ompl/geometric/planners/est/EST.h>
 #include <ompl/geometric/planners/informedtrees/BITstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
@@ -355,6 +358,8 @@ struct PlannerBase {
     const auto space_info = csi_->si_;
     if (name.compare("BKPIECE1") == 0) {
       return create_algorithm<og::BKPIECE1>(space_info, range);
+    } else if (name.compare("LBKPIECE1") == 0) {
+      return create_algorithm<og::LBKPIECE1>(space_info, range);
     } else if (name.compare("KPIECE1") == 0) {
       return create_algorithm<ocustom::KPIECE1Modified>(space_info, range);
     } else if (name.compare("RRT") == 0) {
@@ -363,6 +368,10 @@ struct PlannerBase {
       return create_algorithm<og::RRTConnect>(space_info, range);
     } else if (name.compare("RRTstar") == 0) {
       return create_algorithm<og::RRTstar>(space_info, range);
+    } else if (name.compare("EST") == 0) {
+      return create_algorithm<og::EST>(space_info, range);
+    } else if (name.compare("BiEST") == 0) {
+      return create_algorithm<og::BiEST>(space_info, range);
     } else if (name.compare("BITstar") == 0) {
       return std::make_shared<og::BITstar>(space_info);
     } else if (name.compare("BITstarStop") == 0) {
