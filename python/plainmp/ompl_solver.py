@@ -28,6 +28,8 @@ class Algorithm(Enum):
     BiEST = "BiEST"
     BITstar = "BITstar"
     BITstarStop = "BITstarStop"  # stop after first solution
+    AITstar = "AITstar"
+    AITstarStop = "AITstarStop"  # stop after first solution
 
     def is_unidirectional(self) -> bool:
         return self in [Algorithm.RRT, Algorithm.KPIECE1, Algorithm.LBKPIECE1]

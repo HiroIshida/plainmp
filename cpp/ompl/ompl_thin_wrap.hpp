@@ -2,6 +2,7 @@
 #include <ompl/base/State.h>
 #include <ompl/base/StateSampler.h>
 #include <ompl/base/StateSpace.h>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
@@ -13,6 +14,7 @@
 // #include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/est/BiEST.h>
 #include <ompl/geometric/planners/est/EST.h>
+#include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <ompl/geometric/planners/informedtrees/BITstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
@@ -372,6 +374,10 @@ struct PlannerBase {
       return create_algorithm<og::EST>(space_info, range);
     } else if (name.compare("BiEST") == 0) {
       return create_algorithm<og::BiEST>(space_info, range);
+    } else if (name.compare("AITstar") == 0) {
+      return std::make_shared<og::AITstar>(space_info);
+    } else if (name.compare("AITstarStop") == 0) {
+      return std::make_shared<og::AITstar>(space_info);
     } else if (name.compare("BITstar") == 0) {
       return std::make_shared<og::BITstar>(space_info);
     } else if (name.compare("BITstarStop") == 0) {
@@ -398,6 +404,23 @@ struct OMPLPlanner : public PlannerBase {
       : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width) {
     const auto algo = get_algorithm(algo_name, range);
     setup_->setPlanner(algo);
+
+    if (algo_name.compare("AITstarStop") == 0) {
+      auto pdef = setup_->getProblemDefinition();
+      auto objective =
+          std::make_shared<ob::PathLengthOptimizationObjective>(csi_->si_);
+      objective->setCostThreshold(
+          ob::Cost(std::numeric_limits<double>::infinity()));
+      pdef->setOptimizationObjective(objective);
+    }
+    if (algo_name.compare("AITstar") == 0 ||
+        algo_name.compare("AITstarStop") == 0) {
+      // probably ait star's bug: clear requires to pdef to be set already,
+      // which is usually set in solve() function but we need to set it now
+      auto pdef = setup_->getProblemDefinition();
+      algo->setProblemDefinition(pdef);
+      algo->setup();
+    }
   }
 };
 
