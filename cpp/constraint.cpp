@@ -403,24 +403,27 @@ SphereCollisionCst::evaluate_dirty() {
 }
 
 std::vector<std::pair<Eigen::Vector3d, double>>
-SphereCollisionCst::get_group_spheres() const {
+SphereCollisionCst::get_group_spheres() {
   std::vector<std::pair<Eigen::Vector3d, double>> spheres;
-  // for (auto& sphere_group : sphere_groups_) {
-  //   const auto& pose = kin_->get_link_pose(sphere_group.group_sphere_id);
-  //   spheres.push_back({pose.trans(), sphere_group.group_radius});
-  // }
+  for (auto& sphere_group : sphere_groups_) {
+    sphere_group.create_group_sphere_position_cache(kin_);
+    spheres.push_back(
+        {sphere_group.group_sphere_position_cache, sphere_group.group_radius});
+  }
   return spheres;
 }
 
 std::vector<std::pair<Eigen::Vector3d, double>>
-SphereCollisionCst::get_all_spheres() const {
+SphereCollisionCst::get_all_spheres() {
   std::vector<std::pair<Eigen::Vector3d, double>> spheres;
-  // for (auto& sphere_group : sphere_groups_) {
-  //   for (size_t i = 0; i < sphere_group.sphere_ids.size(); i++) {
-  //     const auto& pose = kin_->get_link_pose(sphere_group.sphere_ids[i]);
-  //     spheres.push_back({pose.trans(), sphere_group.radii[i]});
-  //   }
-  // }
+  for (auto& sphere_group : sphere_groups_) {
+    sphere_group.create_group_sphere_position_cache(kin_);
+    sphere_group.create_sphere_position_cache(kin_);
+    for (size_t i = 0; i < sphere_group.radii.size(); i++) {
+      spheres.push_back(
+          {sphere_group.sphere_positions_cache.col(i), sphere_group.radii[i]});
+    }
+  }
   return spheres;
 }
 
