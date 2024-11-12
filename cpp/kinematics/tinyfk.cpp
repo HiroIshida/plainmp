@@ -91,6 +91,7 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
   std::vector<int> joint_types;
   std::vector<Vector3> joint_axes;
   std::vector<Vector3> joint_positions;
+  std::vector<Quat> joint_orientations;
   std::vector<int> joint_child_link_ids;
   auto root_link = links[root_link_id_];
   std::stack<urdf::JointSharedPtr> joint_stack;
@@ -111,10 +112,14 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
         joint_axes.push_back(joint->axis);
         joint_positions.push_back(
             joint->parent_to_joint_origin_transform.trans());
+        joint_orientations.push_back(
+            joint->parent_to_joint_origin_transform.quat());
       } else if constexpr (std::is_same<Scalar, float>::value) {
         joint_axes.push_back(joint->axis.cast<float>());
         joint_positions.push_back(
             joint->parent_to_joint_origin_transform.trans().cast<float>());
+        joint_orientations.push_back(
+            joint->parent_to_joint_origin_transform.quat().cast<float>());
       } else {
         static_assert(std::is_same<Scalar, double>::value ||
                           std::is_same<Scalar, float>::value,
@@ -176,6 +181,7 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
   joint_types_ = joint_types;
   joint_axes_ = joint_axes;
   joint_positions_ = joint_positions;
+  joint_orientations_ = joint_orientations;
   joint_child_link_ids_ = joint_child_link_ids;
   joint_name_id_map_ = joint_ids;
   num_dof_ = num_dof;
@@ -190,6 +196,8 @@ void KinematicModel<Scalar>::set_joint_angles(
     const std::vector<size_t>& joint_ids,
     const std::vector<Scalar>& joint_angles,
     bool high_accuracy) {
+  Quat tf_pjoint_to_hlink_quat;  // pre-allocate
+
   for (size_t i = 0; i < joint_ids.size(); i++) {
     auto joint_id = joint_ids[i];
     joint_angles_[joint_id] = joint_angles[i];
@@ -198,52 +206,17 @@ void KinematicModel<Scalar>::set_joint_angles(
     auto& tf_plink_to_pjoint_trans = joint_positions_[joint_id];
     if (joint_types_[joint_id] != urdf::Joint::PRISMATIC) {
       auto x = joint_angles[i] * 0.5;
-      if (high_accuracy) {
-        tf_plink_to_hlink.quat().coeffs() << sin(x) * joint_axes_[joint_id],
-            cos(x);
-      } else {
-        // Approximate sin(x) = x - x^3/3! + x^5/5! - x^7/7! + x^9/9!
-        // Approximate cos(x) = 1 - x^2/2! + x^4/4! - x^6/6! + x^8/8!
-        constexpr auto half_pi = M_PI * 0.5;
-        constexpr auto one_dev_2pi = 1.0 / (2 * M_PI);
-        auto cos_sign = 1.0;
-        if (x > half_pi || x < -0.5 * half_pi) {
-          if (x > M_PI || x < -M_PI) {
-            x = x - 2 * M_PI * std::floor(x * one_dev_2pi + 0.5);
-          }
-          if (x < -half_pi) {
-            x = -x - M_PI;
-            cos_sign = -1.0;
-          } else if (x > half_pi) {
-            x = -x + M_PI;
-            cos_sign = -1.0;
-          } else {
-          }
-        }
-        auto xx = x * x;
-        auto xxx = x * xx;
-        auto xxxx = xx * xx;
-        auto xxxxx = xx * xxx;
-        auto xxxxxx = xxx * xxx;
-        auto xxxxxxx = xxx * xxxx;
-        auto xxxxxxxx = xxxx * xxxx;
-        auto xxxxxxxxx = xxxx * xxxxx;
-        constexpr auto coeff2 = 1.0 / (1.0 * 2.0);
-        constexpr auto coeff3 = 1.0 / (1.0 * 2.0 * 3.0);
-        constexpr auto coeff4 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0);
-        constexpr auto coeff5 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0);
-        constexpr auto coeff6 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0);
-        constexpr auto coeff7 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0);
-        constexpr auto coeff8 =
-            1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0 * 8.0);
-        constexpr auto coeff9 =
-            1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0 * 8.0 * 9.0);
-        auto s = x - xxx * coeff3 + xxxxx * coeff5 - xxxxxxx * coeff7 +
-                 xxxxxxxxx * coeff9;
-        auto c = cos_sign * (1 - xx * coeff2 + xxxx * coeff4 - xxxxxx * coeff6 +
-                             xxxxxxxx * coeff8);
-        tf_plink_to_hlink.quat().coeffs() << s * joint_axes_[joint_id], c;
-      }
+
+      // Here we will compute the multiplication of two transformation
+      // tf_plink_to_hlink = tf_plink_to_pjoint * tf_pjoint_to_hlink
+      // without instantiating the transformation object because
+      // 1) dont want to instantiate the object
+      // 2) the tf_pjoint_to_hlink does not have translation
+      tf_pjoint_to_hlink_quat.coeffs() << sin(x) * joint_axes_[joint_id],
+          cos(x);
+      const auto& tf_plink_to_pjoint_quat = joint_orientations_[joint_id];
+      tf_plink_to_hlink.quat() =
+          tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
       tf_plink_to_hlink.is_quat_identity_ = false;
     } else {
