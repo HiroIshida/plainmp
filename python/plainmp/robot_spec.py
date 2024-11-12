@@ -292,6 +292,26 @@ class FetchSpec(RobotSpec):
         return lb_reachable, ub_reachable
 
 
+class PandaSpec(RobotSpec):
+    def __init__(self):
+        p = Path(__file__).parent / "conf" / "panda.yaml"
+        super().__init__(p, with_base=False)
+        if not self.urdf_path.exists():
+            from skrobot.models.panda import Panda  # noqa
+
+            Panda()
+
+    @property
+    def control_joint_names(self) -> List[str]:
+        return self.conf_dict["control_joint_names"]
+
+    def get_robot_model(self) -> RobotModel:
+        return load_urdf_model_using_cache(self.urdf_path)
+
+    def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
+        return []
+
+
 class JaxonSpec(RobotSpec):
     gripper_collision: bool
 
@@ -301,7 +321,7 @@ class JaxonSpec(RobotSpec):
         self.gripper_collision = gripper_collision
 
         if not self.urdf_path.exists():
-            from robot_descriptions.jaxon_description import URDF_PATH  # noqa
+            from robot_descriptions.panda_description import URDF_PATH  # noqa
 
     def get_kin(self):
         kin = super().get_kin()
