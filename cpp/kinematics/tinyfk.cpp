@@ -21,14 +21,13 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
 
   // numbering link id
   std::vector<urdf::LinkSharedPtr> links;
-  std::unordered_map<std::string, int> link_ids;
   int lid = 0;
   std::stack<urdf::LinkSharedPtr> link_stack;
   link_stack.push(robot_urdf_interface->root_link_);
   while (!link_stack.empty()) {
     auto link = link_stack.top();
     link_stack.pop();
-    link_ids[link->name] = lid;
+    link_name_id_map_[link->name] = lid;
     link->id = lid;
     links.push_back(link);
     lid++;
@@ -37,21 +36,21 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
     }
   }
   size_t N_link = lid;  // starting from 0 and finally ++ increment, so it'S ok
-  root_link_id_ = link_ids[robot_urdf_interface->root_link_->name];
+  root_link_id_ = link_name_id_map_[robot_urdf_interface->root_link_->name];
 
   // compute link struct of arrays
-  std::vector<size_t> link_parent_link_ids(N_link);
-  std::vector<bool> link_consider_rotation(N_link);
-  std::vector<std::vector<size_t>> link_child_link_idss(N_link);
+  link_parent_link_ids_.resize(N_link);
+  link_consider_rotation_.resize(N_link);
+  link_child_link_idss_.resize(N_link);
   for (const auto& link : links) {
     if (link->getParent() != nullptr) {
-      link_parent_link_ids[link->id] = link->getParent()->id;
+      link_parent_link_ids_[link->id] = link->getParent()->id;
     } else {
-      link_parent_link_ids[link->id] = 999999;  // dummy value to cause segfault
+      link_parent_link_ids_[link->id] = 999999;  // dummy value to cause segfault
     }
-    link_consider_rotation[link->id] = link->consider_rotation;
+    link_consider_rotation_[link->id] = link->consider_rotation;
     for (const auto& child_link : link->child_links) {
-      link_child_link_idss[link->id].push_back(child_link->id);
+      link_child_link_idss_[link->id].push_back(child_link->id);
     }
     if (link->inertial != nullptr) {
       com_link_ids_.push_back(link->id);
@@ -70,10 +69,10 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
   }
 
   // compute total mass
-  Scalar total_mass = 0.0;
+  total_mass_ = 0.0;
   for (const auto& link : links) {
     if (link->inertial != nullptr) {
-      total_mass += link->inertial->mass;
+      total_mass_ += link->inertial->mass;
     }
   }
 
@@ -81,19 +80,12 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
   for (const auto& pair : robot_urdf_interface->joints_) {
     urdf::JointSharedPtr joint = pair.second;
     std::string clink_name = joint->child_link_name;
-    int clink_id = link_ids[clink_name];
+    int clink_id = link_name_id_map_[clink_name];
     urdf::LinkSharedPtr clink = links[clink_id];
     joint->setChildLink(clink);
   }
 
   // allign joint ids
-  std::unordered_map<std::string, int> joint_ids;
-  std::vector<int> joint_types;
-  std::vector<Vector3> joint_axes;
-  std::vector<Vector3> joint_positions;
-  std::vector<Quat> joint_orientations;
-  std::vector<bool> joint_orientation_identity_flags;
-  std::vector<int> joint_child_link_ids;
   auto root_link = links[root_link_id_];
   std::stack<urdf::JointSharedPtr> joint_stack;
   for (auto& joint : root_link->child_joints) {
@@ -108,19 +100,19 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
     if (jtype == urdf::Joint::REVOLUTE || jtype == urdf::Joint::CONTINUOUS ||
         jtype == urdf::Joint::PRISMATIC) {
       joint->id = joint_counter;
-      joint_types.push_back(jtype);
+      joint_types_.push_back(jtype);
 
       if constexpr (std::is_same<Scalar, double>::value) {
-        joint_axes.push_back(joint->axis);
-        joint_positions.push_back(
+        joint_axes_.push_back(joint->axis);
+        joint_positions_.push_back(
             joint->parent_to_joint_origin_transform.trans());
-        joint_orientations.push_back(
+        joint_orientations_.push_back(
             joint->parent_to_joint_origin_transform.quat());
       } else if constexpr (std::is_same<Scalar, float>::value) {
-        joint_axes.push_back(joint->axis.cast<float>());
-        joint_positions.push_back(
+        joint_axes_.push_back(joint->axis.cast<float>());
+        joint_positions_.push_back(
             joint->parent_to_joint_origin_transform.trans().cast<float>());
-        joint_orientations.push_back(
+        joint_orientations_.push_back(
             joint->parent_to_joint_origin_transform.quat().cast<float>());
       } else {
         static_assert(std::is_same<Scalar, double>::value ||
@@ -128,13 +120,13 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
                       "Scalar must be double or float");
       }
 
-      auto& jo_quat = joint_orientations.back();
+      auto& jo_quat = joint_orientations_.back();
       auto w = jo_quat.w();
       bool is_approx_identity = (std::abs(w - 1.0) < 1e-6);
-      joint_orientation_identity_flags.push_back(is_approx_identity);
+      joint_orientation_identity_flags_.push_back(is_approx_identity);
 
-      joint_child_link_ids.push_back(joint->getChildLink()->id);
-      joint_ids[joint->name] = joint_counter;
+      joint_child_link_ids_.push_back(joint->getChildLink()->id);
+      joint_name_id_map_[joint->name] = joint_counter;
 
       Bound limit;
       if (jtype == urdf::Joint::CONTINUOUS) {
@@ -155,8 +147,8 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
     }
   }
 
-  int num_dof = joint_ids.size();
-  std::vector<Scalar> joint_angles(num_dof, 0.0);
+  num_dof_ = joint_name_id_map_.size();
+  joint_angles_.resize(num_dof_, 0.0);
 
   transform_cache_ = SizedCache<Transform>(N_link);
   tf_plink_to_hlink_cache_ = std::vector<Transform>(N_link);
@@ -182,20 +174,6 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
     }
   }
 
-  link_name_id_map_ = link_ids;
-  link_parent_link_ids_ = link_parent_link_ids;
-  link_child_link_idss_ = link_child_link_idss;
-  link_consider_rotation_ = link_consider_rotation;
-  joint_types_ = joint_types;
-  joint_axes_ = joint_axes;
-  joint_positions_ = joint_positions;
-  joint_orientations_ = joint_orientations;
-  joint_orientation_identity_flags_ = joint_orientation_identity_flags;
-  joint_child_link_ids_ = joint_child_link_ids;
-  joint_name_id_map_ = joint_ids;
-  num_dof_ = num_dof;
-  total_mass_ = total_mass;
-  joint_angles_ = joint_angles;
   this->set_base_pose(Transform::Identity());
   this->update_rptable();
 }
