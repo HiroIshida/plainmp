@@ -157,6 +157,13 @@ void KinematicModel<Scalar>::init_joint_info(
   }
   num_dof_ = joint_name_id_map_.size();
   joint_angles_.resize(num_dof_, 0.0);
+
+  // check if all joint orientations are identity
+  all_joint_orientation_identity_ = true;
+  for (auto is_approx_identity : joint_orientation_identity_flags_) {
+    all_joint_orientation_identity_ =
+        all_joint_orientation_identity_ && is_approx_identity;
+  }
 }
 
 template <typename Scalar>
@@ -235,6 +242,27 @@ void KinematicModel<Scalar>::set_joint_angles(
     const std::vector<size_t>& joint_ids,
     const std::vector<Scalar>& joint_angles,
     bool high_accuracy) {
+  if (high_accuracy) {
+    if (all_joint_orientation_identity_) {
+      this->set_joint_angles_impl<false, true>(joint_ids, joint_angles);
+    } else {
+      this->set_joint_angles_impl<false, false>(joint_ids, joint_angles);
+    }
+  } else {
+    if (all_joint_orientation_identity_) {
+      this->set_joint_angles_impl<true, true>(joint_ids, joint_angles);
+    } else {
+      this->set_joint_angles_impl<true, false>(joint_ids, joint_angles);
+    }
+  }
+  clear_cache();
+}
+
+template <typename Scalar>
+template <bool approx, bool all_quat_identity>
+void KinematicModel<Scalar>::set_joint_angles_impl(
+    const std::vector<size_t>& joint_ids,
+    const std::vector<Scalar>& joint_angles) {
   Quat tf_pjoint_to_hlink_quat;  // pre-allocate
 
   for (size_t i = 0; i < joint_ids.size(); i++) {
@@ -251,23 +279,25 @@ void KinematicModel<Scalar>::set_joint_angles(
       // without instantiating the transformation object because
       // 1) dont want to instantiate the object
       // 2) the tf_pjoint_to_hlink does not have translation
-      if (high_accuracy) {
-        tf_pjoint_to_hlink_quat.coeffs() << sin(x) * joint_axes_[joint_id],
-            cos(x);
-      } else {
+
+      if constexpr (approx) {
         Scalar s, c;
         compute_approx_sin_cos<Scalar>(x, s, c);
         tf_pjoint_to_hlink_quat.coeffs() << s * joint_axes_[joint_id], c;
+      } else {
+        tf_pjoint_to_hlink_quat.coeffs() << sin(x) * joint_axes_[joint_id],
+            cos(x);
       }
       const auto& tf_plink_to_pjoint_quat = joint_orientations_[joint_id];
 
-      if (joint_orientation_identity_flags_[joint_id]) {
+      if constexpr (all_quat_identity) {
         tf_plink_to_hlink.quat() = tf_pjoint_to_hlink_quat;
       } else {
         tf_plink_to_hlink.quat() =
-            tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
+            joint_orientation_identity_flags_[joint_id]
+                ? tf_pjoint_to_hlink_quat
+                : tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
       }
-
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
       tf_plink_to_hlink.is_quat_identity_ = false;
     } else {
@@ -277,7 +307,6 @@ void KinematicModel<Scalar>::set_joint_angles(
       tf_plink_to_hlink.is_quat_identity_ = true;
     }
   }
-  clear_cache();
 }
 
 template <typename Scalar>

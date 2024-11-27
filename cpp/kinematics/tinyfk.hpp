@@ -62,6 +62,7 @@ class KinematicModel {
   std::vector<Vector3> joint_positions_;
   std::vector<Quat> joint_orientations_;
   std::vector<bool> joint_orientation_identity_flags_;
+  bool all_joint_orientation_identity_;
   std::vector<int> joint_child_link_ids_;
   std::vector<Bound> joint_position_limits_;
 
@@ -88,6 +89,10 @@ class KinematicModel {
   void set_joint_angles(const std::vector<size_t>& joint_ids,
                         const std::vector<Scalar>& joint_angles,
                         bool high_accuracy = true);
+
+  template <bool approx, bool all_quat_identity>
+  void set_joint_angles_impl(const std::vector<size_t>& joint_ids,
+                             const std::vector<Scalar>& joint_angles);
 
   inline Transform get_base_pose() const { return base_pose_; }
 
