@@ -80,6 +80,9 @@ class KinematicModel {
 
  public:  // functions
   KinematicModel(const std::string& xml_string);
+  void init_link_info(const std::vector<urdf::LinkSharedPtr>& links);
+  void init_joint_info(const std::vector<urdf::LinkSharedPtr>& links);
+  void init_transform_cache(const std::vector<urdf::LinkSharedPtr>& links);
 
   virtual ~KinematicModel() {}
 

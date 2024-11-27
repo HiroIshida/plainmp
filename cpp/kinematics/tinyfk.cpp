@@ -12,33 +12,10 @@ template class KinematicModel<double>;
 template class KinematicModel<float>;
 
 template <typename Scalar>
-KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
-  if (xml_string.empty()) {
-    throw std::runtime_error("xml string is empty");
-  }
-  urdf::ModelInterfaceSharedPtr robot_urdf_interface =
-      urdf::parseURDF(xml_string);
-
-  // numbering link id
-  std::vector<urdf::LinkSharedPtr> links;
-  int lid = 0;
-  std::stack<urdf::LinkSharedPtr> link_stack;
-  link_stack.push(robot_urdf_interface->root_link_);
-  while (!link_stack.empty()) {
-    auto link = link_stack.top();
-    link_stack.pop();
-    link_name_id_map_[link->name] = lid;
-    link->id = lid;
-    links.push_back(link);
-    lid++;
-    for (auto& child_link : link->child_links) {
-      link_stack.push(child_link);
-    }
-  }
-  size_t N_link = lid;  // starting from 0 and finally ++ increment, so it'S ok
-  root_link_id_ = link_name_id_map_[robot_urdf_interface->root_link_->name];
-
+void KinematicModel<Scalar>::init_link_info(
+    const std::vector<urdf::LinkSharedPtr>& links) {
   // compute link struct of arrays
+  size_t N_link = links.size();
   link_parent_link_ids_.resize(N_link);
   link_consider_rotation_.resize(N_link);
   link_child_link_idss_.resize(N_link);
@@ -46,7 +23,8 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
     if (link->getParent() != nullptr) {
       link_parent_link_ids_[link->id] = link->getParent()->id;
     } else {
-      link_parent_link_ids_[link->id] = 999999;  // dummy value to cause segfault
+      // root link does not have parent
+      link_parent_link_ids_[link->id] = std::numeric_limits<size_t>::max();
     }
     link_consider_rotation_[link->id] = link->consider_rotation;
     for (const auto& child_link : link->child_links) {
@@ -67,24 +45,11 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
       }
     }
   }
+}
 
-  // compute total mass
-  total_mass_ = 0.0;
-  for (const auto& link : links) {
-    if (link->inertial != nullptr) {
-      total_mass_ += link->inertial->mass;
-    }
-  }
-
-  // set joint->_child_link.
-  for (const auto& pair : robot_urdf_interface->joints_) {
-    urdf::JointSharedPtr joint = pair.second;
-    std::string clink_name = joint->child_link_name;
-    int clink_id = link_name_id_map_[clink_name];
-    urdf::LinkSharedPtr clink = links[clink_id];
-    joint->setChildLink(clink);
-  }
-
+template <typename Scalar>
+void KinematicModel<Scalar>::init_joint_info(
+    const std::vector<urdf::LinkSharedPtr>& links) {
   // allign joint ids
   auto root_link = links[root_link_id_];
   std::stack<urdf::JointSharedPtr> joint_stack;
@@ -96,6 +61,11 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
     // assign joint ids in the order of DFS
     auto joint = joint_stack.top();
     joint_stack.pop();
+
+    // set child link of joint
+    size_t clink_id = link_name_id_map_[joint->child_link_name];
+    joint->setChildLink(links[clink_id]);
+
     auto jtype = joint->type;
     if (jtype == urdf::Joint::REVOLUTE || jtype == urdf::Joint::CONTINUOUS ||
         jtype == urdf::Joint::PRISMATIC) {
@@ -146,10 +116,14 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
       }
     }
   }
-
   num_dof_ = joint_name_id_map_.size();
   joint_angles_.resize(num_dof_, 0.0);
+}
 
+template <typename Scalar>
+void KinematicModel<Scalar>::init_transform_cache(
+    const std::vector<urdf::LinkSharedPtr>& links) {
+  size_t N_link = links.size();
   transform_cache_ = SizedCache<Transform>(N_link);
   tf_plink_to_hlink_cache_ = std::vector<Transform>(N_link);
   for (size_t hid = 0; hid < N_link; hid++) {
@@ -173,7 +147,46 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
       tf_plink_to_hlink_cache_[hid].is_quat_identity_ = true;
     }
   }
+}
 
+template <typename Scalar>
+KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
+  if (xml_string.empty()) {
+    throw std::runtime_error("xml string is empty");
+  }
+  urdf::ModelInterfaceSharedPtr robot_urdf_interface =
+      urdf::parseURDF(xml_string);
+
+  // numbering link id
+  std::vector<urdf::LinkSharedPtr> links;
+  int link_counter = 0;
+  std::stack<urdf::LinkSharedPtr> link_stack;
+  link_stack.push(robot_urdf_interface->root_link_);
+  while (!link_stack.empty()) {
+    auto link = link_stack.top();
+    link_stack.pop();
+    link_name_id_map_[link->name] = link_counter;
+    link->id = link_counter;
+    links.push_back(link);
+    link_counter++;
+    for (auto& child_link : link->child_links) {
+      link_stack.push(child_link);
+    }
+  }
+  size_t N_link = link_counter;
+  root_link_id_ = link_name_id_map_[robot_urdf_interface->root_link_->name];
+
+  // compute total mass
+  total_mass_ = 0.0;
+  for (const auto& link : links) {
+    if (link->inertial != nullptr) {
+      total_mass_ += link->inertial->mass;
+    }
+  }
+
+  this->init_link_info(links);
+  this->init_joint_info(links);
+  this->init_transform_cache(links);
   this->set_base_pose(Transform::Identity());
   this->update_rptable();
 }
