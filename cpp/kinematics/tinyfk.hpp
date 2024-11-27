@@ -45,7 +45,6 @@ class KinematicModel {
   using Quat = Eigen::Quaternion<Scalar>;
   using MatrixDynamic = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   using Bound = std::pair<Scalar, Scalar>;
-  urdf::ModelInterfaceSharedPtr robot_urdf_interface_;
 
   // link stuff
   size_t root_link_id_;                                    // N_link
