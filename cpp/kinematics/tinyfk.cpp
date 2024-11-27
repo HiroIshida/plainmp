@@ -92,6 +92,7 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
   std::vector<Vector3> joint_axes;
   std::vector<Vector3> joint_positions;
   std::vector<Quat> joint_orientations;
+  std::vector<bool> joint_orientation_identity_flags;
   std::vector<int> joint_child_link_ids;
   auto root_link = links[root_link_id_];
   std::stack<urdf::JointSharedPtr> joint_stack;
@@ -108,6 +109,7 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
         jtype == urdf::Joint::PRISMATIC) {
       joint->id = joint_counter;
       joint_types.push_back(jtype);
+
       if constexpr (std::is_same<Scalar, double>::value) {
         joint_axes.push_back(joint->axis);
         joint_positions.push_back(
@@ -125,6 +127,12 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
                           std::is_same<Scalar, float>::value,
                       "Scalar must be double or float");
       }
+
+      auto& jo_quat = joint_orientations.back();
+      auto w = jo_quat.w();
+      bool is_approx_identity = (std::abs(w - 1.0) < 1e-6);
+      joint_orientation_identity_flags.push_back(is_approx_identity);
+
       joint_child_link_ids.push_back(joint->getChildLink()->id);
       joint_ids[joint->name] = joint_counter;
 
@@ -182,6 +190,7 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
   joint_axes_ = joint_axes;
   joint_positions_ = joint_positions;
   joint_orientations_ = joint_orientations;
+  joint_orientation_identity_flags_ = joint_orientation_identity_flags;
   joint_child_link_ids_ = joint_child_link_ids;
   joint_name_id_map_ = joint_ids;
   num_dof_ = num_dof;
@@ -215,8 +224,14 @@ void KinematicModel<Scalar>::set_joint_angles(
       tf_pjoint_to_hlink_quat.coeffs() << sin(x) * joint_axes_[joint_id],
           cos(x);
       const auto& tf_plink_to_pjoint_quat = joint_orientations_[joint_id];
-      tf_plink_to_hlink.quat() =
-          tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
+
+      if (joint_orientation_identity_flags_[joint_id]) {
+        tf_plink_to_hlink.quat() = tf_pjoint_to_hlink_quat;
+      } else {
+        tf_plink_to_hlink.quat() =
+            tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
+      }
+
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
       tf_plink_to_hlink.is_quat_identity_ = false;
     } else {
