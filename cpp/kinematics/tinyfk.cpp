@@ -6,6 +6,45 @@
 #include <stdexcept>
 #include "urdf_model/pose.h"
 
+template <typename Scalar>
+void compute_approx_sin_cos(Scalar x, Scalar& s, Scalar& c) {
+  // Approximate sin(x) = x - x^3/3! + x^5/5! - x^7/7! + x^9/9!
+  // Approximate cos(x) = 1 - x^2/2! + x^4/4! - x^6/6! + x^8/8!
+  constexpr auto coeff2 = 1.0 / (1.0 * 2.0);
+  constexpr auto coeff3 = 1.0 / (1.0 * 2.0 * 3.0);
+  constexpr auto coeff4 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0);
+  constexpr auto coeff5 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0);
+  constexpr auto coeff6 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0);
+  constexpr auto coeff7 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0);
+  constexpr auto coeff8 = 1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0 * 8.0);
+  constexpr auto coeff9 =
+      1.0 / (1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0 * 7.0 * 8.0 * 9.0);
+  constexpr auto half_pi = M_PI * 0.5;
+  constexpr auto one_dev_2pi = 1.0 / (2 * M_PI);
+  auto cos_sign = 1.0;
+  if (x > half_pi || x < -half_pi) {
+    if (x > M_PI || x < -M_PI) {
+      x = x - 2 * M_PI * std::floor(x * one_dev_2pi + 0.5);
+    }
+    if (x < -half_pi) {
+      x = -x - M_PI;
+      cos_sign = -1.0;
+    } else if (x > half_pi) {
+      x = -x + M_PI;
+      cos_sign = -1.0;
+    } else {
+    }
+  }
+  auto xx = x * x;
+  auto xxxx = xx * xx;
+  auto xxxxxx = xxxx * xx;
+  auto xxxxxxxx = xxxx * xxxx;
+  s = x *
+      (1 - xx * coeff3 + xxxx * coeff5 - xxxxxx * coeff7 + xxxxxxxx * coeff9);
+  c = cos_sign *
+      (1 - xx * coeff2 + xxxx * coeff4 - xxxxxx * coeff6 + xxxxxxxx * coeff8);
+}
+
 namespace tinyfk {
 
 template class KinematicModel<double>;
@@ -212,8 +251,14 @@ void KinematicModel<Scalar>::set_joint_angles(
       // without instantiating the transformation object because
       // 1) dont want to instantiate the object
       // 2) the tf_pjoint_to_hlink does not have translation
-      tf_pjoint_to_hlink_quat.coeffs() << sin(x) * joint_axes_[joint_id],
-          cos(x);
+      if (high_accuracy) {
+        tf_pjoint_to_hlink_quat.coeffs() << sin(x) * joint_axes_[joint_id],
+            cos(x);
+      } else {
+        Scalar s, c;
+        compute_approx_sin_cos<Scalar>(x, s, c);
+        tf_pjoint_to_hlink_quat.coeffs() << s * joint_axes_[joint_id], c;
+      }
       const auto& tf_plink_to_pjoint_quat = joint_orientations_[joint_id];
 
       if (joint_orientation_identity_flags_[joint_id]) {
