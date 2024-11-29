@@ -1,4 +1,4 @@
-urdf_path: ~/.cache/robot_descriptions/jaxon_description/urdf/jaxon_jvrc.urdf 
+urdf_path: ~/.cache/robot_descriptions/jaxon_description/urdf/jaxon_jvrc.urdf   # robot_descriptions's cache directory
 control_joint_names:
   - RARM_JOINT0
   - RARM_JOINT1

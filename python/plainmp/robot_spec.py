@@ -321,7 +321,7 @@ class JaxonSpec(RobotSpec):
         self.gripper_collision = gripper_collision
 
         if not self.urdf_path.exists():
-            from robot_descriptions.panda_description import URDF_PATH  # noqa
+            from robot_descriptions.jaxon_description import URDF_PATH  # noqa
 
     def get_kin(self):
         kin = super().get_kin()

@@ -1,4 +1,4 @@
-urdf_path: ~/.skrobot/fetch_description/fetch.urdf
+urdf_path: ~/.skrobot/fetch_description/fetch.urdf  # skrobot's cache directory for fetch_description
 
 control_joint_names:
   - torso_lift_joint

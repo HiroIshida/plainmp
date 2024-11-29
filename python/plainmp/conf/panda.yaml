@@ -1,4 +1,4 @@
-urdf_path: ~/.skrobot/franka_description/panda.urdf
+urdf_path: ~/.skrobot/franka_description/panda.urdf  # robot_descriptions's cache directory
 control_joint_names:
   - panda_joint1
   - panda_joint2
