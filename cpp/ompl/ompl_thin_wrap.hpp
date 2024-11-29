@@ -1,4 +1,5 @@
 #pragma once
+
 #include <ompl/base/PlannerTerminationCondition.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
@@ -7,69 +8,13 @@
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/experience/ERTConnect.h>
 #include <optional>
+#include "box_motion_validator.hpp"
 #include "constraints/primitive.hpp"
+#include "custom_goal_samplable_region.hpp"
 #include "repair_planner.hpp"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
-
-using GoalSamplerFn = std::function<std::vector<double>()>;
-
-class CustomGoalSamplableRegion : public ob::GoalSampleableRegion {
- public:
-  using Ptr = std::shared_ptr<CustomGoalSamplableRegion>;
-  CustomGoalSamplableRegion(
-      const ob::SpaceInformationPtr& si,
-      const GoalSamplerFn& sampler,
-      std::optional<size_t> max_sample_count = std::nullopt)
-      : ob::GoalSampleableRegion(si),
-        sampler_(sampler),
-        max_sample_count_(max_sample_count),
-        sample_count_(0),
-        round_robin_idx_(0) {
-    if (max_sample_count_) {
-      size_t n_dof = si->getStateSpace()->getDimension();
-      past_samples_ = std::vector<double>(n_dof * *max_sample_count_);
-    }
-  }
-
-  void sampleGoal(ob::State* st) const override {
-    size_t n_dof = si_->getStateSpace()->getDimension();
-    if (max_sample_count_ && sample_count_ >= *max_sample_count_) {
-      const double* begin = past_samples_.data() + n_dof * round_robin_idx_;
-      std::copy(begin, begin + n_dof,
-                st->as<ob::RealVectorStateSpace::StateType>()->values);
-      round_robin_idx_ = (round_robin_idx_ + 1) % *max_sample_count_;
-    } else {
-      std::vector<double> vec = sampler_();
-      auto rs = st->as<ob::RealVectorStateSpace::StateType>();
-      std::copy(vec.begin(), vec.end(), rs->values);
-      if (max_sample_count_) {
-        std::copy(vec.begin(), vec.end(),
-                  past_samples_.data() + n_dof * sample_count_);
-      }
-      sample_count_++;
-    }
-  }
-
-  unsigned int maxSampleCount() const override {
-    return std::numeric_limits<unsigned int>::max();
-  }
-
-  double distanceGoal(const ob::State* st) const override {
-    // NOTE: distnace goal is 0.0 because we assume that
-    // the sample solve the collision free IK with joint limit
-    // in python side and the goal is the solution
-    return 0.0;
-  }
-
- private:
-  GoalSamplerFn sampler_;
-  std::optional<size_t> max_sample_count_;
-  mutable size_t sample_count_;
-  mutable std::vector<double> past_samples_;  // note: contiguous memory
-  mutable size_t round_robin_idx_;
-};
 
 std::shared_ptr<ob::Planner> get_algorithm(const std::string& name,
                                            const ob::SpaceInformationPtr& si,
@@ -95,68 +40,6 @@ og::PathGeometric points_to_pathgeometric(
   }
   return pg;
 }
-
-class BoxMotionValidator : public ob::MotionValidator {
- public:
-  BoxMotionValidator(const ob::SpaceInformationPtr& si,
-                     std::vector<double> width)
-      : ob::MotionValidator(si), width_(width) {
-    // NOTE: precompute inv width, because devide is more expensive than
-    // multiply
-    for (size_t i = 0; i < width.size(); ++i) {
-      inv_width_.push_back(1.0 / width[i]);
-    }
-  }
-
-  bool checkMotion(const ob::State* s1, const ob::State* s2) const {
-    const auto rs1 = s1->as<ob::RealVectorStateSpace::StateType>();
-    const auto rs2 = s2->as<ob::RealVectorStateSpace::StateType>();
-
-    // find longest (relative) axis index
-    double diff_longest_axis;
-    double max_diff = -std::numeric_limits<double>::infinity();
-    size_t longest_idx = 0;
-    for (size_t idx = 0; idx < si_->getStateDimension(); ++idx) {
-      const double diff = rs2->values[idx] - rs1->values[idx];
-      const double abs_scaled_diff = std::abs(diff) * inv_width_[idx];
-      if (abs_scaled_diff > max_diff) {
-        max_diff = abs_scaled_diff;
-        longest_idx = idx;
-        diff_longest_axis = diff;
-      }
-    }
-    if (std::abs(diff_longest_axis) < 1e-6) {
-      return true;
-    }
-
-    // main
-    const auto s_test =
-        si_->allocState()->as<ob::RealVectorStateSpace::StateType>();
-
-    const auto space = si_->getStateSpace();
-    const double step_ratio = width_[longest_idx] / std::abs(diff_longest_axis);
-
-    double travel_rate = 0.0;
-    while (travel_rate + step_ratio < 1.0) {
-      travel_rate += step_ratio;
-      space->interpolate(rs1, rs2, travel_rate, s_test);
-      if (!si_->isValid(s_test)) {
-        return false;
-      }
-    }
-    return (si_->isValid(rs2));
-  }
-
-  bool checkMotion(const ob::State* s1,
-                   const ob::State* s2,
-                   std::pair<ob::State*, double>& lastValid) const {
-    return checkMotion(s1, s2);
-  }
-
- private:
-  std::vector<double> width_;
-  std::vector<double> inv_width_;
-};
 
 struct CollisionAwareSpaceInformation {
   CollisionAwareSpaceInformation(const std::vector<double>& lb,
