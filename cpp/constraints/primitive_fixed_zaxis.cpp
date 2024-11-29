@@ -1,6 +1,6 @@
 #include "primitive_fixed_zaxis.hpp"
 
-namespace cst {
+namespace constraint {
 
 FixedZAxisCst::FixedZAxisCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
@@ -50,4 +50,4 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
   return {vals, jac};
 };
 
-}  // namespace cst
+}  // namespace constraint

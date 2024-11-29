@@ -9,7 +9,7 @@
 #include "constraints/primitive_sphere_collision.hpp"
 #include "constraints/sequential_constraint.hpp"
 
-using namespace cst;
+using namespace constraint;
 
 namespace plainmp::bindings {
 

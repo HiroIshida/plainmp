@@ -1,6 +1,6 @@
 #include "primitive_relative_pose.hpp"
 
-namespace cst {
+namespace constraint {
 
 RelativePoseCst::RelativePoseCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
@@ -33,4 +33,4 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
   return {vals, jac};
 }
 
-}  // namespace cst
+}  // namespace constraint

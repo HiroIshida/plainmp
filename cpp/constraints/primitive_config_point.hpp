@@ -1,6 +1,6 @@
 #include "primitive.hpp"
 
-namespace cst {
+namespace constraint {
 
 class ConfigPointCst : public EqConstraintBase {
  public:
@@ -17,4 +17,4 @@ class ConfigPointCst : public EqConstraintBase {
   Eigen::VectorXd q_;
 };
 
-}  // namespace cst
+}  // namespace constraint

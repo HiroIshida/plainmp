@@ -1,6 +1,6 @@
 #include "primitive.hpp"
 
-namespace cst {
+namespace constraint {
 
 struct SphereAttachmentSpec {
   std::string postfix;
@@ -99,4 +99,4 @@ class SphereCollisionCst : public IneqConstraintBase {
   double cutoff_dist_ = 0.1;
 };
 
-}  // namespace cst
+}  // namespace constraint

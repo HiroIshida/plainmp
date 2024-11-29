@@ -1,6 +1,6 @@
 #include "primitive_config_point.hpp"
 
-namespace cst {
+namespace constraint {
 
 ConfigPointCst::ConfigPointCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
@@ -38,4 +38,4 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> ConfigPointCst::evaluate_dirty() {
   return {q_now - q_, Eigen::MatrixXd::Identity(dof, dof)};
 }
 
-}  // namespace cst
+}  // namespace constraint

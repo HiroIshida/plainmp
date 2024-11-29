@@ -9,7 +9,7 @@
 #include "collision/primitive_sdf.hpp"
 #include "kinematics/kinematics.hpp"
 
-namespace cst {
+namespace constraint {
 
 namespace kin = kinematics;
 
@@ -93,4 +93,4 @@ class IneqConstraintBase : public ConstraintBase {
   virtual bool is_valid_dirty() = 0;
 };
 
-};  // namespace cst
+};  // namespace constraint

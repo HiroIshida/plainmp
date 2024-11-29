@@ -1,6 +1,6 @@
 #include "primitive.hpp"
 
-namespace cst {
+namespace constraint {
 
 class RelativePoseCst : public EqConstraintBase {
  public:
@@ -21,4 +21,4 @@ class RelativePoseCst : public EqConstraintBase {
   Eigen::Vector3d relative_pose_;
 };
 
-}  // namespace cst
+}  // namespace constraint

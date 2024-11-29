@@ -10,7 +10,7 @@
 #include "kinematics/kinematics.hpp"
 #include "primitive.hpp"
 
-namespace cst {
+namespace constraint {
 template <typename T>
 class CompositeConstraintBase {
  public:
@@ -97,4 +97,4 @@ class IneqCompositeCst
   size_t cst_dim() const;
   bool is_equality() const { return false; }
 };
-}  // namespace cst
+}  // namespace constraint

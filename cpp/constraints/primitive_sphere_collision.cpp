@@ -1,6 +1,6 @@
 #include "primitive_sphere_collision.hpp"
 
-namespace cst {
+namespace constraint {
 
 void SphereGroup::create_group_sphere_position_cache(
     const std::shared_ptr<kin::KinematicModel<double>>& kin) {
@@ -385,4 +385,4 @@ void SphereCollisionCst::set_all_sdfs_inner(SDFBase::Ptr sdf) {
   }
 }
 
-}  // namespace cst
+}  // namespace constraint

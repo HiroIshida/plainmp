@@ -225,7 +225,7 @@ class BoxMotionValidator : public ob::MotionValidator {
 struct CollisionAwareSpaceInformation {
   CollisionAwareSpaceInformation(const std::vector<double>& lb,
                                  const std::vector<double>& ub,
-                                 cst::IneqConstraintBase::Ptr ineq_cst,
+                                 constraint::IneqConstraintBase::Ptr ineq_cst,
                                  size_t max_is_valid_call,
                                  const std::vector<double>& box_width)
       : si_(nullptr),
@@ -271,7 +271,7 @@ struct CollisionAwareSpaceInformation {
   }
 
   ob::SpaceInformationPtr si_;
-  cst::IneqConstraintBase::Ptr ineq_cst_;
+  constraint::IneqConstraintBase::Ptr ineq_cst_;
   size_t is_valid_call_count_;
   const size_t max_is_valid_call_;
   std::vector<double> box_width_;
@@ -282,7 +282,7 @@ struct CollisionAwareSpaceInformation {
 struct PlannerBase {
   PlannerBase(const std::vector<double>& lb,
               const std::vector<double>& ub,
-              cst::IneqConstraintBase::Ptr ineq_cst,
+              constraint::IneqConstraintBase::Ptr ineq_cst,
               size_t max_is_valid_call,
               const std::vector<double>& box_width) {
     csi_ = std::make_unique<CollisionAwareSpaceInformation>(
@@ -398,7 +398,7 @@ struct PlannerBase {
 struct OMPLPlanner : public PlannerBase {
   OMPLPlanner(const std::vector<double>& lb,
               const std::vector<double>& ub,
-              cst::IneqConstraintBase::Ptr ineq_cst,
+              constraint::IneqConstraintBase::Ptr ineq_cst,
               size_t max_is_valid_call,
               const std::vector<double>& box_width,
               const std::string& algo_name,
@@ -429,7 +429,7 @@ struct OMPLPlanner : public PlannerBase {
 struct ERTConnectPlanner : public PlannerBase {
   ERTConnectPlanner(const std::vector<double>& lb,
                     const std::vector<double>& ub,
-                    cst::IneqConstraintBase::Ptr ineq_cst,
+                    constraint::IneqConstraintBase::Ptr ineq_cst,
                     size_t max_is_valid_call,
                     const std::vector<double>& box_width)
       : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width) {

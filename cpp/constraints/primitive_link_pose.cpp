@@ -1,6 +1,6 @@
 #include "primitive_link_pose.hpp"
 
-namespace cst {
+namespace constraint {
 
 LinkPoseCst::LinkPoseCst(std::shared_ptr<kin::KinematicModel<double>> kin,
                          const std::vector<std::string>& control_joint_names,
@@ -56,4 +56,4 @@ size_t LinkPoseCst::cst_dim() const {
   return dim;
 }
 
-}  // namespace cst
+}  // namespace constraint
