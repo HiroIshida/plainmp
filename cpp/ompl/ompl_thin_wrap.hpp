@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ompl/base/PlannerTerminationCondition.h>
 #include <ompl/base/State.h>
 #include <ompl/base/StateSampler.h>

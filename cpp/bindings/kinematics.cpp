@@ -1,11 +1,9 @@
-#include "tinyfk_binding.hpp"
-#include <pybind11/stl.h>
-#include <memory>
-#include "tinyfk.hpp"
+#include "bindings.hpp"
+#include "kinematics/tinyfk.hpp"
 
-namespace tinyfk {
+using namespace tinyfk;
 
-namespace py = pybind11;
+namespace plainmp::bindings {
 
 class _KinematicModel : public KinematicModel<double> {
   // a utility class for easy binding
@@ -22,7 +20,7 @@ class _KinematicModel : public KinematicModel<double> {
   }
 };
 
-void bind_tinyfk(py::module& m) {
+void bind_kinematics_submodule(py::module& m) {
   auto m_tinyfk = m.def_submodule("tinyfk");
   py::class_<urdf::Link, urdf::LinkSharedPtr>(m_tinyfk, "Link")
       .def_readonly("name", &urdf::Link::name)
@@ -42,4 +40,4 @@ void bind_tinyfk(py::module& m) {
       .def("get_joint_ids", &_KinematicModel::get_joint_ids);
 }
 
-}  // namespace tinyfk
+}  // namespace plainmp::bindings

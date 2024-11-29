@@ -1,21 +1,9 @@
-#include <pybind11/detail/common.h>
-#include <pybind11/eigen.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include "kdtree.hpp"
-#include "primitive_sdf.hpp"
+#include "bindings/bindings.hpp"
+#include "collision/primitive_sdf.hpp"
 
-namespace py = pybind11;
+namespace plainmp::bindings {
 
-void bind_kdtree(py::module& m) {
-  auto m_kdtree = m.def_submodule("kdtree");
-  py::class_<KDTree>(m_kdtree, "KDTree")
-      .def(py::init<const std::vector<Eigen::Vector3d>&>())
-      .def("query", &KDTree::query)
-      .def("sqdist", &KDTree::sqdist);
-}
-
-void bind_primitive_sdf(py::module& m) {
+void bind_primitive_submodule(py::module& m) {
   auto m_psdf = m.def_submodule("primitive_sdf");
   py::class_<Pose>(m_psdf, "Pose", py::module_local())
       .def(py::init<const Eigen::Vector3d&, const Eigen::Matrix3d&>())
@@ -67,3 +55,5 @@ void bind_primitive_sdf(py::module& m) {
       .def("evaluate", &CloudSDF::evaluate)
       .def("is_outside", &CloudSDF::is_outside);
 }
+
+}  // namespace plainmp::bindings

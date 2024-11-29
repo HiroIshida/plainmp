@@ -1,16 +1,13 @@
-#include "constraint_binding.hpp"
-#include <pybind11/eigen.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include "composite_constraint.hpp"
 #include "constraint.hpp"
+#include "bindings.hpp"
+#include "composite_constraint.hpp"
 #include "sequential_constraint.hpp"
 
-namespace py = pybind11;
+using namespace cst;
 
-namespace cst {
+namespace plainmp::bindings {
 
-void bind_collision_constraints(py::module& m) {
+void bind_constraint_submodule(py::module& m) {
   auto cst_m = m.def_submodule("constraint");
   py::class_<ConstraintBase, ConstraintBase::Ptr>(cst_m, "ConstraintBase");
   py::class_<EqConstraintBase, EqConstraintBase::Ptr, ConstraintBase>(
@@ -108,4 +105,4 @@ void bind_collision_constraints(py::module& m) {
       .def("cst_dim", &SequentialCst::cst_dim);
 }
 
-}  // namespace cst
+}  // namespace plainmp::bindings
