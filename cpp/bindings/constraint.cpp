@@ -1,6 +1,6 @@
-#include "constraints/constraint.hpp"
 #include "bindings.hpp"
 #include "constraints/composite_constraint.hpp"
+#include "constraints/primitive.hpp"
 #include "constraints/sequential_constraint.hpp"
 
 using namespace cst;

@@ -1,6 +1,6 @@
 #include <Eigen/Sparse>
 #include <optional>
-#include "constraint.hpp"
+#include "primitive.hpp"
 
 namespace cst {
 

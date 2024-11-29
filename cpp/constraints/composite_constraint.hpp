@@ -7,8 +7,8 @@
 #include <sstream>
 #include <utility>
 #include "collision/primitive_sdf.hpp"
-#include "constraint.hpp"
 #include "kinematics/kinematics.hpp"
+#include "primitive.hpp"
 
 namespace cst {
 template <typename T>
