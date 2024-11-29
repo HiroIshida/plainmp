@@ -11,7 +11,6 @@
 #include "box_motion_validator.hpp"
 #include "constraints/primitive.hpp"
 #include "custom_goal_samplable_region.hpp"
-#include "repair_planner.hpp"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
