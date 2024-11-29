@@ -1,6 +1,6 @@
 #include "primitive.hpp"
 
-namespace constraint {
+namespace plainmp::constraint {
 
 class LinkPoseCst : public EqConstraintBase {
  public:
@@ -20,4 +20,4 @@ class LinkPoseCst : public EqConstraintBase {
   std::vector<Eigen::VectorXd> poses_;
 };
 
-}  // namespace constraint
+}  // namespace plainmp::constraint

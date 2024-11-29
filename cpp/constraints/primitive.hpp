@@ -9,7 +9,7 @@
 #include "collision/primitive_sdf.hpp"
 #include "kinematics/kinematics.hpp"
 
-namespace constraint {
+namespace plainmp::constraint {
 
 namespace kin = plainmp::kinematics;
 
@@ -93,4 +93,4 @@ class IneqConstraintBase : public ConstraintBase {
   virtual bool is_valid_dirty() = 0;
 };
 
-};  // namespace constraint
+};  // namespace plainmp::constraint

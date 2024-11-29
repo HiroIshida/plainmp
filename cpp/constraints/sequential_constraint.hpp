@@ -2,7 +2,7 @@
 #include <optional>
 #include "primitive.hpp"
 
-namespace constraint {
+namespace plainmp::constraint {
 
 using SMatrix = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
@@ -39,4 +39,4 @@ class SequentialCst {
   std::optional<Eigen::VectorXd> msbox_width_;
 };
 
-}  // namespace constraint
+}  // namespace plainmp::constraint

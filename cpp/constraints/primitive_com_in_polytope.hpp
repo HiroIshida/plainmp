@@ -1,5 +1,5 @@
 #include "primitive.hpp"
-namespace constraint {
+namespace plainmp::constraint {
 struct AppliedForceSpec {
   std::string link_name;
   double force;  // currently only z-axis force (minus direction) is supported
@@ -24,4 +24,4 @@ class ComInPolytopeCst : public IneqConstraintBase {
   std::vector<double> applied_force_values_;
 };
 
-};  // namespace constraint
+};  // namespace plainmp::constraint

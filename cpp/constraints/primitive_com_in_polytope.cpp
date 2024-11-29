@@ -1,6 +1,6 @@
 #include "primitive_com_in_polytope.hpp"
 
-namespace constraint {
+namespace plainmp::constraint {
 ComInPolytopeCst::ComInPolytopeCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
@@ -75,4 +75,4 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
   return {vals, jac};
 };
 
-}  // namespace constraint
+}  // namespace plainmp::constraint

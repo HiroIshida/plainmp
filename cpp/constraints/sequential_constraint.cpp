@@ -1,6 +1,6 @@
 #include "sequential_constraint.hpp"
 
-namespace constraint {
+namespace plainmp::constraint {
 
 void SequentialCst::add_globally(const ConstraintBase::Ptr& constraint) {
   for (size_t t = 0; t < T_; ++t) {
@@ -138,4 +138,4 @@ std::string SequentialCst::to_string() const {
   return ss.str();
 }
 
-}  // namespace constraint
+}  // namespace plainmp::constraint

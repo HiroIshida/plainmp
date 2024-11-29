@@ -1,6 +1,6 @@
 #include "primitive_sphere_collision.hpp"
 
-namespace constraint {
+namespace plainmp::constraint {
 
 void SphereGroup::create_group_sphere_position_cache(
     const std::shared_ptr<kin::KinematicModel<double>>& kin) {
@@ -388,4 +388,4 @@ void SphereCollisionCst::set_all_sdfs_inner(
   }
 }
 
-}  // namespace constraint
+}  // namespace plainmp::constraint

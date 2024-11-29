@@ -1,6 +1,6 @@
 #include "primitive.hpp"
 
-namespace constraint {
+namespace plainmp::constraint {
 class FixedZAxisCst : public EqConstraintBase {
  public:
   using Ptr = std::shared_ptr<FixedZAxisCst>;
@@ -18,4 +18,4 @@ class FixedZAxisCst : public EqConstraintBase {
   std::vector<size_t> aux_link_ids_;
 };
 
-}  // namespace constraint
+}  // namespace plainmp::constraint
