@@ -1,4 +1,4 @@
-#include "primitive.hpp"
+#include "primitive_com_in_polytope.hpp"
 
 namespace cst {
 ComInPolytopeCst::ComInPolytopeCst(

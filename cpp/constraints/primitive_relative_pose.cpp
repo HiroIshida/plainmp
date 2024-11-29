@@ -1,4 +1,4 @@
-#include "primitive.hpp"
+#include "primitive_relative_pose.hpp"
 
 namespace cst {
 

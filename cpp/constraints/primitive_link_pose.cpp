@@ -1,4 +1,4 @@
-#include "primitive.hpp"
+#include "primitive_link_pose.hpp"
 
 namespace cst {
 

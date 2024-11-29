@@ -1,4 +1,4 @@
-#include "primitive.hpp"
+#include "primitive_fixed_zaxis.hpp"
 
 namespace cst {
 

@@ -1,4 +1,4 @@
-#include "primitive.hpp"
+#include "primitive_sphere_collision.hpp"
 
 namespace cst {
 

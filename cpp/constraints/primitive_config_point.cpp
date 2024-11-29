@@ -1,4 +1,4 @@
-#include "primitive.hpp"
+#include "primitive_config_point.hpp"
 
 namespace cst {
 
