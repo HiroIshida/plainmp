@@ -1,52 +1,8 @@
 #include "motion_validator.hpp"
 #include <ompl/base/spaces/RealVectorStateSpace.h>
+#include "sequence_table.hpp"
 
 namespace plainmp::ompl_wrapper {
-
-std::vector<int64_t> find_farthest_sequence(size_t N) {
-  std::vector<int64_t> result(N);
-  std::vector<bool> used(N, false);
-  used[0] = true;
-  int current_size = 1;
-
-  for (int i = 1; i < N; i++) {
-    int64_t max_min_distance = -1;
-    int64_t best_num = -1;
-
-    for (int num = 0; num < N; num++) {
-      if (used[num])
-        continue;
-
-      int64_t min_distance = std::numeric_limits<int64_t>::max();
-      for (int j = 0; j < current_size; j++) {
-        int64_t distance = std::abs(num - result[j]);
-        if (distance < min_distance) {
-          min_distance = distance;
-        }
-      }
-
-      if (min_distance > max_min_distance ||
-          (min_distance == max_min_distance && num > best_num)) {
-        max_min_distance = min_distance;
-        best_num = num;
-      }
-    }
-
-    result[i] = best_num;
-    used[best_num] = true;
-    current_size++;
-  }
-  return result;
-}
-
-std::vector<std::vector<int64_t>> compute_sequence_table(size_t n_element) {
-  std::vector<std::vector<int64_t>> result(n_element + 1);
-  for (size_t i = 0; i < n_element; i++) {
-    std::vector<int64_t> sequence = find_farthest_sequence(i + 1);
-    result[i] = sequence;
-  }
-  return result;
-}
 
 BoxMotionValidator::BoxMotionValidator(const ob::SpaceInformationPtr& si,
                                        std::vector<double> width)
@@ -57,7 +13,6 @@ BoxMotionValidator::BoxMotionValidator(const ob::SpaceInformationPtr& si,
     inv_width_.push_back(1.0 / width[i]);
   }
   s_test_ = si_->allocState()->as<ob::RealVectorStateSpace::StateType>();
-  sequence_table_ = compute_sequence_table(200);
 }
 
 bool BoxMotionValidator::checkMotion(const ob::State* s1,
@@ -85,23 +40,37 @@ bool BoxMotionValidator::checkMotion(const ob::State* s1,
   // main
   const auto space = si_->getStateSpace();
   const double step_ratio = width_[longest_idx] / std::abs(diff_longest_axis);
-
   size_t n_test = std::floor(1 / step_ratio) + 2;  // including start and end
-  auto& sequence = sequence_table_[n_test - 1];
-  // sequence[0] is already checked
-  // sequence[1] is the end, thus
-  if (!si_->isValid(rs2)) {
-    return false;
-  }
-  // start from 2
-  for (size_t i = 2; i < n_test; i++) {
-    double travel_rate = sequence[i] * step_ratio;
-    space->interpolate(rs1, rs2, travel_rate, s_test_);
-    if (!si_->isValid(s_test_)) {
+  if (n_test < SEQUENCE_TABLE.size() + 1) {
+    // TABLE[i] for i+1 steps
+    auto& sequence = SEQUENCE_TABLE[n_test - 1];
+    // sequence[0] is already checked
+    // sequence[1] is the end, thus
+    if (!si_->isValid(rs2)) {
       return false;
     }
+    // start from 2
+    for (size_t i = 2; i < n_test; i++) {
+      double travel_rate = sequence[i] * step_ratio;
+      space->interpolate(rs1, rs2, travel_rate, s_test_);
+      if (!si_->isValid(s_test_)) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    if (!si_->isValid(rs2)) {
+      return false;
+    }
+    for (size_t i = 1; i < n_test - 1; i++) {
+      double travel_rate = i * step_ratio;
+      space->interpolate(rs1, rs2, travel_rate, s_test_);
+      if (!si_->isValid(s_test_)) {
+        return false;
+      }
+    }
+    return true;
   }
-  return true;
 }
 
 }  // namespace plainmp::ompl_wrapper

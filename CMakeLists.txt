@@ -31,9 +31,19 @@ if(USE_VALGRIND)
     add_definitions(-DUSE_VALGRIND)
 endif()
 
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ompl/sequence_table.hpp
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ompl/generate_sequence.py
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ompl/generate_sequence.py
+)
+add_custom_target(generate_sequence_table
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ompl/sequence_table.hpp
+)
+
 file(GLOB_RECURSE SRC_FILES cpp/*.cpp)
 include_directories(cpp)
 add_subdirectory(pybind11)
 pybind11_add_module(_plainmp ${SRC_FILES})
+add_dependencies(_plainmp generate_sequence_table)
 target_link_libraries(_plainmp urdfdom_model ompl ${Boost_LIBRARIES})
 install(TARGETS _plainmp DESTINATION .)

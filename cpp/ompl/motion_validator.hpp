@@ -25,7 +25,6 @@ class BoxMotionValidator : public ob::MotionValidator {
   std::vector<double> width_;
   std::vector<double> inv_width_;
   ob::RealVectorStateSpace::StateType* s_test_;  // pre-allocated memory
-  std::vector<std::vector<int64_t>> sequence_table_;
 };
 
 }  // namespace plainmp::ompl_wrapper
