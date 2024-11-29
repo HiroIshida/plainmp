@@ -1,5 +1,5 @@
-#include "bindings.hpp"
 #include "kinematics/kinematics.hpp"
+#include "bindings.hpp"
 
 using namespace kinematics;
 

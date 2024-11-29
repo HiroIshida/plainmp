@@ -43,7 +43,7 @@
 #include <utility>
 #include <vector>
 
-#include "constraint.hpp"
+#include "constraints/constraint.hpp"
 #include "ompl/base/DiscreteMotionValidator.h"
 #include "ompl/base/MotionValidator.h"
 #include "ompl/base/Planner.h"

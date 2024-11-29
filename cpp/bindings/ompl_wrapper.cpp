@@ -1,7 +1,7 @@
 #include <pybind11/functional.h>
 #include <optional>
 #include "bindings.hpp"
-#include "constraint.hpp"
+#include "constraints/constraint.hpp"
 #include "ompl/ompl_thin_wrap.hpp"
 
 namespace plainmp::bindings {
