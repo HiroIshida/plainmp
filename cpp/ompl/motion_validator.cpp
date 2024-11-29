@@ -1,4 +1,4 @@
-#include "box_motion_validator.hpp"
+#include "motion_validator.hpp"
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
 namespace plainmp::ompl_wrapper {
