@@ -44,7 +44,7 @@ SphereCollisionCst::SphereCollisionCst(
     bool with_base,
     const std::vector<SphereAttachmentSpec>& sphere_specs,
     const std::vector<std::pair<std::string, std::string>>& selcol_group_pairs,
-    std::optional<SDFBase::Ptr> fixed_sdf)
+    std::optional<plainmp::collision::SDFBase::Ptr> fixed_sdf)
     : IneqConstraintBase(kin, control_joint_names, with_base),
       fixed_sdf_(fixed_sdf == std::nullopt ? nullptr : *fixed_sdf) {
   for (size_t i = 0; i < sphere_specs.size(); i++) {
@@ -374,13 +374,16 @@ void SphereCollisionCst::set_all_sdfs() {
   }
 }
 
-void SphereCollisionCst::set_all_sdfs_inner(SDFBase::Ptr sdf) {
-  if (sdf->get_type() == SDFType::UNION) {
-    for (auto& sub_sdf : std::static_pointer_cast<UnionSDF>(sdf)->sdfs_) {
+void SphereCollisionCst::set_all_sdfs_inner(
+    plainmp::collision::SDFBase::Ptr sdf) {
+  if (sdf->get_type() == plainmp::collision::SDFType::UNION) {
+    for (auto& sub_sdf :
+         std::static_pointer_cast<plainmp::collision::UnionSDF>(sdf)->sdfs_) {
       set_all_sdfs_inner(sub_sdf);
     }
   } else {
-    auto primitive_sdf = std::static_pointer_cast<PrimitiveSDFBase>(sdf);
+    auto primitive_sdf =
+        std::static_pointer_cast<plainmp::collision::PrimitiveSDFBase>(sdf);
     all_sdfs_cache_.push_back(primitive_sdf);
   }
 }

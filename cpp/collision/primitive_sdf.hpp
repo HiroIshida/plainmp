@@ -11,6 +11,8 @@
 
 #include "kdtree.hpp"
 
+namespace plainmp::collision {
+
 using Point = Eigen::Vector3d;
 using Points = Eigen::Matrix3Xd;
 using Values = Eigen::VectorXd;
@@ -465,3 +467,5 @@ struct CloudSDF : public PrimitiveSDFBase {
   KDTree::Ptr kdtree_;
   double radius_;
 };
+
+}  // namespace plainmp::collision

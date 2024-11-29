@@ -1,6 +1,8 @@
 #include "bindings/bindings.hpp"
 #include "collision/primitive_sdf.hpp"
 
+using namespace plainmp::collision;
+
 namespace plainmp::bindings {
 
 void bind_primitive_submodule(py::module& m) {

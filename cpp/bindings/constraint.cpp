@@ -10,6 +10,7 @@
 #include "constraints/sequential_constraint.hpp"
 
 using namespace constraint;
+using namespace plainmp::collision;
 
 namespace plainmp::bindings {
 

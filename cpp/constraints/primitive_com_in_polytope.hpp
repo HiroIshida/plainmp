@@ -11,7 +11,7 @@ class ComInPolytopeCst : public IneqConstraintBase {
   ComInPolytopeCst(std::shared_ptr<kin::KinematicModel<double>> kin,
                    const std::vector<std::string>& control_joint_names,
                    bool with_base,
-                   BoxSDF::Ptr polytope_sdf,
+                   plainmp::collision::BoxSDF::Ptr polytope_sdf,
                    const std::vector<AppliedForceSpec> applied_forces);
   bool is_valid_dirty() override;
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
@@ -19,7 +19,7 @@ class ComInPolytopeCst : public IneqConstraintBase {
   std::string get_name() const override { return "ComInPolytopeCst"; }
 
  private:
-  BoxSDF::Ptr polytope_sdf_;
+  plainmp::collision::BoxSDF::Ptr polytope_sdf_;
   std::vector<size_t> force_link_ids_;
   std::vector<double> applied_force_values_;
 };

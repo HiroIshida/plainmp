@@ -5,7 +5,7 @@ ComInPolytopeCst::ComInPolytopeCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
     bool with_base,
-    BoxSDF::Ptr polytope_sdf,
+    plainmp::collision::BoxSDF::Ptr polytope_sdf,
     const std::vector<AppliedForceSpec> applied_forces)
     : IneqConstraintBase(kin, control_joint_names, with_base),
       polytope_sdf_(polytope_sdf) {

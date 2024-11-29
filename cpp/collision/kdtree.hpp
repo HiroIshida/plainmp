@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+namespace plainmp::collision {
+
 struct KDNode {
   Eigen::Vector3d point;
   int axis;
@@ -33,3 +35,5 @@ class KDTree {
                double& best_dist,
                Eigen::Vector3d& best_point) const;
 };
+
+}  // namespace plainmp::collision

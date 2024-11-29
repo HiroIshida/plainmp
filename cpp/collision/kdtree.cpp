@@ -5,6 +5,8 @@
 #include <random>
 #include <vector>
 
+namespace plainmp::collision {
+
 KDTree::KDTree(const std::vector<Eigen::Vector3d>& points) {
   nodes_.reserve(points.size());
   std::vector<Eigen::Vector3d> points_copy = points;
@@ -82,3 +84,5 @@ void KDTree::nearest(int node_index,
     nearest(second_index, target, best_sqdist, best_point);
   }
 }
+
+}  // namespace plainmp::collision

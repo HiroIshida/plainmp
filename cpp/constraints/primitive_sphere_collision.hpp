@@ -51,7 +51,7 @@ class SphereCollisionCst : public IneqConstraintBase {
       bool with_base,
       const std::vector<SphereAttachmentSpec>& sphere_specs,
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
-      std::optional<SDFBase::Ptr> fixed_sdf);
+      std::optional<plainmp::collision::SDFBase::Ptr> fixed_sdf);
 
   void post_update_kintree() override {
     for (auto& group : sphere_groups_) {
@@ -59,12 +59,12 @@ class SphereCollisionCst : public IneqConstraintBase {
     }
   }
 
-  void set_sdf(const SDFBase::Ptr& sdf) {
+  void set_sdf(const plainmp::collision::SDFBase::Ptr& sdf) {
     sdf_ = sdf;
     set_all_sdfs();
   }
 
-  SDFBase::Ptr get_sdf() const { return sdf_; }
+  plainmp::collision::SDFBase::Ptr get_sdf() const { return sdf_; }
 
   bool is_valid_dirty() override;
   bool check_ext_collision();
@@ -89,13 +89,13 @@ class SphereCollisionCst : public IneqConstraintBase {
 
  private:
   void set_all_sdfs();
-  void set_all_sdfs_inner(SDFBase::Ptr sdf);
+  void set_all_sdfs_inner(plainmp::collision::SDFBase::Ptr sdf);
 
   std::vector<SphereGroup> sphere_groups_;
   std::vector<std::pair<size_t, size_t>> selcol_group_id_pairs_;
-  SDFBase::Ptr fixed_sdf_;
-  SDFBase::Ptr sdf_;  // set later by user
-  std::vector<PrimitiveSDFBase::Ptr> all_sdfs_cache_;
+  plainmp::collision::SDFBase::Ptr fixed_sdf_;
+  plainmp::collision::SDFBase::Ptr sdf_;  // set later by user
+  std::vector<plainmp::collision::PrimitiveSDFBase::Ptr> all_sdfs_cache_;
   double cutoff_dist_ = 0.1;
 };
 

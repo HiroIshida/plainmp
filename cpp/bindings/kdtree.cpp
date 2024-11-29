@@ -2,6 +2,8 @@
 #include <vector>
 #include "bindings.hpp"
 
+using namespace plainmp::collision;
+
 namespace plainmp::bindings {
 void bind_kdtree_submodule(py::module& m) {
   auto m_kdtree = m.def_submodule("kdtree");
