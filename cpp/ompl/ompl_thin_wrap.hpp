@@ -79,7 +79,7 @@ struct CollisionAwareSpaceInformation {
     } else {
       throw std::runtime_error("unknown validator type");
     }
-    si_->setup();
+    // si_->setup();
   }
 
   void resetCount() { this->is_valid_call_count_ = 0; }
@@ -93,7 +93,7 @@ struct CollisionAwareSpaceInformation {
     bounds.high = ub;
     const auto space(std::make_shared<ob::RealVectorStateSpace>(dim));
     space->setBounds(bounds);
-    space->setup();
+    // space->setup();
     return space;
   }
 
