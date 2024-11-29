@@ -65,4 +65,4 @@ class SizedStack {
   size_t current_idx_;
 };
 
-}  // namespace tinyfk
+}  // namespace kinematics

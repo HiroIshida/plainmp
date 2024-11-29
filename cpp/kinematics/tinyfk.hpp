@@ -163,6 +163,6 @@ class KinematicModel {
 };
 
 std::string load_urdf(const std::string& urdf_path);
-};  // namespace tinyfk
+};  // namespace kinematics
 
 #endif  // include guard
