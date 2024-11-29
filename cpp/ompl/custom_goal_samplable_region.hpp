@@ -3,6 +3,8 @@
 #include <memory>
 #include <optional>
 
+namespace plainmp::ompl_wrapper {
+
 namespace ob = ompl::base;
 
 using GoalSamplerFn = std::function<std::vector<double>()>;
@@ -32,3 +34,4 @@ class CustomGoalSamplableRegion : public ob::GoalSampleableRegion {
   mutable std::vector<double> past_samples_;  // note: contiguous memory
   mutable size_t round_robin_idx_;
 };
+}  // namespace plainmp::ompl_wrapper

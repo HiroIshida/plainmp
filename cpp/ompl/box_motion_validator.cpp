@@ -1,6 +1,8 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include "box_motion_validator.hpp"
 
+namespace plainmp::ompl_wrapper {
+
 BoxMotionValidator::BoxMotionValidator(const ob::SpaceInformationPtr& si,
                                        std::vector<double> width)
     : ob::MotionValidator(si), width_(width) {
@@ -57,3 +59,5 @@ bool BoxMotionValidator::checkMotion(
     std::pair<ob::State*, double>& lastValid) const {
   return checkMotion(s1, s2);
 }
+
+}  // namespace plainmp::ompl_wrapper

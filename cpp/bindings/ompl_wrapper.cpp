@@ -6,6 +6,8 @@
 
 namespace plainmp::bindings {
 
+using namespace plainmp::ompl_wrapper;
+
 void bind_ompl_wrapper_submodule(py::module& m) {
   auto ompl_m = m.def_submodule("ompl");
   ompl_m.def("set_random_seed", &setGlobalSeed);

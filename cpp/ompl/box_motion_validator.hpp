@@ -2,6 +2,8 @@
 #include <ompl/base/SpaceInformation.h>
 #include <vector>
 
+namespace plainmp::ompl_wrapper {
+
 namespace ob = ompl::base;
 
 class BoxMotionValidator : public ob::MotionValidator {
@@ -18,3 +20,5 @@ class BoxMotionValidator : public ob::MotionValidator {
   std::vector<double> width_;
   std::vector<double> inv_width_;
 };
+
+}  // namespace plainmp::ompl_wrapper

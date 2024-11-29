@@ -1,6 +1,8 @@
 #include "custom_goal_samplable_region.hpp"
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
+namespace plainmp::ompl_wrapper {
+
 CustomGoalSamplableRegion::CustomGoalSamplableRegion(
     const ob::SpaceInformationPtr& si,
     const GoalSamplerFn& sampler,
@@ -34,3 +36,5 @@ void CustomGoalSamplableRegion::sampleGoal(ob::State* st) const {
     sample_count_++;
   }
 }
+
+}  // namespace plainmp::ompl_wrapper

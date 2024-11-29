@@ -12,6 +12,8 @@
 #include "constraints/primitive.hpp"
 #include "custom_goal_samplable_region.hpp"
 
+namespace plainmp::ompl_wrapper {
+
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
@@ -253,3 +255,5 @@ void setGlobalSeed(size_t seed) {
 void setLogLevelNone() {
   ompl::msg::setLogLevel(ompl::msg::LOG_NONE);
 }
+
+}  // namespace plainmp::ompl_wrapper

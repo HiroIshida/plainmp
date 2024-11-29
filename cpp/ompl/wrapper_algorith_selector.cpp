@@ -9,6 +9,8 @@
 #include <optional>
 #include "unidirectional_modified.hpp"
 
+namespace ompl_wrapper {
+
 namespace ocustom = ompl::custom;
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -55,3 +57,5 @@ std::shared_ptr<ob::Planner> get_algorithm(const std::string& name,
   }
   throw std::runtime_error("algorithm " + name + " is not supported");
 }
+
+}  // namespace ompl_wrapper
