@@ -45,7 +45,7 @@ void compute_approx_sin_cos(Scalar x, Scalar& s, Scalar& c) {
       (1 - xx * coeff2 + xxxx * coeff4 - xxxxxx * coeff6 + xxxxxxxx * coeff8);
 }
 
-namespace tinyfk {
+namespace kinematics {
 
 template class KinematicModel<double>;
 template class KinematicModel<float>;

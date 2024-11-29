@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace tinyfk {
+namespace kinematics {
 
 template <class DataT>
 class SizedCache {

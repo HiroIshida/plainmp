@@ -18,21 +18,20 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty() {
       vals.segment(head, 3) = pose.trans() - poses_[i];
       jac.block(head, 0, 3, q_dim()) =
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
-                             tinyfk::RotationType::IGNORE, with_base_);
+                             kin::RotationType::IGNORE, with_base_);
       head += 3;
     } else if (poses_[i].size() == 6) {
       vals.segment(head, 3) = pose.trans() - poses_[i].head(3);
       vals.segment(head + 3, 3) = pose.getRPY() - poses_[i].tail(3);
-      jac.block(head, 0, 6, q_dim()) =
-          kin_->get_jacobian(link_ids_[i], control_joint_ids_,
-                             tinyfk::RotationType::RPY, with_base_);
+      jac.block(head, 0, 6, q_dim()) = kin_->get_jacobian(
+          link_ids_[i], control_joint_ids_, kin::RotationType::RPY, with_base_);
       head += 6;
     } else {
       vals.segment(head, 3) = pose.trans() - poses_[i].head(3);
       vals.segment(head + 3, 4) = pose.quat().coeffs() - poses_[i].tail(4);
       jac.block(head, 0, 7, q_dim()) =
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
-                             tinyfk::RotationType::XYZW, with_base_);
+                             kin::RotationType::XYZW, with_base_);
       head += 7;
     }
   }
@@ -47,14 +46,14 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
   vals.head(3) = pose_dummy.trans() - pose2.trans();
   vals.segment(3, 4) = pose_dummy.quat().coeffs() - pose2.quat().coeffs();
   jac = kin_->get_jacobian(dummy_link_id_, control_joint_ids_,
-                           tinyfk::RotationType::XYZW, with_base_) -
+                           kin::RotationType::XYZW, with_base_) -
         kin_->get_jacobian(link_id2_, control_joint_ids_,
-                           tinyfk::RotationType::XYZW, with_base_);
+                           kin::RotationType::XYZW, with_base_);
   return {vals, jac};
 }
 
 FixedZAxisCst::FixedZAxisCst(
-    std::shared_ptr<tinyfk::KinematicModel<double>> kin,
+    std::shared_ptr<kin::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
     bool with_base,
     const std::string& link_name)
@@ -90,11 +89,11 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
   Eigen::MatrixXd jac_plus1_x(3, q_dim());
   Eigen::MatrixXd jac_plus1_y(3, q_dim());
   jac_here = kin_->get_jacobian(link_id_, control_joint_ids_,
-                                tinyfk::RotationType::IGNORE, with_base_);
+                                kin::RotationType::IGNORE, with_base_);
   jac_plus1_x = kin_->get_jacobian(aux_link_ids_[0], control_joint_ids_,
-                                   tinyfk::RotationType::IGNORE, with_base_);
+                                   kin::RotationType::IGNORE, with_base_);
   jac_plus1_y = kin_->get_jacobian(aux_link_ids_[1], control_joint_ids_,
-                                   tinyfk::RotationType::IGNORE, with_base_);
+                                   kin::RotationType::IGNORE, with_base_);
   Eigen::MatrixXd jac(2, q_dim());
   jac.row(0) = jac_plus1_x.row(2) - jac_here.row(2);
   jac.row(1) = jac_plus1_y.row(2) - jac_here.row(2);
@@ -102,7 +101,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
 };
 
 SphereCollisionCst::SphereCollisionCst(
-    std::shared_ptr<tinyfk::KinematicModel<double>> kin,
+    std::shared_ptr<kin::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
     bool with_base,
     const std::vector<SphereAttachmentSpec>& sphere_specs,
@@ -480,7 +479,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
       com += force * pose.trans();
 
       com_jaco += kin_->get_jacobian(force_link_ids_[j], control_joint_ids_,
-                                     tinyfk::RotationType::IGNORE, with_base_) *
+                                     kin::RotationType::IGNORE, with_base_) *
                   force;
     }
     double inv = 1.0 / vertical_force_sum;

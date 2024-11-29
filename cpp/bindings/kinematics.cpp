@@ -1,7 +1,7 @@
 #include "bindings.hpp"
 #include "kinematics/tinyfk.hpp"
 
-using namespace tinyfk;
+using namespace kinematics;
 
 namespace plainmp::bindings {
 

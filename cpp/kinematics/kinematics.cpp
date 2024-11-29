@@ -5,7 +5,7 @@
 #include "tinyfk.hpp"
 #include "urdf_model/pose.h"
 
-namespace tinyfk {
+namespace kinematics {
 
 template <typename Scalar>
 Eigen::Matrix<Scalar, 3, 1> rpy_derivative(

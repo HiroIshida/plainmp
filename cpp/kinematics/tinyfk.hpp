@@ -16,7 +16,7 @@
 
 #include "data_structure.hpp"
 
-namespace tinyfk {
+namespace kinematics {
 
 struct RelevancePredicateTable {
   std::vector<std::vector<bool>> table_;
