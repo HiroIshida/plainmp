@@ -100,36 +100,8 @@ class ConfigPointCst : public EqConstraintBase {
   ConfigPointCst(std::shared_ptr<kin::KinematicModel<double>> kin,
                  const std::vector<std::string>& control_joint_names,
                  bool with_base,
-                 const Eigen::VectorXd& q)
-      : EqConstraintBase(kin, control_joint_names, with_base), q_(q) {
-    size_t dof = control_joint_names.size() + (with_base ? 6 : 0);
-    if (q.size() != dof) {
-      throw std::runtime_error(
-          "q must have the same size as the number of control joints");
-    }
-  }
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override {
-    size_t dof = q_dim();
-    std::vector<double> q_now_joint_std =
-        kin_->get_joint_angles(control_joint_ids_);
-
-    Eigen::VectorXd q_now(dof);
-    for (size_t i = 0; i < control_joint_ids_.size(); i++) {
-      q_now[i] = q_now_joint_std[i];
-    }
-    if (with_base_) {
-      size_t head = control_joint_ids_.size();
-      auto base_pose = kin_->get_base_pose();
-      q_now(head) = base_pose.trans().x();
-      q_now(head + 1) = base_pose.trans().y();
-      q_now(head + 2) = base_pose.trans().z();
-      auto base_rpy = base_pose.getRPY();
-      q_now(head + 3) = base_rpy.x();
-      q_now(head + 4) = base_rpy.y();
-      q_now(head + 5) = base_rpy.z();
-    }
-    return {q_now - q_, Eigen::MatrixXd::Identity(dof, dof)};
-  }
+                 const Eigen::VectorXd& q);
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   size_t cst_dim() const { return q_.size(); }
   std::string get_name() const override { return "ConfigPointCst"; }
 
@@ -144,24 +116,10 @@ class LinkPoseCst : public EqConstraintBase {
               const std::vector<std::string>& control_joint_names,
               bool with_base,
               const std::vector<std::string>& link_names,
-              const std::vector<Eigen::VectorXd>& poses)
-      : EqConstraintBase(kin, control_joint_names, with_base),
-        link_ids_(kin_->get_link_ids(link_names)),
-        poses_(poses) {
-    for (auto& pose : poses_) {
-      if (pose.size() != 3 && pose.size() != 6 && pose.size() != 7) {
-        throw std::runtime_error("All poses must be 3 or 6 or 7 dimensional");
-      }
-    }
-  }
+              const std::vector<Eigen::VectorXd>& poses);
+
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
-  size_t cst_dim() const {
-    size_t dim = 0;
-    for (auto& pose : poses_) {
-      dim += pose.size();
-    }
-    return dim;
-  }
+  size_t cst_dim() const;
   std::string get_name() const override { return "LinkPoseCst"; }
 
  private:
@@ -177,17 +135,7 @@ class RelativePoseCst : public EqConstraintBase {
                   bool with_base,
                   const std::string& link_name1,
                   const std::string& link_name2,
-                  const Eigen::Vector3d& relative_pose)
-      : EqConstraintBase(kin, control_joint_names, with_base),
-        link_id2_(kin_->get_link_ids({link_name2})[0]),
-        relative_pose_(relative_pose) {
-    // TODO: because name is hard-coded, we cannot create two RelativePoseCst...
-    auto pose = Transform::Identity();
-    pose.trans() = relative_pose;
-    size_t link_id1_ = kin_->get_link_ids({link_name1})[0];
-    dummy_link_id_ = kin_->add_new_link(link_id1_, pose, true);
-  }
-
+                  const Eigen::Vector3d& relative_pose);
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   size_t cst_dim() const { return 7; }
   std::string get_name() const override { return "RelativePoseCst"; }
@@ -250,40 +198,9 @@ struct SphereGroup {
   }
 
   void create_group_sphere_position_cache(
-      const std::shared_ptr<kin::KinematicModel<double>>& kin) {
-    auto plink_pose = kin->get_link_pose(parent_link_id);
-    // The code below is "safe" but not efficient so see the HACK below
-    // if (is_rot_mat_dirty) {
-    //   rot_mat_cache = plink_pose.quat().toRotationMatrix();
-    //   this->is_rot_mat_dirty = false;
-    // }
-    // HACK: because is_group_sphere_position_dirty => is_sphere_positions_dirty
-    rot_mat_cache = plink_pose.quat().toRotationMatrix();
-    this->group_sphere_position_cache =
-        rot_mat_cache * group_sphere_relative_position + plink_pose.trans();
-    this->is_group_sphere_position_dirty = false;
-  }
-
+      const std::shared_ptr<kin::KinematicModel<double>>& kin);
   void create_sphere_position_cache(
-      const std::shared_ptr<kin::KinematicModel<double>>& kin) {
-    // The code below is "safe" but not efficient so see the HACK below
-    // auto plink_pose = kin->get_link_pose(parent_link_id);
-    // if (is_rot_mat_dirty) {
-    //   rot_mat_cache = plink_pose.quat().toRotationMatrix();
-    //   this->is_rot_mat_dirty = false;
-    // }
-
-    // HACK: because the sub-sphere is evaluated after the group sphere
-    // we know that there exiss matrix cache and transform cache. so...
-    auto& plink_trans = kin->transform_cache_.data_[parent_link_id].trans();
-
-    // NOTE: the above for-loop is faster than batch operation using Colwise
-    for (int i = 0; i < sphere_positions_cache.cols(); i++) {
-      sphere_positions_cache.col(i) =
-          rot_mat_cache * sphere_relative_positions.col(i) + plink_trans;
-    }
-    this->is_sphere_positions_dirty = false;
-  }
+      const std::shared_ptr<kin::KinematicModel<double>>& kin);
 };
 
 class SphereCollisionCst : public IneqConstraintBase {
@@ -355,24 +272,9 @@ class ComInPolytopeCst : public IneqConstraintBase {
                    const std::vector<std::string>& control_joint_names,
                    bool with_base,
                    BoxSDF::Ptr polytope_sdf,
-                   const std::vector<AppliedForceSpec> applied_forces)
-      : IneqConstraintBase(kin, control_joint_names, with_base),
-        polytope_sdf_(polytope_sdf) {
-    auto w = polytope_sdf_->get_width();
-    w[2] = 1000;  // adhoc to represent infinite height
-    polytope_sdf_->set_width(w);
-
-    auto force_link_names = std::vector<std::string>();
-    for (auto& force : applied_forces) {
-      force_link_names.push_back(force.link_name);
-      applied_force_values_.push_back(force.force);
-    }
-    force_link_ids_ = kin_->get_link_ids(force_link_names);
-  }
-
+                   const std::vector<AppliedForceSpec> applied_forces);
   bool is_valid_dirty() override;
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
-
   size_t cst_dim() const { return 1; }
   std::string get_name() const override { return "ComInPolytopeCst"; }
 

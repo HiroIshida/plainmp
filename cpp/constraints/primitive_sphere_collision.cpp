@@ -1,104 +1,42 @@
 #include "primitive.hpp"
-#include <pybind11/stl.h>
-#include <algorithm>
-#include <optional>
-#include <stdexcept>
-#include <unordered_map>
 
 namespace cst {
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty() {
-  Eigen::VectorXd vals(cst_dim());
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-  size_t head = 0;
-  for (size_t i = 0; i < link_ids_.size(); i++) {
-    const auto& pose = kin_->get_link_pose(link_ids_[i]);
-
-    if (poses_[i].size() == 3) {
-      vals.segment(head, 3) = pose.trans() - poses_[i];
-      jac.block(head, 0, 3, q_dim()) =
-          kin_->get_jacobian(link_ids_[i], control_joint_ids_,
-                             kin::RotationType::IGNORE, with_base_);
-      head += 3;
-    } else if (poses_[i].size() == 6) {
-      vals.segment(head, 3) = pose.trans() - poses_[i].head(3);
-      vals.segment(head + 3, 3) = pose.getRPY() - poses_[i].tail(3);
-      jac.block(head, 0, 6, q_dim()) = kin_->get_jacobian(
-          link_ids_[i], control_joint_ids_, kin::RotationType::RPY, with_base_);
-      head += 6;
-    } else {
-      vals.segment(head, 3) = pose.trans() - poses_[i].head(3);
-      vals.segment(head + 3, 4) = pose.quat().coeffs() - poses_[i].tail(4);
-      jac.block(head, 0, 7, q_dim()) =
-          kin_->get_jacobian(link_ids_[i], control_joint_ids_,
-                             kin::RotationType::XYZW, with_base_);
-      head += 7;
-    }
-  }
-  return {vals, jac};
+void SphereGroup::create_group_sphere_position_cache(
+    const std::shared_ptr<kin::KinematicModel<double>>& kin) {
+  auto plink_pose = kin->get_link_pose(parent_link_id);
+  // The code below is "safe" but not efficient so see the HACK below
+  // if (is_rot_mat_dirty) {
+  //   rot_mat_cache = plink_pose.quat().toRotationMatrix();
+  //   this->is_rot_mat_dirty = false;
+  // }
+  // HACK: because is_group_sphere_position_dirty => is_sphere_positions_dirty
+  rot_mat_cache = plink_pose.quat().toRotationMatrix();
+  this->group_sphere_position_cache =
+      rot_mat_cache * group_sphere_relative_position + plink_pose.trans();
+  this->is_group_sphere_position_dirty = false;
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
-  Eigen::VectorXd vals(cst_dim());
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-  const auto& pose_dummy = kin_->get_link_pose(dummy_link_id_);
-  const auto& pose2 = kin_->get_link_pose(link_id2_);
-  vals.head(3) = pose_dummy.trans() - pose2.trans();
-  vals.segment(3, 4) = pose_dummy.quat().coeffs() - pose2.quat().coeffs();
-  jac = kin_->get_jacobian(dummy_link_id_, control_joint_ids_,
-                           kin::RotationType::XYZW, with_base_) -
-        kin_->get_jacobian(link_id2_, control_joint_ids_,
-                           kin::RotationType::XYZW, with_base_);
-  return {vals, jac};
-}
+void SphereGroup::create_sphere_position_cache(
+    const std::shared_ptr<kin::KinematicModel<double>>& kin) {
+  // The code below is "safe" but not efficient so see the HACK below
+  // auto plink_pose = kin->get_link_pose(parent_link_id);
+  // if (is_rot_mat_dirty) {
+  //   rot_mat_cache = plink_pose.quat().toRotationMatrix();
+  //   this->is_rot_mat_dirty = false;
+  // }
 
-FixedZAxisCst::FixedZAxisCst(
-    std::shared_ptr<kin::KinematicModel<double>> kin,
-    const std::vector<std::string>& control_joint_names,
-    bool with_base,
-    const std::string& link_name)
-    : EqConstraintBase(kin, control_joint_names, with_base),
-      link_id_(kin_->get_link_ids({link_name})[0]) {
-  aux_link_ids_.clear();
-  {
-    auto pose = Transform::Identity();
-    pose.trans().x() = 1;
-    auto new_link_id = kin_->add_new_link(link_id_, pose, false);
-    aux_link_ids_.push_back(new_link_id);
+  // HACK: because the sub-sphere is evaluated after the group sphere
+  // we know that there exiss matrix cache and transform cache. so...
+  auto& plink_trans = kin->transform_cache_.data_[parent_link_id].trans();
+
+  // NOTE: the above for-loop is faster than batch operation using Colwise
+  for (int i = 0; i < sphere_positions_cache.cols(); i++) {
+    sphere_positions_cache.col(i) =
+        rot_mat_cache * sphere_relative_positions.col(i) + plink_trans;
   }
-
-  {
-    auto pose = Transform::Identity();
-    pose.trans().y() = 1;
-    auto new_link_id = kin_->add_new_link(link_id_, pose, false);
-    aux_link_ids_.push_back(new_link_id);
-  }
+  this->is_sphere_positions_dirty = false;
 }
-
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
-  const auto& pose_here = kin_->get_link_pose(link_id_);
-  const auto& pose_plus1_x = kin_->get_link_pose(aux_link_ids_[0]);
-  const auto& pose_plus1_y = kin_->get_link_pose(aux_link_ids_[1]);
-  Eigen::VectorXd vals(2);
-  double diff_plus1_x_z = pose_plus1_x.trans().z() - pose_here.trans().z();
-  double diff_plus1_y_z = pose_plus1_y.trans().z() - pose_here.trans().z();
-  vals << diff_plus1_x_z, diff_plus1_y_z;
-
-  // jacobian
-  Eigen::MatrixXd jac_here(3, q_dim());
-  Eigen::MatrixXd jac_plus1_x(3, q_dim());
-  Eigen::MatrixXd jac_plus1_y(3, q_dim());
-  jac_here = kin_->get_jacobian(link_id_, control_joint_ids_,
-                                kin::RotationType::IGNORE, with_base_);
-  jac_plus1_x = kin_->get_jacobian(aux_link_ids_[0], control_joint_ids_,
-                                   kin::RotationType::IGNORE, with_base_);
-  jac_plus1_y = kin_->get_jacobian(aux_link_ids_[1], control_joint_ids_,
-                                   kin::RotationType::IGNORE, with_base_);
-  Eigen::MatrixXd jac(2, q_dim());
-  jac.row(0) = jac_plus1_x.row(2) - jac_here.row(2);
-  jac.row(1) = jac_plus1_y.row(2) - jac_here.row(2);
-  return {vals, jac};
-};
 
 SphereCollisionCst::SphereCollisionCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
@@ -446,59 +384,5 @@ void SphereCollisionCst::set_all_sdfs_inner(SDFBase::Ptr sdf) {
     all_sdfs_cache_.push_back(primitive_sdf);
   }
 }
-
-bool ComInPolytopeCst::is_valid_dirty() {
-  // COPIED from evaluate() >> START
-  auto com = kin_->get_com();
-  if (force_link_ids_.size() > 0) {
-    double vertical_force_sum = 1.0;  // 1.0 for normalized self
-    for (size_t j = 0; j < force_link_ids_.size(); ++j) {
-      double force = applied_force_values_[j] / kin_->total_mass_;
-      vertical_force_sum += force;
-      const auto& pose = kin_->get_link_pose(force_link_ids_[j]);
-      com += force * pose.trans();
-    }
-    com /= vertical_force_sum;
-  }
-  // COPIED from evaluate() >> END
-  return polytope_sdf_->evaluate(com) < 0;
-}
-
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
-  Eigen::VectorXd vals(cst_dim());
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-
-  auto com = kin_->get_com();
-  auto com_jaco = kin_->get_com_jacobian(control_joint_ids_, q_dim());
-  if (force_link_ids_.size() > 0) {
-    double vertical_force_sum = 1.0;  // 1.0 for normalized self
-    for (size_t j = 0; j < force_link_ids_.size(); ++j) {
-      double force = applied_force_values_[j] / kin_->total_mass_;
-      vertical_force_sum += force;
-      const auto& pose = kin_->get_link_pose(force_link_ids_[j]);
-      com += force * pose.trans();
-
-      com_jaco += kin_->get_jacobian(force_link_ids_[j], control_joint_ids_,
-                                     kin::RotationType::IGNORE, with_base_) *
-                  force;
-    }
-    double inv = 1.0 / vertical_force_sum;
-    com *= inv;
-    com_jaco *= inv;
-  }
-  double val = -polytope_sdf_->evaluate(com);
-  vals[0] = val;
-
-  Eigen::Vector3d grad;
-  for (size_t i = 0; i < 3; i++) {
-    Eigen::Vector3d perturbed_com = com;
-    perturbed_com[i] += 1e-6;
-    double val_perturbed = -polytope_sdf_->evaluate(perturbed_com);
-    grad[i] = (val_perturbed - val) / 1e-6;
-  }
-  jac.row(0) = com_jaco.transpose() * grad;
-
-  return {vals, jac};
-};
 
 }  // namespace cst
