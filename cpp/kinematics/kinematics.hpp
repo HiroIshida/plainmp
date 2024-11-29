@@ -15,7 +15,7 @@
 
 #include "data_structure.hpp"
 
-namespace kinematics {
+namespace plainmp::kinematics {
 
 struct RelevancePredicateTable {
   std::vector<std::vector<bool>> table_;
@@ -162,4 +162,4 @@ class KinematicModel {
 };
 
 std::string load_urdf(const std::string& urdf_path);
-};  // namespace kinematics
+};  // namespace plainmp::kinematics

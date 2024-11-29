@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include "urdf_model/pose.h"
 
-namespace kinematics {
+namespace plainmp::kinematics {
 
 template class KinematicModel<double>;
 template class KinematicModel<float>;
@@ -357,4 +357,4 @@ std::string load_urdf(const std::string& urdf_path) {
   return xml_string;
 }
 
-};  // namespace kinematics
+};  // namespace plainmp::kinematics

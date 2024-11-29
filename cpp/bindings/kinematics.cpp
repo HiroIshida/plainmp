@@ -1,7 +1,7 @@
 #include "kinematics/kinematics.hpp"
 #include "bindings.hpp"
 
-using namespace kinematics;
+using namespace plainmp::kinematics;
 
 namespace plainmp::bindings {
 

@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace kinematics {
+namespace plainmp::kinematics {
 
 template <class DataT>
 class SizedCache {
@@ -65,4 +65,4 @@ class SizedStack {
   size_t current_idx_;
 };
 
-}  // namespace kinematics
+}  // namespace plainmp::kinematics

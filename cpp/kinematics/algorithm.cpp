@@ -5,7 +5,7 @@
 #include "kinematics.hpp"
 #include "urdf_model/pose.h"
 
-namespace kinematics {
+namespace plainmp::kinematics {
 
 template <typename Scalar>
 Eigen::Matrix<Scalar, 3, 1> rpy_derivative(
@@ -423,4 +423,4 @@ KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t>& joint_ids,
   return jac_average;
 }
 
-};  // namespace kinematics
+};  // namespace plainmp::kinematics

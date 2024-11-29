@@ -11,7 +11,7 @@
 
 namespace constraint {
 
-namespace kin = kinematics;
+namespace kin = plainmp::kinematics;
 
 class ConstraintBase {
  public:
