@@ -8,7 +8,7 @@
 #include <utility>
 #include "collision/primitive_sdf.hpp"
 #include "constraint.hpp"
-#include "kinematics/tinyfk.hpp"
+#include "kinematics/kinematics.hpp"
 
 namespace cst {
 template <typename T>

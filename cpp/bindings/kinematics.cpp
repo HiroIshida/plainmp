@@ -1,5 +1,5 @@
 #include "bindings.hpp"
-#include "kinematics/tinyfk.hpp"
+#include "kinematics/kinematics.hpp"
 
 using namespace kinematics;
 
@@ -21,16 +21,16 @@ class _KinematicModel : public KinematicModel<double> {
 };
 
 void bind_kinematics_submodule(py::module& m) {
-  auto m_tinyfk = m.def_submodule("tinyfk");
-  py::class_<urdf::Link, urdf::LinkSharedPtr>(m_tinyfk, "Link")
+  auto m_kin = m.def_submodule("kinematics");
+  py::class_<urdf::Link, urdf::LinkSharedPtr>(m_kin, "Link")
       .def_readonly("name", &urdf::Link::name)
       .def_readonly("id", &urdf::Link::id);
 
   py::class_<KinematicModel<double>, std::shared_ptr<KinematicModel<double>>>(
-      m_tinyfk, "KinematicModel_cpp", py::module_local());
+      m_kin, "KinematicModel_cpp", py::module_local());
 
   py::class_<_KinematicModel, std::shared_ptr<_KinematicModel>,
-             KinematicModel<double>>(m_tinyfk, "KinematicModel",
+             KinematicModel<double>>(m_kin, "KinematicModel",
                                      py::module_local())
       .def(py::init<std::string&>())
       .def("add_new_link", &_KinematicModel::add_new_link_py)

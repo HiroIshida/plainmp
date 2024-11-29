@@ -1,5 +1,4 @@
-#ifndef tinyfk_hpp
-#define tinyfk_hpp
+#pragma once
 
 #include <assert.h>
 #include <Eigen/Core>  // slow compile...
@@ -164,5 +163,3 @@ class KinematicModel {
 
 std::string load_urdf(const std::string& urdf_path);
 };  // namespace kinematics
-
-#endif  // include guard

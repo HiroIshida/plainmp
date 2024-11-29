@@ -31,8 +31,8 @@ from plainmp.constraint import (
     SphereAttachmentSpec,
     SphereCollisionCst,
 )
+from plainmp.kinematics import KinematicModel
 from plainmp.psdf import BoxSDF, Pose
-from plainmp.tinyfk import KinematicModel
 from plainmp.utils import sksdf_to_cppsdf
 
 _loaded_urdf_models: Dict[str, URDF] = {}

@@ -2,7 +2,7 @@
 #include <cmath>
 #include <stack>
 #include <stdexcept>
-#include "tinyfk.hpp"
+#include "kinematics.hpp"
 #include "urdf_model/pose.h"
 
 namespace kinematics {

@@ -8,7 +8,7 @@
 #include <optional>
 #include <utility>
 #include "collision/primitive_sdf.hpp"
-#include "kinematics/tinyfk.hpp"
+#include "kinematics/kinematics.hpp"
 
 namespace cst {
 

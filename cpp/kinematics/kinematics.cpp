@@ -1,4 +1,4 @@
-#include "tinyfk.hpp"
+#include "kinematics.hpp"
 #include <Eigen/Geometry>
 #include <cmath>
 #include <fstream>
