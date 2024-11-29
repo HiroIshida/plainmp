@@ -9,9 +9,9 @@
 #include <ompl/geometric/planners/experience/ERTConnect.h>
 #include <optional>
 #include "algorithm_selector.hpp"
-#include "motion_validator.hpp"
 #include "constraints/primitive.hpp"
 #include "custom_goal_samplable_region.hpp"
+#include "motion_validator.hpp"
 
 namespace plainmp::ompl_wrapper {
 
