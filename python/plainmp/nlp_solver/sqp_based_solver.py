@@ -65,7 +65,8 @@ def translate(problem: Problem, n_wp: int) -> Tuple[SequentialCst, SequentialCst
     if problem.global_ineq_const is not None:
         # seq_ineq_const.add_globally(problem.global_ineq_const)
         add_globally_workaround(seq_ineq_const, problem.global_ineq_const)
-    seq_ineq_const.add_motion_step_box_constraint(problem.motion_step_box)
+    assert problem.validator_type == "box", "currently only box validator is supported"
+    seq_ineq_const.add_motion_step_box_constraint(problem.resolution)
     seq_ineq_const.finalize()
     return seq_eq_const, seq_ineq_const
 
@@ -173,14 +174,9 @@ class SQPBasedSolver:
         ts = time.time()
         config = self.config
         seq_eq_const, seq_ineq_const = translate(problem, config.n_wp)
-        n_dof = len(problem.start)
 
         lb_stacked = np.tile(problem.lb, config.n_wp)
         ub_stacked = np.tile(problem.ub, config.n_wp)
-        self.config.n_wp * n_dof
-
-        problem.motion_step_box
-
         ctol_ineq = config.osqpsqp_config.ctol_ineq
 
         def ineq_tighten(x):

@@ -13,6 +13,8 @@ from plainmp.trajectory import Trajectory
 from ._plainmp.ompl import (  # noqa: F401
     ERTConnectPlanner,
     OMPLPlanner,
+    ValidatorConfig,
+    ValidatorType,
     set_log_level_none,
 )
 
@@ -146,13 +148,25 @@ class OMPLSolver:
             q_goal = ik_ret.q
             goal_sampler = None
 
+        vconfig = ValidatorConfig()
+        if problem.validator_type == "box":
+            vconfig.type = ValidatorType.BOX
+            vconfig.box_width = problem.resolution
+        elif problem.validator_type == "euclidean":
+            vconfig.type = ValidatorType.EUCLIDEAN
+            vconfig.resolution = problem.resolution
+        else:
+            raise ValueError(
+                f"Unknown validator type: {problem.motion_validation_resolution.validator_type}"
+            )
+
         if guess is not None:
             planner = ERTConnectPlanner(
                 problem.lb,
                 problem.ub,
                 problem.global_ineq_const,
                 self.config.n_max_call,
-                problem.motion_step_box,
+                vconfig,
             )
             planner.set_heuristic(guess.numpy())
         else:
@@ -161,7 +175,7 @@ class OMPLSolver:
                 problem.ub,
                 problem.global_ineq_const,
                 self.config.n_max_call,
-                problem.motion_step_box,
+                vconfig,
                 self.config.algorithm.value,
                 self.config.algorithm_range,
             )

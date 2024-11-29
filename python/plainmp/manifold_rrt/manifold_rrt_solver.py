@@ -96,12 +96,13 @@ class ManiRRTConnectSolver:
                 return True
             return problem.global_ineq_const.is_valid(q)
 
+        assert problem.validator_type == "box", "currenlty only box validator is supported"
         rrtconnect = ManifoldRRTConnect(
             problem.start,
             q_goal,  # type: ignore
             problem.lb,
             problem.ub,
-            problem.motion_step_box,
+            problem.resolution,
             project,
             is_valid,
             config=conf,
