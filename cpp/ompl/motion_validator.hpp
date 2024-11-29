@@ -27,4 +27,21 @@ class BoxMotionValidator : public ob::MotionValidator {
   ob::RealVectorStateSpace::StateType* s_test_;  // pre-allocated memory
 };
 
+class EuclideanMotionValidator : public ob::MotionValidator {
+ public:
+  EuclideanMotionValidator(const ob::SpaceInformationPtr& si,
+                           double resolution);
+  ~EuclideanMotionValidator() override { si_->freeState(s_test_); }
+  bool checkMotion(const ob::State* s1, const ob::State* s2) const;
+  bool checkMotion(const ob::State* s1,
+                   const ob::State* s2,
+                   std::pair<ob::State*, double>& lastValid) const {
+    return checkMotion(s1, s2);
+  }
+
+ private:
+  double resolution_;
+  ob::RealVectorStateSpace::StateType* s_test_;  // pre-allocated memory
+};
+
 }  // namespace plainmp::ompl_wrapper

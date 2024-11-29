@@ -37,10 +37,57 @@ bool BoxMotionValidator::checkMotion(const ob::State* s1,
     return true;
   }
 
-  // main
-  const auto space = si_->getStateSpace();
   const double step_ratio = width_[longest_idx] / std::abs(diff_longest_axis);
+
+  const auto space = si_->getStateSpace();
   size_t n_test = std::floor(1 / step_ratio) + 2;  // including start and end
+  if (n_test < SEQUENCE_TABLE.size() + 1) {
+    // TABLE[i] for i+1 steps
+    auto& sequence = SEQUENCE_TABLE[n_test - 1];
+    // sequence[0] is already checked
+    // sequence[1] is the end, thus
+    if (!si_->isValid(rs2)) {
+      return false;
+    }
+    // start from 2
+    for (size_t i = 2; i < n_test; i++) {
+      double travel_rate = sequence[i] * step_ratio;
+      space->interpolate(rs1, rs2, travel_rate, s_test_);
+      if (!si_->isValid(s_test_)) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    if (!si_->isValid(rs2)) {
+      return false;
+    }
+    for (size_t i = 1; i < n_test - 1; i++) {
+      double travel_rate = i * step_ratio;
+      space->interpolate(rs1, rs2, travel_rate, s_test_);
+      if (!si_->isValid(s_test_)) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+EuclideanMotionValidator::EuclideanMotionValidator(
+    const ob::SpaceInformationPtr& si,
+    double resolution)
+    : ob::MotionValidator(si), resolution_(resolution) {
+  s_test_ = si_->allocState()->as<ob::RealVectorStateSpace::StateType>();
+}
+
+bool EuclideanMotionValidator::checkMotion(const ob::State* s1,
+                                           const ob::State* s2) const {
+  const auto rs1 = s1->as<ob::RealVectorStateSpace::StateType>();
+  const auto rs2 = s2->as<ob::RealVectorStateSpace::StateType>();
+  double dist = si_->distance(s1, s2);
+  double step_ratio = resolution_ / dist;
+  size_t n_test = std::floor(1 / step_ratio) + 2;
+  const auto space = si_->getStateSpace();
   if (n_test < SEQUENCE_TABLE.size() + 1) {
     // TABLE[i] for i+1 steps
     auto& sequence = SEQUENCE_TABLE[n_test - 1];

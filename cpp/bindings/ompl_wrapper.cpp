@@ -13,10 +13,21 @@ void bind_ompl_wrapper_submodule(py::module& m) {
   ompl_m.def("set_random_seed", &setGlobalSeed);
   ompl_m.def("set_log_level_none", &setLogLevelNone);
 
+  py::enum_<ValidatorConfig::Type>(ompl_m, "ValidatorType")
+      .value("BOX", ValidatorConfig::Type::BOX)
+      .value("EUCLIDEAN", ValidatorConfig::Type::EUCLIDEAN)
+      .export_values();
+
+  py::class_<ValidatorConfig>(ompl_m, "ValidatorConfig")
+      .def(py::init<>())
+      .def_readwrite("type", &ValidatorConfig::type)
+      .def_readwrite("resolution", &ValidatorConfig::resolution)
+      .def_readwrite("box_width", &ValidatorConfig::box_width);
+
   py::class_<OMPLPlanner>(ompl_m, "OMPLPlanner", py::module_local())
       .def(py::init<std::vector<double>&, std::vector<double>&,
                     constraint::IneqConstraintBase::Ptr, size_t,
-                    std::vector<double>, std::string, std::optional<double>>())
+                    ValidatorConfig, std::string, std::optional<double>>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("solve", &OMPLPlanner::solve, py::arg("start"), py::arg("goal"),
            py::arg("simplify"), py::arg("timeout") = py::none(),
@@ -26,7 +37,7 @@ void bind_ompl_wrapper_submodule(py::module& m) {
   py::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner", py::module_local())
       .def(py::init<std::vector<double>, std::vector<double>,
                     constraint::IneqConstraintBase::Ptr, size_t,
-                    std::vector<double>>())
+                    ValidatorConfig>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("solve", &ERTConnectPlanner::solve, py::arg("start"),
            py::arg("goal"), py::arg("simplify"),

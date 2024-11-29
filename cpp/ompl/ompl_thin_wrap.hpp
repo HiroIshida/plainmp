@@ -12,6 +12,7 @@
 #include "constraints/primitive.hpp"
 #include "custom_goal_samplable_region.hpp"
 #include "motion_validator.hpp"
+#include "ompl/base/MotionValidator.h"
 
 namespace plainmp::ompl_wrapper {
 
@@ -39,25 +40,45 @@ og::PathGeometric points_to_pathgeometric(
   return pg;
 }
 
+struct ValidatorConfig {
+  enum class Type { BOX, EUCLIDEAN };
+  Type type;
+  // cannot use std::variant to work with pybind11
+  // but either double or vector<double> is expected
+  // and BOX => vector<double> is expected
+  // and EUCLIDEAN => double is expected
+  double resolution;
+  std::vector<double> box_width;
+};
+
 struct CollisionAwareSpaceInformation {
   CollisionAwareSpaceInformation(const std::vector<double>& lb,
                                  const std::vector<double>& ub,
                                  constraint::IneqConstraintBase::Ptr ineq_cst,
                                  size_t max_is_valid_call,
-                                 const std::vector<double>& box_width)
+                                 const ValidatorConfig& vconfig)
       : si_(nullptr),
         ineq_cst_(ineq_cst),
         is_valid_call_count_(0),
         max_is_valid_call_(max_is_valid_call),
-        box_width_(box_width),
         tmp_vec_(lb.size()) {
     const auto space = bound2space(lb, ub);
     si_ = std::make_shared<ob::SpaceInformation>(space);
-    if (box_width.size() != space->getDimension()) {
-      throw std::runtime_error("box dimension and space dimension mismatch");
+
+    size_t dim = space->getDimension();
+
+    if (vconfig.type == ValidatorConfig::Type::EUCLIDEAN) {
+      si_->setMotionValidator(
+          std::make_shared<EuclideanMotionValidator>(si_, vconfig.resolution));
+    } else if (vconfig.type == ValidatorConfig::Type::BOX) {
+      if (vconfig.box_width.size() != dim) {
+        throw std::runtime_error("box dimension and space dimension mismatch");
+      }
+      si_->setMotionValidator(
+          std::make_shared<BoxMotionValidator>(si_, vconfig.box_width));
+    } else {
+      throw std::runtime_error("unknown validator type");
     }
-    si_->setMotionValidator(
-        std::make_shared<BoxMotionValidator>(si_, box_width));
     si_->setup();
   }
 
@@ -91,7 +112,6 @@ struct CollisionAwareSpaceInformation {
   constraint::IneqConstraintBase::Ptr ineq_cst_;
   size_t is_valid_call_count_;
   const size_t max_is_valid_call_;
-  std::vector<double> box_width_;
   std::vector<double>
       tmp_vec_;  // to avoid dynamic allocation (used in is_valid)
 };
@@ -101,9 +121,9 @@ struct PlannerBase {
               const std::vector<double>& ub,
               constraint::IneqConstraintBase::Ptr ineq_cst,
               size_t max_is_valid_call,
-              const std::vector<double>& box_width) {
+              const ValidatorConfig& vconfig) {
     csi_ = std::make_unique<CollisionAwareSpaceInformation>(
-        lb, ub, ineq_cst, max_is_valid_call, box_width);
+        lb, ub, ineq_cst, max_is_valid_call, vconfig);
     setup_ = std::make_unique<og::SimpleSetup>(csi_->si_);
     setup_->setStateValidityChecker(
         [this](const ob::State* s) { return this->csi_->is_valid(s); });
@@ -184,10 +204,10 @@ struct OMPLPlanner : public PlannerBase {
               const std::vector<double>& ub,
               constraint::IneqConstraintBase::Ptr ineq_cst,
               size_t max_is_valid_call,
-              const std::vector<double>& box_width,
+              const ValidatorConfig& vconfig,
               const std::string& algo_name,
               std::optional<double> range)
-      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width) {
+      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, vconfig) {
     const auto algo = get_algorithm(algo_name, csi_->si_, range);
     setup_->setPlanner(algo);
 
@@ -215,8 +235,8 @@ struct ERTConnectPlanner : public PlannerBase {
                     const std::vector<double>& ub,
                     constraint::IneqConstraintBase::Ptr ineq_cst,
                     size_t max_is_valid_call,
-                    const std::vector<double>& box_width)
-      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width) {
+                    const ValidatorConfig& vconfig)
+      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, vconfig) {
     auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
     setup_->setPlanner(ert_connect);
   }
