@@ -1,5 +1,5 @@
-#include <ompl/base/spaces/RealVectorStateSpace.h>
 #include "box_motion_validator.hpp"
+#include <ompl/base/spaces/RealVectorStateSpace.h>
 
 namespace plainmp::ompl_wrapper {
 
@@ -11,6 +11,7 @@ BoxMotionValidator::BoxMotionValidator(const ob::SpaceInformationPtr& si,
   for (size_t i = 0; i < width.size(); ++i) {
     inv_width_.push_back(1.0 / width[i]);
   }
+  s_test_ = si_->allocState()->as<ob::RealVectorStateSpace::StateType>();
 }
 
 bool BoxMotionValidator::checkMotion(const ob::State* s1,
@@ -36,17 +37,14 @@ bool BoxMotionValidator::checkMotion(const ob::State* s1,
   }
 
   // main
-  const auto s_test =
-      si_->allocState()->as<ob::RealVectorStateSpace::StateType>();
-
   const auto space = si_->getStateSpace();
   const double step_ratio = width_[longest_idx] / std::abs(diff_longest_axis);
 
   double travel_rate = 0.0;
   while (travel_rate + step_ratio < 1.0) {
     travel_rate += step_ratio;
-    space->interpolate(rs1, rs2, travel_rate, s_test);
-    if (!si_->isValid(s_test)) {
+    space->interpolate(rs1, rs2, travel_rate, s_test_);
+    if (!si_->isValid(s_test_)) {
       return false;
     }
   }
