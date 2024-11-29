@@ -8,6 +8,7 @@
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/experience/ERTConnect.h>
 #include <optional>
+#include "algorithm_selector.hpp"
 #include "box_motion_validator.hpp"
 #include "constraints/primitive.hpp"
 #include "custom_goal_samplable_region.hpp"
@@ -16,10 +17,6 @@ namespace plainmp::ompl_wrapper {
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
-
-std::shared_ptr<ob::Planner> get_algorithm(const std::string& name,
-                                           const ob::SpaceInformationPtr& si,
-                                           std::optional<double> range);
 
 inline void state_to_vec(const ob::State* state, std::vector<double>& vec) {
   const ob::RealVectorStateSpace::StateType* rs;
