@@ -4,6 +4,9 @@ namespace plainmp::constraint {
 
 void SphereGroup::create_group_sphere_position_cache(
     const std::shared_ptr<kin::KinematicModel<double>>& kin) {
+  if (!is_group_sphere_position_dirty) {
+    return;
+  }
   auto plink_pose = kin->get_link_pose(parent_link_id);
   // The code below is "safe" but not efficient so see the HACK below
   // if (is_rot_mat_dirty) {
@@ -19,6 +22,9 @@ void SphereGroup::create_group_sphere_position_cache(
 
 void SphereGroup::create_sphere_position_cache(
     const std::shared_ptr<kin::KinematicModel<double>>& kin) {
+  if (!is_sphere_positions_dirty) {
+    return;
+  }
   // The code below is "safe" but not efficient so see the HACK below
   // auto plink_pose = kin->get_link_pose(parent_link_id);
   // if (is_rot_mat_dirty) {
@@ -107,9 +113,7 @@ bool SphereCollisionCst::check_ext_collision() {
     if (group.ignore_collision) {
       continue;
     }
-    if (group.is_group_sphere_position_dirty) {
-      group.create_group_sphere_position_cache(kin_);
-    }
+    group.create_group_sphere_position_cache(kin_);
 
     // check against all SDFs
     for (auto& sdf : all_sdfs_cache_) {
@@ -118,9 +122,7 @@ bool SphereCollisionCst::check_ext_collision() {
         if (!sdf->is_outside(group.group_sphere_position_cache,
                              group.group_radius)) {
           // now narrow phase collision checking
-          if (group.is_sphere_positions_dirty) {
-            group.create_sphere_position_cache(kin_);
-          }
+          group.create_sphere_position_cache(kin_);
           for (size_t i = 0; i < group.radii.size(); i++) {
             if (!sdf->is_outside_aabb(group.sphere_positions_cache.col(i),
                                       group.radii[i])) {
@@ -141,12 +143,8 @@ bool SphereCollisionCst::check_self_collision() {
   for (auto& group_id_pair : selcol_group_id_pairs_) {
     auto& group1 = sphere_groups_[group_id_pair.first];
     auto& group2 = sphere_groups_[group_id_pair.second];
-    if (group1.is_group_sphere_position_dirty) {
-      group1.create_group_sphere_position_cache(kin_);
-    }
-    if (group2.is_group_sphere_position_dirty) {
-      group2.create_group_sphere_position_cache(kin_);
-    }
+    group1.create_group_sphere_position_cache(kin_);
+    group2.create_group_sphere_position_cache(kin_);
 
     double outer_sqdist = (group1.group_sphere_position_cache -
                            group2.group_sphere_position_cache)
@@ -156,12 +154,8 @@ bool SphereCollisionCst::check_self_collision() {
       continue;
     }
 
-    if (group1.is_sphere_positions_dirty) {
-      group1.create_sphere_position_cache(kin_);
-    }
-    if (group2.is_sphere_positions_dirty) {
-      group2.create_sphere_position_cache(kin_);
-    }
+    group1.create_sphere_position_cache(kin_);
+    group2.create_sphere_position_cache(kin_);
 
     // check if the inner volumes are colliding
     for (size_t i = 0; i < group1.radii.size(); i++) {
@@ -192,9 +186,7 @@ double SphereCollisionCst::evaluate_ext_collision(
     }
 
     // filter out groups that are not colliding with margin of cutoff
-    if (group.is_group_sphere_position_dirty) {
-      group.create_group_sphere_position_cache(kin_);
-    }
+    group.create_group_sphere_position_cache(kin_);
     for (size_t j = 0; j < all_sdfs_cache_.size(); j++) {
       auto& sdf = all_sdfs_cache_[j];
       if (!sdf->is_outside_aabb(group.group_sphere_position_cache,
@@ -202,9 +194,7 @@ double SphereCollisionCst::evaluate_ext_collision(
         if (!sdf->is_outside(group.group_sphere_position_cache,
                              group.group_radius + cutoff_dist_)) {
           // if broad collision with sdf-j detected
-          if (group.is_sphere_positions_dirty) {
-            group.create_sphere_position_cache(kin_);
-          }
+          group.create_sphere_position_cache(kin_);
           for (size_t k = 0; k < group.radii.size(); k++) {
             auto sphere_center = group.sphere_positions_cache.col(k);
             if (sdf->is_outside_aabb(sphere_center,
@@ -260,12 +250,8 @@ double SphereCollisionCst::evaluate_self_collision(
     auto& group1 = sphere_groups_[group_id_pair.first];
     auto& group2 = sphere_groups_[group_id_pair.second];
 
-    if (group1.is_group_sphere_position_dirty) {
-      group1.create_group_sphere_position_cache(kin_);
-    }
-    if (group2.is_group_sphere_position_dirty) {
-      group2.create_group_sphere_position_cache(kin_);
-    }
+    group1.create_group_sphere_position_cache(kin_);
+    group2.create_group_sphere_position_cache(kin_);
 
     double outer_sqdist = (group1.group_sphere_position_cache -
                            group2.group_sphere_position_cache)
@@ -277,12 +263,8 @@ double SphereCollisionCst::evaluate_self_collision(
     }
 
     // narrow phase
-    if (group1.is_sphere_positions_dirty) {
-      group1.create_sphere_position_cache(kin_);
-    }
-    if (group2.is_sphere_positions_dirty) {
-      group2.create_sphere_position_cache(kin_);
-    }
+    group1.create_sphere_position_cache(kin_);
+    group2.create_sphere_position_cache(kin_);
 
     for (size_t i = 0; i < group1.radii.size(); i++) {
       for (size_t j = 0; j < group2.radii.size(); j++) {
