@@ -18,9 +18,8 @@ struct SphereGroup {
   bool ignore_collision;
   Eigen::Matrix3Xd sphere_relative_positions;
   Eigen::Vector3d group_sphere_relative_position;
-  // rot mat cache
+  // rot mat cache (NOTE: see comment in primitive_sphere_collision.cpp)
   Eigen::Matrix3d rot_mat_cache;
-  bool is_rot_mat_dirty;
 
   // group sphere position
   Eigen::Vector3d group_sphere_position_cache;
@@ -31,7 +30,6 @@ struct SphereGroup {
   bool is_sphere_positions_dirty;
 
   inline void clear_cache() {
-    is_rot_mat_dirty = true;
     is_group_sphere_position_dirty = true;
     is_sphere_positions_dirty = true;
   }

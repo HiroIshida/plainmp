@@ -2,21 +2,23 @@
 
 namespace plainmp::constraint {
 
+/* NOTE: The create_group_sphere_position_cache function must be called before
+ * create_sphere_position_cache to optimize performance.
+ *
+ * create_group_sphere_position_cache updates the rot_mat_cache, which is also
+ * needed by create_sphere_position_cache. By enforcing this call order, we can
+ * avoid redundant checks of rot_mat_cache in create_sphere_position_cache,
+ * since we know it has already been updated.
+ */
 void SphereGroup::create_group_sphere_position_cache(
     const std::shared_ptr<kin::KinematicModel<double>>& kin) {
   if (!is_group_sphere_position_dirty) {
     return;
   }
   auto plink_pose = kin->get_link_pose(parent_link_id);
-  // The code below is "safe" but not efficient so see the HACK below
-  // if (is_rot_mat_dirty) {
-  //   rot_mat_cache = plink_pose.quat().toRotationMatrix();
-  //   this->is_rot_mat_dirty = false;
-  // }
-  // HACK: because is_group_sphere_position_dirty => is_sphere_positions_dirty
-  rot_mat_cache = plink_pose.quat().toRotationMatrix();
+  this->rot_mat_cache = plink_pose.quat().toRotationMatrix();
   this->group_sphere_position_cache =
-      rot_mat_cache * group_sphere_relative_position + plink_pose.trans();
+      this->rot_mat_cache * group_sphere_relative_position + plink_pose.trans();
   this->is_group_sphere_position_dirty = false;
 }
 
@@ -25,21 +27,12 @@ void SphereGroup::create_sphere_position_cache(
   if (!is_sphere_positions_dirty) {
     return;
   }
-  // The code below is "safe" but not efficient so see the HACK below
-  // auto plink_pose = kin->get_link_pose(parent_link_id);
-  // if (is_rot_mat_dirty) {
-  //   rot_mat_cache = plink_pose.quat().toRotationMatrix();
-  //   this->is_rot_mat_dirty = false;
-  // }
-
-  // HACK: because the sub-sphere is evaluated after the group sphere
-  // we know that there exiss matrix cache and transform cache. so...
   auto& plink_trans = kin->transform_cache_.data_[parent_link_id].trans();
 
-  // NOTE: the above for-loop is faster than batch operation using Colwise
+  // NOTE: the for-loop below is faster than batch operation using Colwise
   for (int i = 0; i < sphere_positions_cache.cols(); i++) {
     sphere_positions_cache.col(i) =
-        rot_mat_cache * sphere_relative_positions.col(i) + plink_trans;
+        this->rot_mat_cache * sphere_relative_positions.col(i) + plink_trans;
   }
   this->is_sphere_positions_dirty = false;
 }
@@ -72,11 +65,11 @@ SphereCollisionCst::SphereCollisionCst(
     }
     double group_radius = max_dist;
     Eigen::Matrix3Xd sphere_position_cache(3, spec.radii.size());
-    sphere_groups_.push_back(
-        {spec.parent_link_name, parent_id, spec.radii, group_radius,
-         spec.ignore_collision, spec.relative_positions, group_center,
-         Eigen::Matrix3d::Zero(), true, Eigen::Vector3d::Zero(), true,
-         sphere_position_cache, true});
+    sphere_groups_.push_back({spec.parent_link_name, parent_id, spec.radii,
+                              group_radius, spec.ignore_collision,
+                              spec.relative_positions, group_center,
+                              Eigen::Matrix3d::Zero(), Eigen::Vector3d::Zero(),
+                              true, sphere_position_cache, true});
   }
 
   for (const auto& pair : selcol_group_pairs) {
