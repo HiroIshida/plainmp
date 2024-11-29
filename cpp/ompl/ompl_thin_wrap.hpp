@@ -1,29 +1,17 @@
 #pragma once
-
 #include <ompl/base/PlannerTerminationCondition.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
-#include <ompl/geometric/planners/est/BiEST.h>
-#include <ompl/geometric/planners/est/EST.h>
 #include <ompl/geometric/planners/experience/ERTConnect.h>
-#include <ompl/geometric/planners/informedtrees/AITstar.h>
-#include <ompl/geometric/planners/informedtrees/BITstar.h>
-#include <ompl/geometric/planners/kpiece/BKPIECE1.h>
-#include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
-#include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <optional>
 #include "constraints/primitive.hpp"
 #include "repair_planner.hpp"
-#include "unidirectional_modified.hpp"
 
-namespace ocustom = ompl::custom;
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
-namespace ot = ompl::tools;
 
 using GoalSamplerFn = std::function<std::vector<double>()>;
 
@@ -83,15 +71,9 @@ class CustomGoalSamplableRegion : public ob::GoalSampleableRegion {
   mutable size_t round_robin_idx_;
 };
 
-template <typename T>
-std::shared_ptr<T> create_algorithm(const ob::SpaceInformationPtr si,
-                                    std::optional<double> range) {
-  auto algo = std::make_shared<T>(si);
-  if (range) {
-    algo->setRange(*range);
-  }
-  return algo;
-}
+std::shared_ptr<ob::Planner> get_algorithm(const std::string& name,
+                                           const ob::SpaceInformationPtr& si,
+                                           std::optional<double> range);
 
 inline void state_to_vec(const ob::State* state, std::vector<double>& vec) {
   const ob::RealVectorStateSpace::StateType* rs;
@@ -311,39 +293,6 @@ struct PlannerBase {
     return trajectory;
   }
 
-  std::shared_ptr<ob::Planner> get_algorithm(const std::string& name,
-                                             std::optional<double> range) {
-    const auto space_info = csi_->si_;
-    if (name.compare("BKPIECE1") == 0) {
-      return create_algorithm<og::BKPIECE1>(space_info, range);
-    } else if (name.compare("LBKPIECE1") == 0) {
-      return create_algorithm<og::LBKPIECE1>(space_info, range);
-    } else if (name.compare("KPIECE1") == 0) {
-      return create_algorithm<ocustom::KPIECE1Modified>(space_info, range);
-    } else if (name.compare("RRT") == 0) {
-      return create_algorithm<ocustom::RRTModified>(space_info, range);
-    } else if (name.compare("RRTConnect") == 0) {
-      return create_algorithm<og::RRTConnect>(space_info, range);
-    } else if (name.compare("RRTstar") == 0) {
-      return create_algorithm<og::RRTstar>(space_info, range);
-    } else if (name.compare("EST") == 0) {
-      return create_algorithm<og::EST>(space_info, range);
-    } else if (name.compare("BiEST") == 0) {
-      return create_algorithm<og::BiEST>(space_info, range);
-    } else if (name.compare("AITstar") == 0) {
-      return std::make_shared<og::AITstar>(space_info);
-    } else if (name.compare("AITstarStop") == 0) {
-      return std::make_shared<og::AITstar>(space_info);
-    } else if (name.compare("BITstar") == 0) {
-      return std::make_shared<og::BITstar>(space_info);
-    } else if (name.compare("BITstarStop") == 0) {
-      auto bit = std::make_shared<og::BITstar>(space_info);
-      bit->setStopOnSolnImprovement(true);
-      return bit;
-    }
-    throw std::runtime_error("algorithm " + name + " is not supported");
-  }
-
   size_t getCallCount() const { return csi_->is_valid_call_count_; }
   std::unique_ptr<CollisionAwareSpaceInformation> csi_;
   std::unique_ptr<og::SimpleSetup> setup_;
@@ -358,7 +307,7 @@ struct OMPLPlanner : public PlannerBase {
               const std::string& algo_name,
               std::optional<double> range)
       : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, box_width) {
-    const auto algo = get_algorithm(algo_name, range);
+    const auto algo = get_algorithm(algo_name, csi_->si_, range);
     setup_->setPlanner(algo);
 
     if (algo_name.compare("AITstarStop") == 0) {
