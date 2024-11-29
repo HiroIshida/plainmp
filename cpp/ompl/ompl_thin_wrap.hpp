@@ -1,76 +1,30 @@
 #pragma once
 
 #include <ompl/base/PlannerTerminationCondition.h>
-#include <ompl/base/State.h>
-#include <ompl/base/StateSampler.h>
-#include <ompl/base/StateSpace.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
-#include <ompl/geometric/planners/experience/ERTConnect.h>
-#include <ompl/geometric/planners/kpiece/BKPIECE1.h>
-#include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
-// #include <ompl/geometric/planners/kpiece/KPIECE1.h>
-// #include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/est/BiEST.h>
 #include <ompl/geometric/planners/est/EST.h>
+#include <ompl/geometric/planners/experience/ERTConnect.h>
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <ompl/geometric/planners/informedtrees/BITstar.h>
+#include <ompl/geometric/planners/kpiece/BKPIECE1.h>
+#include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
-#include <ompl/tools/experience/ExperienceSetup.h>
-#include <ompl/tools/lightning/Lightning.h>
-#include <ompl/tools/lightning/LightningDB.h>
-#include <ompl/util/Console.h>
-#include <ompl/util/PPM.h>
-#include <ompl/util/Time.h>
-
-#include <boost/filesystem.hpp>
-#include <cassert>
-#include <cstddef>
-#include <cstring>
-#include <functional>
-#include <iostream>
-#include <limits>
-#include <memory>
 #include <optional>
-#include <stack>
-#include <stdexcept>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
 #include "constraints/primitive.hpp"
-#include "ompl/base/DiscreteMotionValidator.h"
-#include "ompl/base/MotionValidator.h"
-#include "ompl/base/Planner.h"
-#include "ompl/base/PlannerData.h"
-#include "ompl/base/PlannerStatus.h"
-#include "ompl/base/SpaceInformation.h"
-#include "ompl/base/StateValidityChecker.h"
 #include "repair_planner.hpp"
 #include "unidirectional_modified.hpp"
-
-#define STRING(str) #str
-#define ALLOCATE_ALGO(ALGO)                                   \
-  if (name.compare(#ALGO) == 0) {                             \
-    const auto algo = std::make_shared<og::ALGO>(space_info); \
-    return std::static_pointer_cast<ob::Planner>(algo);       \
-  }
 
 namespace ocustom = ompl::custom;
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 namespace ot = ompl::tools;
 
-// TODO: I wanted to pass and return eigen::matrix / vector, but
-// pybind fail to convert numpy to eigen in callback case
-using ConstFn = std::function<std::vector<double>(std::vector<double>)>;
-using ConstJacFn =
-    std::function<std::vector<std::vector<double>>(std::vector<double>)>;
 using GoalSamplerFn = std::function<std::vector<double>()>;
 
 class CustomGoalSamplableRegion : public ob::GoalSampleableRegion {
