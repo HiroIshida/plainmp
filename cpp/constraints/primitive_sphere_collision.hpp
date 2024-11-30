@@ -1,3 +1,4 @@
+#include "collision/primitive_sdf.hpp"
 #include "primitive.hpp"
 
 namespace plainmp::constraint {

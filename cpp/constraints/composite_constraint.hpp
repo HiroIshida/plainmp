@@ -6,7 +6,6 @@
 #include <memory>
 #include <sstream>
 #include <utility>
-#include "collision/primitive_sdf.hpp"
 #include "kinematics/kinematics.hpp"
 #include "primitive.hpp"
 

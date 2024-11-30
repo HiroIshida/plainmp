@@ -6,7 +6,6 @@
 #include <memory>
 #include <optional>
 #include <utility>
-#include "collision/primitive_sdf.hpp"
 #include "kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
