@@ -31,7 +31,7 @@ if __name__ == "__main__":
     coll_cst.set_sdf(sksdf_to_cppsdf(table.sdf))
     ineq_cst = IneqCompositeCst([com_const, coll_cst])
 
-    stance_cst = jspec.crate_pose_const_from_coords(
+    stance_cst = jspec.create_pose_const_from_coords(
         ["rleg_end_coords", "lleg_end_coords"],
         [Coordinates([0.0, -0.2, 0]), Coordinates([0.0, +0.2, 0])],
         [RotType.XYZW] * 2,
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     lb, ub = jspec.angle_bounds()
 
     # determine initial pose by solving IK
-    init_arm_pose_cst = jspec.crate_pose_const_from_coords(
+    init_arm_pose_cst = jspec.create_pose_const_from_coords(
         ["rarm_end_coords", "larm_end_coords"],
         [
             Coordinates([0.6, -0.6, 1.0], rot=[0, -0.5 * np.pi, 0]),
