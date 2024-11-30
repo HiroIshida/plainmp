@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # setup
     fs = FetchSpec()
     cst = fs.create_collision_const()
-    table = Box([1.0, 2.0, 0.05], face_colors=[100, 200, 100, 200], with_sdf=True)
+    table = Box([1.0, 2.0, 0.05], face_colors=[100, 200, 100, 200])
     table.translate([0.95, 0.0, 0.8])
     table_sdf = primitive_to_plainmp_sdf(table)
     sdf = UnionSDF([table_sdf, GroundSDF(0.0)])

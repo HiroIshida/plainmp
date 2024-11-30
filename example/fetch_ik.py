@@ -26,7 +26,7 @@ if __name__ == "__main__":
         table = PointCloudLink(table_points)
         sdf = CloudSDF(table_points, 0.002)
     else:
-        table = Box([1.0, 2.0, 0.05], with_sdf=True)
+        table = Box([1.0, 2.0, 0.05])
         table.translate([1.0, 0.0, 0.8])
         sdf = primitive_to_plainmp_sdf(table)
 

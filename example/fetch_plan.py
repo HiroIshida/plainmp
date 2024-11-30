@@ -29,7 +29,7 @@ if __name__ == "__main__":
         table = PointCloudLink(table_points)
         table_sdf = CloudSDF(table_points, 0.002)
     else:
-        table = Box([1.0, 2.0, 0.05], face_colors=[100, 200, 100, 200], with_sdf=True)
+        table = Box([1.0, 2.0, 0.05], face_colors=[100, 200, 100, 200])
         table.translate([0.95, 0.0, 0.8])
         table_sdf = primitive_to_plainmp_sdf(table)
 

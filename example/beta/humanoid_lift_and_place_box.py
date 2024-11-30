@@ -25,13 +25,13 @@ if __name__ == "__main__":
     com_const = jspec.create_default_com_const(total_force_on_arm=10)
     com_const_no = jspec.create_default_com_const()
 
-    box = Box([0.4, 0.4, 0.4], with_sdf=True, face_colors=[0, 0, 255, 230])
+    box = Box([0.4, 0.4, 0.4], face_colors=[0, 0, 255, 230])
     box.translate([0.6, 0.0, 0.2])
 
-    ground = Box([2.0, 2.0, 0.03], with_sdf=True)
+    ground = Box([2.0, 2.0, 0.03])
     ground.translate([0.0, 0.0, -0.015])
 
-    table = Box([0.6, 1.0, 0.8], with_sdf=True)
+    table = Box([0.6, 1.0, 0.8])
     table.rotate(np.pi * 0.5, "z")
     table.translate([0.7, 0.0, 0.4])
 

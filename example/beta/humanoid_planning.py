@@ -24,7 +24,7 @@ if __name__ == "__main__":
     jspec = JaxonSpec(gripper_collision=True)
     com_const = jspec.create_default_com_const()
 
-    table = Box([1.0, 3.0, 0.1], with_sdf=True)
+    table = Box([1.0, 3.0, 0.1])
     table.translate([0.8, 0.0, 0.8])
 
     coll_cst = jspec.create_collision_const()
