@@ -147,7 +147,7 @@ class RobotSpec(ABC):
         d = self.conf_dict["collision_spheres"]
         sphere_specs = []
         for parent_link_name, vals in d.items():
-            ignore_collision = vals["ignore_collision"]
+            only_self_collision = "only_self_collision" in vals  # flag
             spheres_d = vals["spheres"]
             radii = []
             positions = []
@@ -159,7 +159,7 @@ class RobotSpec(ABC):
             radii = np.array(radii)
             positions = np.array(positions).transpose()
             spec = SphereAttachmentSpec(
-                "yaml-colsphere", parent_link_name, positions, radii, ignore_collision
+                "yaml-colsphere", parent_link_name, positions, radii, only_self_collision
             )
             sphere_specs.append(spec)
         return sphere_specs

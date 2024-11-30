@@ -8,7 +8,7 @@ struct SphereAttachmentSpec {
   std::string parent_link_name;
   Eigen::Matrix3Xd relative_positions;
   Eigen::VectorXd radii;
-  bool ignore_collision;
+  bool only_self_collision;
 };
 
 struct SphereGroup {
@@ -16,7 +16,7 @@ struct SphereGroup {
   size_t parent_link_id;
   Eigen::VectorXd radii;
   double group_radius;
-  bool ignore_collision;
+  bool only_self_collision;
   Eigen::Matrix3Xd sphere_relative_positions;
   Eigen::Vector3d group_sphere_relative_position;
   // rot mat cache (NOTE: see comment in primitive_sphere_collision.cpp)

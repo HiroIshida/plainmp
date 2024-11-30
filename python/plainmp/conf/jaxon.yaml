@@ -56,7 +56,6 @@ end_effectors:
 
 collision_spheres:
   RLEG_LINK5:
-    ignore_collision: false
     spheres:
       - [-0.08, 0.035, -0.075, 0.04]
       - [-0.08, -0.05, -0.075, 0.04]
@@ -65,7 +64,6 @@ collision_spheres:
       - [-0.0, 0.0, -0.075, 0.04]
       - [0.0, 0.0, 0.0, 0.07]
   LLEG_LINK5:
-    ignore_collision: false
     spheres:
       - [-0.08, -0.035, -0.075, 0.04]
       - [-0.08, 0.05, -0.075, 0.04]
@@ -74,7 +72,6 @@ collision_spheres:
       - [-0.0, 0.0, -0.075, 0.04]
       - [0.0, 0.0, 0.0, 0.07]
   RLEG_LINK3:
-    ignore_collision: false
     spheres:
       - [0.0, -0.015, 0.0, 0.09]
       - [0.02, -0.015, -0.07, 0.09]
@@ -83,7 +80,6 @@ collision_spheres:
       - [0.0, -0.015, -0.3, 0.08]
       - [0.0, -0.015, -0.35, 0.08]
   LLEG_LINK3:
-    ignore_collision: false
     spheres:
       - [0.0, 0.015, 0.0, 0.09]
       - [0.02, 0.015, -0.07, 0.09]
@@ -92,7 +88,6 @@ collision_spheres:
       - [0.0, 0.015, -0.3, 0.08]
       - [0.0, 0.015, -0.35, 0.08]
   RLEG_LINK2:
-    ignore_collision: false
     spheres:
       - [-0.02, -0.01, 0.0, 0.12]
       - [-0.02, -0.01, -0.08, 0.12]
@@ -100,7 +95,6 @@ collision_spheres:
       - [0.02, -0.02, -0.24, 0.1]
       - [0.02, -0.02, -0.32, 0.1]
   LLEG_LINK2:
-    ignore_collision: false
     spheres:
       - [-0.02, 0.01, 0.0, 0.12]
       - [-0.02, 0.01, -0.08, 0.12]
@@ -108,14 +102,12 @@ collision_spheres:
       - [0.02, 0.02, -0.24, 0.1]
       - [0.02, 0.02, -0.32, 0.1]
   RARM_FINGER0:
-    ignore_collision: false
     spheres:
       - [0.04, 0.01, 0.0, 0.02]
       - [0.06, 0.02, 0.0, 0.02]
       - [0.1, 0.02, 0.0, 0.02]
       - [0.14, 0.01, 0.0, 0.02]
   RARM_FINGER1:
-    ignore_collision: false
     spheres:
       - [0.04, -0.01, 0.02, 0.02]
       - [0.06, -0.02, 0.02, 0.02]
@@ -126,21 +118,18 @@ collision_spheres:
       - [0.1, -0.02, -0.02, 0.02]
       - [0.14, -0.01, -0.02, 0.02]
   RARM_LINK7:
-    ignore_collision: false
     spheres:
       - [0.0, 0.04, -0.16, 0.06]
       - [0.0, -0.04, -0.16, 0.06]
       - [0.0, 0.0, -0.10, 0.06]
       - [0.03, 0.0, -0.15, 0.06]
   LARM_FINGER0:
-    ignore_collision: false
     spheres:
       - [0.04, 0.01, 0.0, 0.02]
       - [0.06, 0.02, 0.0, 0.02]
       - [0.1, 0.02, 0.0, 0.02]
       - [0.14, 0.01, 0.0, 0.02]
   LARM_FINGER1:
-    ignore_collision: false
     spheres:
       - [0.04, -0.01, 0.02, 0.02]
       - [0.06, -0.02, 0.02, 0.02]
@@ -151,46 +140,39 @@ collision_spheres:
       - [0.1, -0.02, -0.02, 0.02]
       - [0.14, -0.01, -0.02, 0.02]
   LARM_LINK7:
-    ignore_collision: false
     spheres:
       - [0.0, 0.04, -0.16, 0.06]
       - [0.0, -0.04, -0.16, 0.06]
       - [0.0, 0.0, -0.10, 0.06]
       - [0.03, 0.0, -0.15, 0.06]
   RARM_LINK5:
-    ignore_collision: false
     spheres:
       - [0.0, 0.0, 0.14, 0.08]
       - [0.0, 0.0, 0.04, 0.08]
       - [0.0, 0.0, -0.06, 0.09]
       - [0.0, 0.0, -0.16, 0.09]
   LARM_LINK5:
-    ignore_collision: false
     spheres:
       - [0.0, 0.0, 0.14, 0.08]
       - [0.0, 0.0, 0.04, 0.08]
       - [0.0, 0.0, -0.06, 0.09]
       - [0.0, 0.0, -0.16, 0.09]
   RARM_LINK3:
-    ignore_collision: false
     spheres:
       - [0.0, 0.0, 0.16, 0.08]
       - [0.0, 0.0, 0.06, 0.08]
       - [0.0, 0.0, -0.04, 0.08]
   LARM_LINK3:
-    ignore_collision: false
     spheres:
       - [0.0, 0.0, 0.16, 0.08]
       - [0.0, 0.0, 0.06, 0.08]
       - [0.0, 0.0, -0.04, 0.08]
   CHEST_LINK2:
-    ignore_collision: false
     spheres:
       - [-0.06, 0.0, -0.05, 0.25]
       - [-0.17, 0.0, -0.03, 0.25]
       - [-0.08, 0.0, -0.27, 0.25]
   HEAD_LINK0:
-    ignore_collision: false
     spheres:
       - [0.0, 0.0, 0.1, 0.15]
       - [0.0, 0.0, 0.2, 0.15]

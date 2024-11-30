@@ -66,7 +66,7 @@ SphereCollisionCst::SphereCollisionCst(
     double group_radius = max_dist;
     Eigen::Matrix3Xd sphere_position_cache(3, spec.radii.size());
     sphere_groups_.push_back({spec.parent_link_name, parent_id, spec.radii,
-                              group_radius, spec.ignore_collision,
+                              group_radius, spec.only_self_collision,
                               spec.relative_positions, group_center,
                               Eigen::Matrix3d::Zero(), Eigen::Vector3d::Zero(),
                               true, sphere_position_cache, true});
@@ -103,7 +103,7 @@ bool SphereCollisionCst::is_valid_dirty() {
 
 bool SphereCollisionCst::check_ext_collision() {
   for (auto& group : sphere_groups_) {
-    if (group.ignore_collision) {
+    if (group.only_self_collision) {
       continue;
     }
     group.create_group_sphere_position_cache(kin_);
@@ -174,7 +174,7 @@ double SphereCollisionCst::evaluate_ext_collision(
   std::optional<size_t> min_sdf_idx = std::nullopt;
   for (size_t i = 0; i < sphere_groups_.size(); i++) {
     auto& group = sphere_groups_[i];
-    if (group.ignore_collision) {
+    if (group.only_self_collision) {
       continue;
     }
 
