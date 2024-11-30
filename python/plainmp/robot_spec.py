@@ -198,14 +198,6 @@ class RobotSpec(ABC):
     def create_config_point_const(self, q: np.ndarray) -> ConfigPointCst:
         return ConfigPointCst(self.get_kin(), self.control_joint_names, self.with_base, q)
 
-    def crate_pose_const_from_coords(
-        self, link_names: List[str], link_poses: List[Coordinates], rot_types: List[RotType]
-    ) -> LinkPoseCst:
-        print(
-            "\033[93m[Warning] crate_pose_const_from_coords is deprecated, please use create_pose_const_from_coords.\033[0m"
-        )
-        return self.create_pose_const_from_coords(link_names, link_poses, rot_types)
-
     def create_pose_const_from_coords(
         self, link_names: List[str], link_poses: List[Coordinates], rot_types: List[RotType]
     ) -> LinkPoseCst:

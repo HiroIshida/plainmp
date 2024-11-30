@@ -40,7 +40,7 @@ def test_manifold_rrt():
         Coordinates([0.6, -0.25, 0.25]).rotate(+np.pi * 0.5, "z"),
         Coordinates([0.6, +0.25, 0.25]).rotate(+np.pi * 0.5, "z"),
     ]
-    eq_cst = jspec.crate_pose_const_from_coords(efnames, start_coords_list, [RotType.XYZW] * 4)
+    eq_cst = jspec.create_pose_const_from_coords(efnames, start_coords_list, [RotType.XYZW] * 4)
 
     lb, ub = jspec.angle_bounds()
     ret1 = solve_ik(eq_cst, ineq_cst, lb, ub, q_seed=None, max_trial=100)
@@ -58,14 +58,14 @@ def test_manifold_rrt():
         larm_target,
     ]
 
-    goal_pose_cst = jspec.crate_pose_const_from_coords(
+    goal_pose_cst = jspec.create_pose_const_from_coords(
         efnames, goal_coords_list, [RotType.XYZW] * 4
     )
     ret2 = solve_ik(goal_pose_cst, ineq_cst, lb, ub, q_seed=ret1.q, max_trial=100)
     assert ret2.success
 
     # solve RRT
-    stance_cst = jspec.crate_pose_const_from_coords(
+    stance_cst = jspec.create_pose_const_from_coords(
         efnames[:2], start_coords_list[:2], [RotType.XYZW] * 2
     )
     relative_pose_cst = jspec.create_relative_pose_const(
