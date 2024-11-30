@@ -121,14 +121,18 @@ class RobotSpec(ABC):
     def urdf_path(self) -> Path:
         return Path(self.conf_dict["urdf_path"]).expanduser()
 
-    @property
-    @abstractmethod
-    def control_joint_names(self) -> List[str]:
-        ...
 
-    @abstractmethod
+    @property
+    def control_joint_names(self) -> List[str]:
+        return self.conf_dict["control_joint_names"]
+
+
     def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
-        pass
+        # Override this if you want to add self body collision primitives.
+        # Self body collision primitives are the primitive shapes that are attached to the
+        # robot's base. This is useful when you know that certain parts of the robot
+        # are fixed and well approximated by primitive shapes rather than spheres.
+        return []
 
     def angle_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
         kin = self.get_kin()
@@ -271,10 +275,6 @@ class FetchSpec(RobotSpec):
 
             Fetch()
 
-    @property
-    def control_joint_names(self) -> List[str]:
-        return self.conf_dict["control_joint_names"]
-
     def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
         base = Cylinder(0.29, 0.32, face_colors=[255, 255, 255, 200], with_sdf=True)
         base.translate([0.005, 0.0, 0.2])
@@ -319,13 +319,6 @@ class PandaSpec(RobotSpec):
 
             Panda()
 
-    @property
-    def control_joint_names(self) -> List[str]:
-        return self.conf_dict["control_joint_names"]
-
-    def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
-        return []
-
 
 class JaxonSpec(RobotSpec):
     gripper_collision: bool
@@ -337,10 +330,6 @@ class JaxonSpec(RobotSpec):
 
         if not self.urdf_path.exists():
             from robot_descriptions.jaxon_description import URDF_PATH  # noqa
-
-    @property
-    def control_joint_names(self) -> List[str]:
-        return self.conf_dict["control_joint_names"]
 
     def get_sphere_specs(self) -> List[SphereAttachmentSpec]:
         # because legs are on the ground, we don't need to consider the spheres on the legs
@@ -365,9 +354,6 @@ class JaxonSpec(RobotSpec):
                 continue
             filtered.append(spec)
         return filtered
-
-    def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
-        return []
 
     def create_default_stand_pose_const(self) -> LinkPoseCst:
         robot_model = self.get_robot_model()
