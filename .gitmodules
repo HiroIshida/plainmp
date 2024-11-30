@@ -4,6 +4,3 @@
 [submodule "third/ompl"]
 	path = third/ompl
 	url = https://github.com/HiroIshida/ompl.git
-[submodule "third/version2"]
-	path = third/version2
-	url = https://github.com/vectorclass/version2.git
