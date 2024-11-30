@@ -7,14 +7,29 @@ control_joint_names:
   - panda_joint5
   - panda_joint6
   - panda_joint7
+
+self_collision_pairs:
+  - [panda_link0, panda_link5]
+  - [panda_link1, panda_link5]
+  - [panda_link2, panda_link5]
+  - [panda_link0, panda_link6]
+  - [panda_link1, panda_link6]
+  - [panda_link0, panda_link7]
+  - [panda_link1, panda_link7]
+  - [panda_link2, panda_link7]
+  - [panda_link0, panda_link8]
+  - [panda_link1, panda_link8]
+  - [panda_link2, panda_link8]
+
 collision_spheres:
   # panda_link0 should be ignored because it is fixed to the world
   # Also, it is problematic to define ground collision box
-  # panda_link0:
-  #   spheres:
-  #     - [-0.01, 0.0, 0.04, 0.09]
-  #     - [-0.07, 0.0, 0.035, 0.07]
-  #     - [-0.00, 0.0, 0.1, 0.07]
+  panda_link0:
+    only_self_collision: true
+    spheres:
+      - [-0.01, 0.0, 0.04, 0.09]
+      - [-0.07, 0.0, 0.035, 0.07]
+      - [-0.00, 0.0, 0.1, 0.07]
   panda_link1:
     spheres:
       - [0.00, -0.03, 0.00, 0.065]
@@ -82,7 +97,7 @@ collision_spheres:
     spheres:
       - [0.0, 0.0, 0.05, 0.05]
       - [0.0, 0.0, 0.08, 0.05]
-  panda_link8:
+  panda_link8:  # include hand and fingers
     spheres:
       - [0.033, 0.033, -0.015, 0.05]
       - [0.0, 0.0, 0.03, 0.03]
