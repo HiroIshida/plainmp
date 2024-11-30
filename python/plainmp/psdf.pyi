@@ -19,9 +19,9 @@ class SDFBase:
         """
         ...
     def evaluate_batch(self, points: np.ndarray) -> np.ndarray:
-        """Evaluate the SDF at the given points.
+        """Evaluate the SDF at the given points (Note 3xN, not Nx3).
         Args:
-            points: The (N, 3) points to evaluate the SDF at.
+            points: The (3, N) points to evaluate the SDF at.
         Returns:
             The signed distances at the given points.
         """

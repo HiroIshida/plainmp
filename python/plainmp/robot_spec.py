@@ -1,6 +1,6 @@
 import copy
 import uuid
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
@@ -121,11 +121,9 @@ class RobotSpec(ABC):
     def urdf_path(self) -> Path:
         return Path(self.conf_dict["urdf_path"]).expanduser()
 
-
     @property
     def control_joint_names(self) -> List[str]:
         return self.conf_dict["control_joint_names"]
-
 
     def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
         # Override this if you want to add self body collision primitives.
@@ -245,7 +243,8 @@ class RobotSpec(ABC):
         )
         grid_points = np.stack([g.flatten() for g in grid], axis=1)
         grid_points = box.transform_vector(grid_points)
-        grid_points = grid_points[box.sdf(grid_points) > -1e-2]
+        sdf = primitive_to_plainmp_sdf(box)
+        grid_points = grid_points[sdf.evaluate_batch(grid_points.T) > -1e-2]
 
         points_from_center = grid_points - box.worldpos()
         points_from_link = points_from_center + relative_position
