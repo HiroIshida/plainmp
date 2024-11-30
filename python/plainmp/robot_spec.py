@@ -85,20 +85,21 @@ class RobotSpec(ABC):
 
         # For each of the end effectors defined in the conf file
         # Add it as a link to the kinematic chain if it is not present in the chain.
-        for name in self.conf_dict["end_effectors"].keys():
-            try:
-                # Pass if end effector link is already in the kinematic chain.
-                _loaded_kin[self_id].get_link_ids([name])
-            except ValueError:
-                # Add the unfound end effector link to the kinematic chain.
-                consider_rotation = True
-                _loaded_kin[self_id].add_new_link(
-                    name,
-                    self.conf_dict["end_effectors"][name]["parent_link"],
-                    np.array(self.conf_dict["end_effectors"][name]["position"]),
-                    np.array(self.conf_dict["end_effectors"][name]["rpy"]),
-                    consider_rotation,
-                )
+        if "end_effectors" in self.conf_dict:
+            for name in self.conf_dict["end_effectors"].keys():
+                try:
+                    # Pass if end effector link is already in the kinematic chain.
+                    _loaded_kin[self_id].get_link_ids([name])
+                except ValueError:
+                    # Add the unfound end effector link to the kinematic chain.
+                    consider_rotation = True
+                    _loaded_kin[self_id].add_new_link(
+                        name,
+                        self.conf_dict["end_effectors"][name]["parent_link"],
+                        np.array(self.conf_dict["end_effectors"][name]["position"]),
+                        np.array(self.conf_dict["end_effectors"][name]["rpy"]),
+                        consider_rotation,
+                    )
         return _loaded_kin[self_id]
 
     def get_robot_model(self) -> RobotModel:
