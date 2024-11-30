@@ -65,6 +65,10 @@ class OMPLSolverResult:
     n_call: int
     terminate_state: TerminateState
 
+    @property
+    def success(self) -> bool:
+        return self.traj is not None
+
 
 OMPLSolverT = TypeVar("OMPLSolverT", bound="OMPLSolver")
 
