@@ -57,7 +57,7 @@ if __name__ == "__main__":
         v.add(table)
         v.add(Box([2.0, 2.0, 0.05]))  # ground
         v.show()
-        time.sleep(1.0)
+        input("Press Enter to replay the path")
         for q in ret.traj.resample(50):
             set_robot_state(robot_model, fs.control_joint_names, q)
             v.redraw()

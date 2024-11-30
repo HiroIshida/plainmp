@@ -1,9 +1,8 @@
-import copy
+import argparse
 import time
 
 import numpy as np
-from skrobot.model.primitives import Box
-from skrobot.models.panda import Panda
+from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.viewers import PyrenderViewer
 
 from plainmp.ompl_solver import OMPLSolver
@@ -12,79 +11,58 @@ from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import PandaSpec
 from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
 
-ps = PandaSpec()
-cst = ps.create_collision_const()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--visualize", action="store_true", help="visualize")
+    parser.add_argument("--difficult", action="store_true", help="difficult")
+    args = parser.parse_args()
 
-panda = Panda()
-q0 = copy.deepcopy(panda.angle_vector())
-q0[0:5] = 0.0
-q0[0] = -1.54
-q0[1] = 1.54
-q0[3] = -0.1
-q0[5] = 1.5
+    height = 1.0
+    ground = Box([2.0, 2.0, 0.05])
+    ground.translate([0, 0, -0.05])
 
-q1 = copy.deepcopy(q0)
-q1[0] = 1.54
-q1[1] = 1.54
+    poll1 = Cylinder(0.05, height, face_colors=[100, 100, 200, 200])
+    poll1.translate([0.3, 0.3, 0.5 * height])
 
-panda.angle_vector(q1)
+    poll2 = Cylinder(0.05, height, face_colors=[100, 100, 200, 200])
+    poll2.translate([-0.3, -0.3, 0.5 * height])
 
-case = "d"
-if case == "a":
-    n_sample = 20
-elif case == "b":
-    n_sample = 50
-elif case == "c":
-    n_sample = 100
-elif case == "d":
-    n_sample = 300
+    primitives = [ground, poll1, poll2]
 
-low = np.array([-1.2, -1.2, 0.0])
-high = np.array([1.2, 1.2, 1.2])
-density = 0.001 * n_sample / np.prod(high - low)
-print(f"density: {density}")
+    if args.difficult:
+        ceil = Box([2.0, 2.0, 0.05], face_colors=[100, 200, 100, 200])
+        ceil.translate([0, 0, height])
+        primitives.append(ceil)
 
-box_lits = []
-ground = Box([0.8, 0.8, 0.05], with_sdf=True)
-ground.translate([0, 0, -0.025])
-box_lits.append(ground)
-np.random.seed(0)
-while len(box_lits) < n_sample:
-    box = Box([0.1, 0.1, 0.1], with_sdf=True)
-    pos = np.random.uniform(low, high)
-    if abs(pos[0]) < 0.2 and pos[2] < 0.5:
-        continue
-    box.translate(pos)
-    box_lits.append(box)
+    sdf = UnionSDF([primitive_to_plainmp_sdf(p) for p in primitives])
 
-boxes_in_reach = []
-for box in box_lits:
-    if np.linalg.norm(box.worldpos()) < 1.0:
-        boxes_in_reach.append(box)
+    q0 = np.array([-1.54, 1.54, 0, -0.1, 0, 1.5, 0.81])
+    q1 = np.array([1.54, 1.54, 0, -0.1, 0, 1.5, 0.81])
+    spec = PandaSpec()
+    cst = spec.create_collision_const()
+    cst.set_sdf(sdf)
 
-ts = time.time()
-dists = [np.linalg.norm(box.worldpos()) for box in boxes_in_reach]
-sorted_idx = np.argsort(dists)
-boxes_in_reach = [boxes_in_reach[idx] for idx in sorted_idx]
-print(f"time elapsed to sort: {time.time() - ts}")
+    lb, ub = spec.angle_bounds()
+    resolution = np.ones(7) * 0.05
+    problem = Problem(q0, lb, ub, q1, cst, None, resolution)
+    solver = OMPLSolver()
+    ret = solver.solve(problem)
+    assert ret.success
 
-sdf = UnionSDF([primitive_to_plainmp_sdf(b) for b in boxes_in_reach])
-cst.set_sdf(sdf)
+    if args.visualize:
+        v = PyrenderViewer()
+        robot_model = spec.get_robot_model(with_mesh=True)
+        set_robot_state(robot_model, spec.control_joint_names, q1)
+        co = robot_model.panda_hand.copy_worldcoords()
+        v.add(Sphere(0.05, color=[255, 0, 0]).translate(co.worldpos()))
 
-lb, ub = ps.angle_bounds()
-msbox = np.array([0.1, 0.12, 0.15, 0.18, 0.3, 0.3, 0.3])
-problem = Problem(q0[:7], lb, ub, q1[:7], cst, None, msbox)
-solver = OMPLSolver()
-ret = solver.solve(problem)
-
-v = PyrenderViewer()
-v.add(panda)
-for box in box_lits:
-    v.add(box)
-v.show()
-
-for q in ret.traj.resample(20):
-    set_robot_state(panda, ps.control_joint_names, q)
-    time.sleep(0.2)
-
-time.sleep(1000)
+        v.add(robot_model)
+        for p in primitives:
+            v.add(p)
+        v.show()
+        input("Press Enter to replay the path")
+        for q in ret.traj.resample(50):
+            set_robot_state(robot_model, spec.control_joint_names, q)
+            v.redraw()
+            time.sleep(0.2)
+        time.sleep(1000)
