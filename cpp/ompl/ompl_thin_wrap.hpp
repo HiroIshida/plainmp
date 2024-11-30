@@ -20,12 +20,6 @@ namespace plainmp::ompl_wrapper {
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-inline void state_to_vec(const ob::State* state, std::vector<double>& vec) {
-  const ob::RealVectorStateSpace::StateType* rs;
-  rs = state->as<ob::RealVectorStateSpace::StateType>();
-  std::memcpy(vec.data(), rs->values, vec.size() * sizeof(double));
-};
-
 og::PathGeometric points_to_pathgeometric(
     const std::vector<std::vector<double>>& points,
     ob::SpaceInformationPtr si) {
@@ -103,8 +97,8 @@ struct CollisionAwareSpaceInformation {
   }
 
   bool is_valid(const ob::State* state) {
-    const size_t dim = si_->getStateDimension();
-    state_to_vec(state, tmp_vec_);
+    auto rs = state->as<ob::RealVectorStateSpace::StateType>();
+    std::memcpy(tmp_vec_.data(), rs->values, tmp_vec_.size() * sizeof(double));
     this->is_valid_call_count_++;
     return ineq_cst_->is_valid(tmp_vec_);
   }
