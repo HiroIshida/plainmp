@@ -108,9 +108,7 @@ class OMPLSolver:
                 return ret
             return ret  # type: ignore
 
-    def solve(
-        self, problem: Problem, guess: Optional[Trajectory] = None, bench: bool = False
-    ) -> OMPLSolverResult:
+    def solve(self, problem: Problem, guess: Optional[Trajectory] = None) -> OMPLSolverResult:
 
         ts = time.time()
         assert problem.global_eq_const is None, "not supported by OMPL"
@@ -179,14 +177,6 @@ class OMPLSolver:
                 self.config.algorithm.value,
                 self.config.algorithm_range,
             )
-
-        if bench:
-            ts = time.time()
-            set_log_level_none()
-            for _ in range(10000):
-                planner.solve(problem.start, q_goal, self.config.simplify)
-            print(f"ms per solve() = {(time.time() - ts) / 10000 * 1000:.3f} ms")
-
         timeout_remain = (
             None if (self.config.timeout is None) else self.config.timeout - (time.time() - ts)
         )
