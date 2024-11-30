@@ -201,9 +201,7 @@ class OMPLSolver:
         if result is None:
             return OMPLSolverResult(None, None, -1, TerminateState.FAIL_PLANNING)
         else:
-            for i in range(len(result)):
-                result[i] = np.array(result[i])
             n_call = planner.get_call_count()
             return OMPLSolverResult(
-                Trajectory(result), time.time() - ts, n_call, TerminateState.SUCCESS
+                Trajectory(list(result)), time.time() - ts, n_call, TerminateState.SUCCESS
             )

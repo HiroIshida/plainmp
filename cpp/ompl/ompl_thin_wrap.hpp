@@ -7,6 +7,7 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/experience/ERTConnect.h>
+#include <Eigen/Dense>
 #include <optional>
 #include "algorithm_selector.hpp"
 #include "constraints/primitive.hpp"
@@ -128,7 +129,7 @@ struct PlannerBase {
     setup_->setStateValidityChecker(
         [this](const ob::State* s) { return this->csi_->is_valid(s); });
   }
-  std::optional<std::vector<std::vector<double>>> solve(
+  std::optional<Eigen::MatrixXd> solve(
       const std::vector<double>& start,
       const std::optional<std::vector<double>>& goal,
       bool simplify,
@@ -183,15 +184,14 @@ struct PlannerBase {
     auto& states = p->getStates();
     const size_t dim = start.size();
 
-    // states
-    auto trajectory = std::vector<std::vector<double>>();
-
+    // use Eigen::MatrixXd to rerun numpy array in python
+    Eigen::MatrixXd trajectory(dim, states.size());
     std::vector<double> tmp_vec(dim);
-    for (const auto& state : states) {
-      state_to_vec(state, tmp_vec);
-      trajectory.push_back(tmp_vec);
+    for (size_t i = 0; i < states.size(); ++i) {
+      auto rs = states[i]->as<ob::RealVectorStateSpace::StateType>();
+      trajectory.col(i) = Eigen::Map<Eigen::VectorXd>(rs->values, dim);
     }
-    return trajectory;
+    return trajectory.transpose();
   }
 
   size_t getCallCount() const { return csi_->is_valid_call_count_; }
