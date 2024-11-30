@@ -91,11 +91,13 @@ class RobotSpec(ABC):
                 _loaded_kin[self_id].get_link_ids([name])
             except ValueError:
                 # Add the unfound end effector link to the kinematic chain.
+                consider_rotation = True
                 _loaded_kin[self_id].add_new_link(
                     name,
                     self.conf_dict["end_effectors"][name]["parent_link"],
                     np.array(self.conf_dict["end_effectors"][name]["position"]),
                     np.array(self.conf_dict["end_effectors"][name]["rpy"]),
+                    consider_rotation,
                 )
         return _loaded_kin[self_id]
 
