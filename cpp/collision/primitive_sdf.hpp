@@ -69,11 +69,7 @@ class SDFBase {
 struct UnionSDF : public SDFBase {
   using Ptr = std::shared_ptr<UnionSDF>;
   SDFType get_type() const override { return SDFType::UNION; }
-  UnionSDF(std::vector<SDFBase::Ptr> sdfs, bool create_bvh) : sdfs_(sdfs) {
-    if (create_bvh) {
-      throw std::runtime_error("Not implemented yet");
-    }
-  }
+  UnionSDF(std::vector<SDFBase::Ptr> sdfs) : sdfs_(sdfs) {}
 
   Values evaluate_batch(const Points& p) const override {
     Values vals = sdfs_[0]->evaluate_batch(p);
