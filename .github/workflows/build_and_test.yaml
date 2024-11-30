@@ -65,6 +65,8 @@ jobs:
           run_example "example/fetch_ik.py" "--pcloud" || exit 1
           run_example "example/fetch_plan.py" || exit 1
           run_example "example/fetch_plan.py" "--pcloud" || exit 1
-          run_example "example/humanoid_planning.py" || exit 1
-          run_example "example/humanoid_lift_and_place_box.py" || exit 1
+          run_example "example/panda_plan.py" || exit 1
+          run_example "example/panda_plan.py" "--difficult" || exit 1
+          run_example "example/beta/humanoid_planning.py" || exit 1
+          run_example "example/beta/humanoid_lift_and_place_box.py" || exit 1
         timeout-minutes: 10
