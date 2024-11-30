@@ -8,7 +8,7 @@ from plainmp.manifold_rrt.manifold_rrt_solver import ManiRRTConfig, ManiRRTConne
 from plainmp.problem import Problem
 from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import JaxonSpec, RotType
-from plainmp.utils import sksdf_to_cppsdf
+from plainmp.utils import primitive_to_plainmp_sdf
 
 
 def test_manifold_rrt():
@@ -26,8 +26,8 @@ def test_manifold_rrt():
     table.rotate(np.pi * 0.5, "z")
     table.translate([0.7, 0.0, 0.4])
 
-    sksdfs = [box.sdf, ground.sdf, table.sdf]
-    sdf = UnionSDF([sksdf_to_cppsdf(sdf) for sdf in sksdfs], False)
+    primitives = [box, ground, table]
+    sdf = UnionSDF([primitive_to_plainmp_sdf(p) for p in primitives])
 
     coll_cst = jspec.create_collision_const(False)
     coll_cst.set_sdf(sdf)
@@ -76,7 +76,7 @@ def test_manifold_rrt():
     box_coll_cst = jspec.create_attached_box_collision_const(
         box, "rarm_end_coords", np.array([0.25, 0.0, -0.04])
     )
-    table_sdf = sksdf_to_cppsdf(table.sdf)
+    table_sdf = primitive_to_plainmp_sdf(table)
     box_coll_cst.set_sdf(table_sdf)
 
     ineq_cst = IneqCompositeCst([com_const, coll_cst, box_coll_cst])

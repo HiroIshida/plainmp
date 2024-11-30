@@ -1,32 +1,26 @@
-from typing import List
+from typing import List, Union
 
 import numpy as np
 from skrobot.coordinates import Coordinates
 from skrobot.coordinates.math import rpy_matrix
+from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
-from skrobot.sdf import BoxSDF, CylinderSDF, SphereSDF, UnionSDF
 
 import plainmp.psdf as psdf
 
 
-def sksdf_to_cppsdf(sksdf, create_bvh: bool = False) -> psdf.SDFBase:
-    if isinstance(sksdf, BoxSDF):
-        pose = psdf.Pose(sksdf.worldpos(), sksdf.worldrot())
-        sdf = psdf.BoxSDF(sksdf._width, pose)
-    elif isinstance(sksdf, CylinderSDF):
-        pose = psdf.Pose(sksdf.worldpos(), sksdf.worldrot())
-        sdf = psdf.CylinderSDF(sksdf._radius, sksdf._height, pose)
-    elif isinstance(sksdf, SphereSDF):
-        pose = psdf.Pose(sksdf.worldpos(), sksdf.worldrot())
-        sdf = psdf.SphereSDF(sksdf._radius, pose)
-    elif isinstance(sksdf, UnionSDF):
-        for s in sksdf.sdf_list:
-            if not isinstance(s, (BoxSDF, CylinderSDF)):
-                raise ValueError("Unsupported SDF type")
-        cpp_sdf_list = [sksdf_to_cppsdf(s, create_bvh) for s in sksdf.sdf_list]
-        sdf = psdf.UnionSDF(cpp_sdf_list, create_bvh)
+def primitive_to_plainmp_sdf(shape: Union[Sphere, Box, Cylinder]) -> psdf.SDFBase:
+    if isinstance(shape, Sphere):
+        pose = psdf.Pose(shape.worldpos(), shape.worldrot())
+        sdf = psdf.SphereSDF(shape.radius, pose)
+    elif isinstance(shape, Box):
+        pose = psdf.Pose(shape.worldpos(), shape.worldrot())
+        sdf = psdf.BoxSDF(shape.extents, pose)
+    elif isinstance(shape, Cylinder):
+        pose = psdf.Pose(shape.worldpos(), shape.worldrot())
+        sdf = psdf.CylinderSDF(shape.radius, shape.height, pose)
     else:
-        raise ValueError(f"Unsupported SDF type {type(sksdf)}")
+        raise ValueError(f"Unsupported shape type {type(shape)}")
     return sdf
 
 

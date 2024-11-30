@@ -13,7 +13,7 @@ from plainmp.nlp_solver import SQPBasedSolver, SQPBasedSolverConfig
 from plainmp.parallel import ParallelSolver
 from plainmp.problem import Problem
 from plainmp.robot_spec import JaxonSpec, RotType
-from plainmp.utils import set_robot_state, sksdf_to_cppsdf
+from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     table.translate([0.8, 0.0, 0.8])
 
     coll_cst = jspec.create_collision_const()
-    coll_cst.set_sdf(sksdf_to_cppsdf(table.sdf))
+    coll_cst.set_sdf(primitive_to_plainmp_sdf(table))
     ineq_cst = IneqCompositeCst([com_const, coll_cst])
 
     stance_cst = jspec.create_pose_const_from_coords(

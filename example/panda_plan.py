@@ -4,13 +4,13 @@ import time
 import numpy as np
 from skrobot.model.primitives import Box
 from skrobot.models.panda import Panda
-from skrobot.sdf import UnionSDF
 from skrobot.viewers import PyrenderViewer
 
 from plainmp.ompl_solver import OMPLSolver
 from plainmp.problem import Problem
+from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import PandaSpec
-from plainmp.utils import set_robot_state, sksdf_to_cppsdf
+from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
 
 ps = PandaSpec()
 cst = ps.create_collision_const()
@@ -29,7 +29,7 @@ q1[1] = 1.54
 
 panda.angle_vector(q1)
 
-case = "b"
+case = "d"
 if case == "a":
     n_sample = 20
 elif case == "b":
@@ -68,15 +68,14 @@ sorted_idx = np.argsort(dists)
 boxes_in_reach = [boxes_in_reach[idx] for idx in sorted_idx]
 print(f"time elapsed to sort: {time.time() - ts}")
 
-sksdf = UnionSDF([box.sdf for box in boxes_in_reach])
-sdf = sksdf_to_cppsdf(sksdf)
+sdf = UnionSDF([primitive_to_plainmp_sdf(b) for b in boxes_in_reach])
 cst.set_sdf(sdf)
 
 lb, ub = ps.angle_bounds()
 msbox = np.array([0.1, 0.12, 0.15, 0.18, 0.3, 0.3, 0.3])
 problem = Problem(q0[:7], lb, ub, q1[:7], cst, None, msbox)
 solver = OMPLSolver()
-ret = solver.solve(problem, bench=True)
+ret = solver.solve(problem)
 
 v = PyrenderViewer()
 v.add(panda)

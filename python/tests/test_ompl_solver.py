@@ -8,7 +8,7 @@ from plainmp.ompl_solver import Algorithm, OMPLSolver, OMPLSolverConfig
 from plainmp.problem import Problem
 from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import FetchSpec
-from plainmp.utils import sksdf_to_cppsdf
+from plainmp.utils import primitive_to_plainmp_sdf
 
 algos = (Algorithm.RRTConnect, Algorithm.KPIECE1, Algorithm.BITstarStop)
 test_conditions = [(True, algo, False) for algo in algos] + [(False, algo, False) for algo in algos]
@@ -24,7 +24,7 @@ def test_ompl_solver(goal_is_pose: bool, algo: Algorithm, use_goal_sampler: bool
     table = Box([1.0, 2.0, 0.05], with_sdf=True)
     table.translate([1.0, 0.0, 0.8])
     ground = Box([2.0, 2.0, 0.05], with_sdf=True)
-    sdf = UnionSDF([sksdf_to_cppsdf(table.sdf), sksdf_to_cppsdf(ground.sdf)], False)
+    sdf = UnionSDF([primitive_to_plainmp_sdf(table), primitive_to_plainmp_sdf(ground)])
     cst.set_sdf(sdf)
     lb, ub = fetch.angle_bounds()
     start = np.array([0.0, 1.31999949, 1.40000015, -0.20000077, 1.71999929, 0.0, 1.6600001, 0.0])
@@ -59,7 +59,7 @@ def test_timeout():
     cst = fetch.create_collision_const()
     obstacle = Box([0.1, 0.1, 0.1], with_sdf=True)
     obstacle.translate([0.7, 0.0, 0.9])  # overlap with the goal to make problem infeasible
-    sdf = UnionSDF([sksdf_to_cppsdf(obstacle.sdf)], False)
+    sdf = UnionSDF([primitive_to_plainmp_sdf(obstacle)])
     cst.set_sdf(sdf)
     lb, ub = fetch.angle_bounds()
     start = np.array([0.0, 1.31999949, 1.40000015, -0.20000077, 1.71999929, 0.0, 1.6600001, 0.0])

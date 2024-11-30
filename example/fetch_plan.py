@@ -9,7 +9,7 @@ from plainmp.ompl_solver import OMPLSolver, set_log_level_none
 from plainmp.problem import Problem
 from plainmp.psdf import CloudSDF, GroundSDF, UnionSDF
 from plainmp.robot_spec import FetchSpec
-from plainmp.utils import set_robot_state, sksdf_to_cppsdf
+from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -31,9 +31,9 @@ if __name__ == "__main__":
     else:
         table = Box([1.0, 2.0, 0.05], face_colors=[100, 200, 100, 200], with_sdf=True)
         table.translate([0.95, 0.0, 0.8])
-        table_sdf = sksdf_to_cppsdf(table.sdf)
+        table_sdf = primitive_to_plainmp_sdf(table)
 
-    sdf = UnionSDF([table_sdf, GroundSDF(0.0)], False)
+    sdf = UnionSDF([table_sdf, GroundSDF(0.0)])
     cst.set_sdf(sdf)
     lb, ub = fs.angle_bounds()
     q_start = np.array([0.0, 1.32, 1.40, -0.20, 1.72, 0.0, 1.66, 0.0])

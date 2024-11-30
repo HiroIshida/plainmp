@@ -6,7 +6,21 @@ from skrobot.coordinates import Coordinates, rpy_matrix
 from skrobot.sdf import BoxSDF, CylinderSDF, SignedDistanceFunction, SphereSDF, UnionSDF
 
 import plainmp.psdf as psdf
-from plainmp.utils import sksdf_to_cppsdf
+
+
+def convert(sksdf: SignedDistanceFunction) -> psdf.SDFBase:
+    # get xyz and rotation matrix from sksdf and create Pose
+    pose = psdf.Pose(sksdf.worldpos(), sksdf.worldrot())
+    if isinstance(sksdf, BoxSDF):
+        return psdf.BoxSDF(sksdf._width, pose)
+    elif isinstance(sksdf, SphereSDF):
+        return psdf.SphereSDF(sksdf._radius, pose)
+    elif isinstance(sksdf, CylinderSDF):
+        return psdf.CylinderSDF(sksdf._radius, sksdf._height, pose)
+    elif isinstance(sksdf, UnionSDF):
+        return psdf.UnionSDF([convert(s) for s in sksdf.sdf_list])
+    else:
+        raise ValueError("Unknown SDF type")
 
 
 def test_pose_axis_align():
@@ -38,7 +52,7 @@ def test_consistency_with_skrobot(sksdf):
             yaw, pitch, roll = np.random.randn(3)
         co = Coordinates(trans, rot=rpy_matrix(yaw, pitch, roll))
         sksdf.newcoords(co)
-        sdf = sksdf_to_cppsdf(sksdf)
+        sdf = convert(sksdf)
 
         if np.random.rand() < 0.5:
             r = 0.0
@@ -52,21 +66,6 @@ def test_consistency_with_skrobot(sksdf):
         values = sksdf(points)
         cpp_values = sdf.evaluate_batch(points.transpose())
         assert np.allclose(values, cpp_values)
-
-
-def convert(sksdf: SignedDistanceFunction, create_bvh: bool = False) -> psdf.SDFBase:
-    # get xyz and rotation matrix from sksdf and create Pose
-    pose = psdf.Pose(sksdf.worldpos(), sksdf.worldrot())
-    if isinstance(sksdf, BoxSDF):
-        return psdf.BoxSDF(sksdf._width, pose)
-    elif isinstance(sksdf, SphereSDF):
-        return psdf.SphereSDF(sksdf._radius, pose)
-    elif isinstance(sksdf, CylinderSDF):
-        return psdf.CylinderSDF(sksdf._radius, sksdf._height, pose)
-    elif isinstance(sksdf, UnionSDF):
-        return psdf.UnionSDF([convert(s) for s in sksdf.sdf_list], create_bvh)
-    else:
-        raise ValueError("Unknown SDF type")
 
 
 def check_single_batch_consistency(cppsdf: psdf.SDFBase, points):

@@ -13,7 +13,6 @@ from skrobot.coordinates.math import matrix2quaternion, rpy_angle, wxyz2xyzw
 from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
 from skrobot.models.urdf import RobotModelFromURDF
-from skrobot.sdf import UnionSDF
 from skrobot.utils.urdf import URDF, no_mesh_load_mode
 
 from plainmp.constraint import (
@@ -27,8 +26,8 @@ from plainmp.constraint import (
     SphereCollisionCst,
 )
 from plainmp.kinematics import KinematicModel
-from plainmp.psdf import BoxSDF, Pose
-from plainmp.utils import sksdf_to_cppsdf
+from plainmp.psdf import BoxSDF, Pose, UnionSDF
+from plainmp.utils import primitive_to_plainmp_sdf
 
 _loaded_urdf_models: Dict[str, URDF] = {}
 _loaded_yamls: Dict[str, Dict] = {}  # loading yaml is quite slow
@@ -170,15 +169,15 @@ class RobotSpec(ABC):
     def create_collision_const(self, self_collision: bool = True) -> SphereCollisionCst:
         sphere_specs = self.get_sphere_specs()
         self_collision_pairs = []
-        robot_anchor_cppsdf = None
+        robot_anchor_sdf = None
         if self_collision:
             # Add self_collision_pairs only if exist in the conf file
             if "self_collision_pairs" in self.conf_dict:
                 self_collision_pairs = self.conf_dict["self_collision_pairs"]
             # Add self_body_collision_primitives only if exist
             if len(self.self_body_collision_primitives()) > 0:
-                robot_anchor_sksdf = UnionSDF([p.sdf for p in self.self_body_collision_primitives()])
-                robot_anchor_cppsdf = sksdf_to_cppsdf(robot_anchor_sksdf, create_bvh=False)
+                sdfs = [primitive_to_plainmp_sdf(p) for p in self.self_body_collision_primitives()]
+                robot_anchor_sdf = UnionSDF(sdfs)
         with open(self.urdf_path, "r") as f:
             f.read()
         kin = self.get_kin()
@@ -188,7 +187,7 @@ class RobotSpec(ABC):
             self.with_base,
             sphere_specs,
             self_collision_pairs,
-            robot_anchor_cppsdf,
+            robot_anchor_sdf,
         )
         return cst
 

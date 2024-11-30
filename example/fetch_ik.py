@@ -9,7 +9,7 @@ from skrobot.viewers import PyrenderViewer
 from plainmp.ik import solve_ik
 from plainmp.psdf import CloudSDF
 from plainmp.robot_spec import FetchSpec
-from plainmp.utils import set_robot_state, sksdf_to_cppsdf
+from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     else:
         table = Box([1.0, 2.0, 0.05], with_sdf=True)
         table.translate([1.0, 0.0, 0.8])
-        sdf = sksdf_to_cppsdf(table.sdf, False)
+        sdf = primitive_to_plainmp_sdf(table)
 
     # create problem
     fs = FetchSpec()
