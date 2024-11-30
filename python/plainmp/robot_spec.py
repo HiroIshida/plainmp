@@ -104,16 +104,17 @@ class RobotSpec(ABC):
     def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
         model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
         # Add end effectors defined in conf to the robot model as CascadedCoords
-        for name in self.conf_dict["end_effectors"].keys():
-            parent_link = self.conf_dict["end_effectors"][name]["parent_link"]
-            pos = np.array(self.conf_dict["end_effectors"][name]["position"])
-            rpy = np.array(self.conf_dict["end_effectors"][name]["rpy"])
-            setattr(model, name, CascadedCoords(getattr(model, parent_link), name=name))
-            link = getattr(model, name)
-            link.rotate(rpy[0], "x")
-            link.rotate(rpy[1], "y")
-            link.rotate(rpy[2], "z")
-            link.translate(pos)
+        if "end_effectors" in self.conf_dict:
+            for name in self.conf_dict["end_effectors"].keys():
+                parent_link = self.conf_dict["end_effectors"][name]["parent_link"]
+                pos = np.array(self.conf_dict["end_effectors"][name]["position"])
+                rpy = np.array(self.conf_dict["end_effectors"][name]["rpy"])
+                setattr(model, name, CascadedCoords(getattr(model, parent_link), name=name))
+                link = getattr(model, name)
+                link.rotate(rpy[0], "x")
+                link.rotate(rpy[1], "y")
+                link.rotate(rpy[2], "z")
+                link.translate(pos)
         return model
 
     @property
@@ -321,9 +322,6 @@ class PandaSpec(RobotSpec):
     @property
     def control_joint_names(self) -> List[str]:
         return self.conf_dict["control_joint_names"]
-
-    def get_robot_model(self) -> RobotModel:
-        return load_urdf_model_using_cache(self.urdf_path)
 
     def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
         return []
