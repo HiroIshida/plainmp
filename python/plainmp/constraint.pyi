@@ -6,7 +6,14 @@ from scipy.sparse import csc_matrix
 from plainmp.psdf import SDFBase
 
 class ConstraintBase:
-    def update_kintree(self, q: np.ndarray) -> None: ...
+    def update_kintree(self, q: np.ndarray, high_accuracy: bool) -> None:
+        """Update kinematic tree with given joint values
+        Args:
+            q: joint values
+            high_accuracy: if False, sin/cos computation in FK is approximated
+                via Taylor expansion
+        """
+        ...
     def evaluate(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]: ...
 
 class EqConstraintBase(ConstraintBase): ...

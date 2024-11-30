@@ -11,26 +11,19 @@ from plainmp.utils import set_robot_state
 fs = FetchSpec()
 cst = fs.create_collision_const()
 q = np.zeros(8)
-cst.update_kintree(q)
-
-
-sk_group_spheres = []
-for center, r in cst.get_group_spheres():
-    sk_sphere = Sphere(r, pos=center, color=[255, 0, 0, 100])
-    sk_group_spheres.append(sk_sphere)
-
-sk_all_spheres = []
-for center, r in cst.get_all_spheres():
-    sk_sphere = Sphere(r, pos=center, color=[0, 255, 0, 100])
-    sk_all_spheres.append(sk_sphere)
+cst.update_kintree(q, True)
 
 fetch = Fetch()
 set_robot_state(fetch, fs.control_joint_names, q)
 v = PyrenderViewer()
 v.add(fetch)
-for s in sk_group_spheres:
+for center, r in cst.get_group_spheres():
+    s = Sphere(r, pos=center, color=[255, 0, 0, 100])
     v.add(s)
-for s in sk_all_spheres:
+
+for center, r in cst.get_all_spheres():
+    s = Sphere(r, pos=center, color=[0, 255, 0, 100])
     v.add(s)
+
 v.show()
 time.sleep(1000)
