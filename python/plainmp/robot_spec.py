@@ -102,8 +102,8 @@ class RobotSpec(ABC):
                     )
         return _loaded_kin[self_id]
 
-    def get_robot_model(self) -> RobotModel:
-        model = load_urdf_model_using_cache(self.urdf_path)
+    def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
+        model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
         # Add end effectors defined in conf to the robot model as CascadedCoords
         for name in self.conf_dict["end_effectors"].keys():
             parent_link = self.conf_dict["end_effectors"][name]["parent_link"]
