@@ -33,11 +33,7 @@ struct Pose {
   }
 
   Points transform_points(const Points& p) const {
-    return rot_inv_ * (p.colwise() - position_);
-  }
-
-  Point transform_point(const Point& p) const {
-    return rot_inv_ * (p - position_);
+    return (rot_ * p).colwise() + position_;
   }
 
   void set_position(const Eigen::Vector3d& position) { position_ = position; }
@@ -198,7 +194,7 @@ struct BoxSDF : public PrimitiveSDFBase {
         Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
     local_vertices.col(7) =
         Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
-    auto world_vertices = pose.inverse().transform_points(local_vertices);
+    auto world_vertices = pose.transform_points(local_vertices);
     lb = world_vertices.rowwise().minCoeff();
     ub = world_vertices.rowwise().maxCoeff();
   }
@@ -340,7 +336,7 @@ struct CylinderSDF : public PrimitiveSDFBase {
     local_vertices.col(5) = Eigen::Vector3d(radius, -radius, height * 0.5);
     local_vertices.col(6) = Eigen::Vector3d(-radius, radius, height * 0.5);
     local_vertices.col(7) = Eigen::Vector3d(radius, radius, height * 0.5);
-    auto world_vertices = pose.inverse().transform_points(local_vertices);
+    auto world_vertices = pose.transform_points(local_vertices);
     lb = world_vertices.rowwise().minCoeff();
     ub = world_vertices.rowwise().maxCoeff();
   }
