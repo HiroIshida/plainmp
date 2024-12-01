@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import yaml
 from skrobot.coordinates import CascadedCoords, Coordinates
-from skrobot.coordinates.math import matrix2quaternion, rpy_angle, wxyz2xyzw
+from skrobot.coordinates.math import matrix2quaternion, rpy_angle, rpy_matrix, wxyz2xyzw
 from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
 from skrobot.models.urdf import RobotModelFromURDF
@@ -126,11 +126,34 @@ class RobotSpec(ABC):
         return self.conf_dict["control_joint_names"]
 
     def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
-        # Override this if you want to add self body collision primitives.
         # Self body collision primitives are the primitive shapes that are attached to the
         # robot's base. This is useful when you know that certain parts of the robot
         # are fixed and well approximated by primitive shapes rather than spheres.
-        return []
+        # Typical use case if for base or torso of the robot.
+        # Because these primitives are fixed, they are used only for self collision
+        self_collision_primitives = []
+        if "self_body_collision_primitives" in self.conf_dict:
+            for prim_dict in self.conf_dict["self_body_collision_primitives"]:
+                if prim_dict["type"] == "box":
+                    extents = prim_dict["extents"]
+                    obj = Box(extents, face_colors=[255, 255, 255, 200])
+                elif prim_dict["type"] == "sphere":
+                    # TODO: not tested well
+                    radius = prim_dict["radius"]
+                    obj = Sphere(radius, color=[255, 255, 255, 200])
+                elif prim_dict["type"] == "cylinder":
+                    radius = prim_dict["radius"]
+                    height = prim_dict["height"]
+                    obj = Cylinder(radius, height, face_colors=[255, 255, 255, 200])
+                else:
+                    raise ValueError("Invalid primitive type")
+                position = np.array(prim_dict["position"])
+                roll, pitch, yaw = np.array(prim_dict["rotation"])
+                rotmat = rpy_matrix(yaw, pitch, roll)
+                co = Coordinates(position, rotmat)
+                obj.newcoords(co)
+                self_collision_primitives.append(obj)
+        return self_collision_primitives
 
     def angle_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
         kin = self.get_kin()
@@ -283,27 +306,6 @@ class FetchSpec(RobotSpec):
             from skrobot.models.fetch import Fetch  # noqa
 
             Fetch()
-
-    def self_body_collision_primitives(self) -> Sequence[Union[Box, Sphere, Cylinder]]:
-        base = Cylinder(0.29, 0.32, face_colors=[255, 255, 255, 200], with_sdf=True)
-        base.translate([0.005, 0.0, 0.2])
-        torso = Box([0.16, 0.16, 1.0], face_colors=[255, 255, 255, 200], with_sdf=True)
-        torso.translate([-0.12, 0.0, 0.5])
-
-        neck_lower = Box([0.1, 0.18, 0.08], face_colors=[255, 255, 255, 200], with_sdf=True)
-        neck_lower.translate([0.0, 0.0, 0.97])
-        neck_upper = Box([0.05, 0.17, 0.15], face_colors=[255, 255, 255, 200], with_sdf=True)
-        neck_upper.translate([-0.035, 0.0, 0.92])
-
-        torso_left = Cylinder(0.1, 1.5, face_colors=[255, 255, 255, 200], with_sdf=True)
-        torso_left.translate([-0.143, 0.09, 0.75])
-        torso_right = Cylinder(0.1, 1.5, face_colors=[255, 255, 255, 200], with_sdf=True)
-        torso_right.translate([-0.143, -0.09, 0.75])
-
-        head = Cylinder(0.235, 0.12, face_colors=[255, 255, 255, 200], with_sdf=True)
-        head.translate([0.0, 0.0, 1.04])
-        self_body_obstacles = [base, torso, torso_left, torso_right]
-        return self_body_obstacles
 
     def create_gripper_pose_const(self, link_pose: np.ndarray) -> LinkPoseCst:
         return self.create_pose_const(["gripper_link"], [link_pose])
