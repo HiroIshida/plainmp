@@ -3,8 +3,9 @@
 The project is licensed under the BSD 3 License (see [LICENSE](LICENSE)), except for the code in `cpp` directory which is licensed under the MPL2.0 (see [cpp/LICENSE-MPL2](cpp/LICENSE-MPL2)).
 
 plainmp provides:
-- Very fast motion planning (**less than 1ms** for moderate problems)
+- Fast motion planning (e.g., **less than 1ms** for moderate problems)
 - Collision-aware inverse kinematics (IK) solver
+- Flexible framework for defining various robot model and motion planning problems
 - Collision checking for primitives (sphere/box/cylinder...) and/or point cloud vs. robot
 - (Beta) Sampling-based constrained motion planning solver (e.g., whole-body humanoid)
 - (Beta) SQP-based constrained motion planning (will be used as smoother for sampling-based planner)
@@ -40,7 +41,8 @@ python3 example/bench/fetch_plan.py  # fetch table
 sudo apt-get install libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev  # for scikit-robot
 sudo apt install libeigen3-dev libboost-all-dev libompl-dev # plainmp dependencies
 pip install scikit-build
-pip install plainmp
+git submodule update --init
+pip install -e . -v
 ```
 Then try examples in [example directory](./example) with `--visualize` option. Note that you may need to install the following for visualization:
 ```bash
