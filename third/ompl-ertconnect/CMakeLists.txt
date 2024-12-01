@@ -11,5 +11,5 @@ include_directories(${OMPL_INCLUDE_DIRS})
 file(GLOB_RECURSE ERTTREE_SRC ertconnect/*.cpp)
 include_directories(ertconnect)
 
-add_library(ertconnect SHARED ${ERTTREE_SRC})
+add_library(ertconnect STATIC ${ERTTREE_SRC})
 target_link_libraries(ertconnect ${OMPL_LIBRARIES})
