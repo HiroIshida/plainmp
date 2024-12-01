@@ -1,6 +1,6 @@
 import copy
 import uuid
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
@@ -63,6 +63,17 @@ class RobotSpec(ABC):
         if str(conf_file) not in _loaded_yamls:
             with open(conf_file, "r") as f:
                 self.conf_dict = yaml.safe_load(f)
+            if "include" in self.conf_dict:
+                for relative_path in self.conf_dict["include"]:
+                    depend_file = conf_file.parent / relative_path
+                    with open(depend_file, "r") as f:
+                        depend_dict = yaml.safe_load(f)
+                    assert (
+                        len(set(self.conf_dict.keys()) & set(depend_dict.keys())) == 0
+                    ), "conflict"
+                    self.conf_dict.update(depend_dict)
+                    assert "include" not in depend_dict, "recursive include is not supported yet"
+
             _loaded_yamls[str(conf_file)] = self.conf_dict
         else:
             self.conf_dict = _loaded_yamls[str(conf_file)]
@@ -82,10 +93,10 @@ class RobotSpec(ABC):
                 _loaded_kin.popitem(last=False)
             _loaded_kin[self_id] = kin
 
-        # For each of the end effectors defined in the conf file
-        # Add it as a link to the kinematic chain if it is not present in the chain.
-        if "end_effectors" in self.conf_dict:
-            for name in self.conf_dict["end_effectors"].keys():
+        # For each of the custom link defined in the conf file
+        # add it as a link to the kinematic chain if it is not present in the chain.
+        if "custom_links" in self.conf_dict:
+            for name in self.conf_dict["custom_links"].keys():
                 try:
                     # Pass if end effector link is already in the kinematic chain.
                     _loaded_kin[self_id].get_link_ids([name])
@@ -94,9 +105,9 @@ class RobotSpec(ABC):
                     consider_rotation = True
                     _loaded_kin[self_id].add_new_link(
                         name,
-                        self.conf_dict["end_effectors"][name]["parent_link"],
-                        np.array(self.conf_dict["end_effectors"][name]["position"]),
-                        np.array(self.conf_dict["end_effectors"][name]["rpy"]),
+                        self.conf_dict["custom_links"][name]["parent_link"],
+                        np.array(self.conf_dict["custom_links"][name]["position"]),
+                        np.array(self.conf_dict["custom_links"][name]["rpy"]),
                         consider_rotation,
                     )
         return _loaded_kin[self_id]
@@ -115,12 +126,12 @@ class RobotSpec(ABC):
 
     def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
         model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
-        # Add end effectors defined in conf to the robot model as CascadedCoords
-        if "end_effectors" in self.conf_dict:
-            for name in self.conf_dict["end_effectors"].keys():
-                parent_link = self.conf_dict["end_effectors"][name]["parent_link"]
-                pos = np.array(self.conf_dict["end_effectors"][name]["position"])
-                rpy = np.array(self.conf_dict["end_effectors"][name]["rpy"])
+        # Add custom links defined in conf to the robot model as CascadedCoords
+        if "custom_links" in self.conf_dict:
+            for name in self.conf_dict["custom_links"].keys():
+                parent_link = self.conf_dict["custom_links"][name]["parent_link"]
+                pos = np.array(self.conf_dict["custom_links"][name]["position"])
+                rpy = np.array(self.conf_dict["custom_links"][name]["rpy"])
                 setattr(model, name, CascadedCoords(getattr(model, parent_link), name=name))
                 link = getattr(model, name)
                 link.rotate(rpy[0], "x")
@@ -331,6 +342,52 @@ class FetchSpec(RobotSpec):
         lb_reachable = np.array([-0.60046263, -1.08329689, -0.18025853])
         ub_reachable = np.array([1.10785484, 1.08329689, 2.12170273])
         return lb_reachable, ub_reachable
+
+
+class PR2SpecBase(RobotSpec):
+    def __init__(self):
+        p = Path(__file__).parent / "conf" / self.get_yaml_file_name()
+        super().__init__(p, with_base=False)
+        if not self.urdf_path.exists():
+            from skrobot.models.pr2 import PR2  # noqa
+
+    @property
+    def default_joint_positions(self) -> Dict[str, float]:
+        return copy.deepcopy(self.conf_dict["default_joint_positions"])
+
+    @property
+    def q_default(self) -> np.ndarray:
+        return np.array([self.default_joint_positions[jn] for jn in self.control_joint_names])
+
+    @abstractmethod
+    def get_yaml_file_name(self) -> str:
+        pass
+
+
+class PR2RarmSpec(PR2SpecBase):
+    def get_yaml_file_name(self) -> str:
+        return "pr2_rarm.yaml"
+
+    def create_gripper_pose_const(self, link_pose: np.ndarray) -> LinkPoseCst:
+        return self.create_pose_const(["r_gripper_tool_frame"], [link_pose])
+
+
+class PR2LarmSpec(PR2SpecBase):
+    def get_yaml_file_name(self) -> str:
+        return "pr2_larm.yaml"
+
+    def create_gripper_pose_const(self, link_pose: np.ndarray) -> LinkPoseCst:
+        return self.create_pose_const(["l_gripper_tool_frame"], [link_pose])
+
+
+class PR2DualarmSpec(PR2SpecBase):
+    def get_yaml_file_name(self) -> str:
+        return "pr2_dualarm.yaml"
+
+    def create_gripper_pose_const(self, link_poses: Tuple[np.ndarray, np.ndarray]) -> LinkPoseCst:
+        return self.create_pose_const(
+            ["r_gripper_tool_frame", "l_gripper_tool_frame"], list(link_poses)
+        )
 
 
 class PandaSpec(RobotSpec):

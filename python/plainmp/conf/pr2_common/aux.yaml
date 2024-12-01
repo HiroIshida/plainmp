@@ -1,0 +1,41 @@
+control_group:
+  - rarm:
+    - r_shoulder_pan_joint
+    - r_shoulder_lift_joint
+    - r_upper_arm_roll_joint
+    - r_elbow_flex_joint
+    - r_forearm_roll_joint
+    - r_wrist_flex_joint
+    - r_wrist_roll_joint
+  - larm:
+    - l_shoulder_pan_joint
+    - l_shoulder_lift_joint
+    - l_upper_arm_roll_joint
+    - l_elbow_flex_joint
+    - l_forearm_roll_joint
+    - l_wrist_flex_joint
+    - l_wrist_roll_joint
+  - torso:
+    - torso_lift_joint
+  - head:
+    - head_pan_joint
+    - head_tilt_joint
+
+default_joint_positions:
+  r_shoulder_pan_joint: -1.30899
+  r_shoulder_lift_joint: 0.87266
+  r_upper_arm_roll_joint: -1.91986
+  r_elbow_flex_joint: -1.91986
+  r_forearm_roll_joint: 0.34907
+  r_wrist_flex_joint: -0.17453
+  r_wrist_roll_joint: -0.17453
+  l_shoulder_pan_joint: 1.30899
+  l_shoulder_lift_joint: 0.87266
+  l_upper_arm_roll_joint: 1.91986
+  l_elbow_flex_joint: -1.91986
+  l_forearm_roll_joint: -0.34907
+  l_wrist_flex_joint: -0.17453
+  l_wrist_roll_joint: -0.17453
+  torso_lift_joint: 0.3
+  head_pan_joint: 0.0
+  head_tilt_joint: 0.87266
