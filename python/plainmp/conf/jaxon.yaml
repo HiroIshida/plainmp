@@ -32,7 +32,7 @@ control_joint_names:
   - CHEST_JOINT1
   - CHEST_JOINT2
 
-end_effectors:
+custom_links:
   rarm_end_coords:
     parent_link: RARM_LINK7
     position: [0, 0, -0.220]
