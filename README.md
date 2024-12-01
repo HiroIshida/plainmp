@@ -38,7 +38,7 @@ python3 example/bench/fetch_plan.py  # fetch table
 ## installation and usage
 ```bash
 sudo apt-get install libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev  # for scikit-robot
-sudo apt install libeigen3-dev libboost-all-dev  # plainmp dependencies
+sudo apt install libeigen3-dev libboost-all-dev libompl-dev # plainmp dependencies
 pip install scikit-build
 pip install plainmp
 ```

@@ -1,8 +1,6 @@
 #include "algorithm_selector.hpp"
 #include <ompl/geometric/planners/est/BiEST.h>
 #include <ompl/geometric/planners/est/EST.h>
-#include <ompl/geometric/planners/informedtrees/AITstar.h>
-#include <ompl/geometric/planners/informedtrees/BITstar.h>
 #include <ompl/geometric/planners/kpiece/BKPIECE1.h>
 #include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
@@ -40,18 +38,6 @@ std::shared_ptr<ompl::base::Planner> get_algorithm(
     if (name == "EST") return create_with_range<og::EST>(si, range);
     if (name == "BiEST") return create_with_range<og::BiEST>(si, range);
   // clang-format on
-
-  if (name == "AITstar" || name == "AITstarStop") {
-    return std::make_shared<og::AITstar>(si);
-  }
-  if (name == "BITstar") {
-    return std::make_shared<og::BITstar>(si);
-  }
-  if (name == "BITstarStop") {
-    auto bit = std::make_shared<og::BITstar>(si);
-    bit->setStopOnSolnImprovement(true);
-    return bit;
-  }
   throw std::runtime_error(std::string("Algorithm '") + std::string(name) +
                            "' is not supported");
 }

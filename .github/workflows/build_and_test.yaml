@@ -35,7 +35,7 @@ jobs:
 
       - name: Install This Package
         run: |
-          sudo apt-get install libeigen3-dev libboost-all-dev
+          sudo apt-get install libeigen3-dev libboost-all-dev libompl-dev
           pip install scikit-build
           MAKEFLAGS="-j$(nproc)" pip install -e . -v
 
