@@ -58,7 +58,7 @@ pip uninstall -y pyrender && pip install git+https://github.com/mmatl/pyrender.g
 ## Note on motion validator of motion planning
 We provides two types of motion validator type `box` and `euclidean`.
 - The `box` type split the motion segment into waypoints by clipping the segment with the collision box. You need to specify box widths for each joint.
-    - e.g. `resolution = np.ones(7) / 20` for panda robot
+    - e.g. `bow_width = np.ones(7) / 20` for panda robot
 - The `euclidean` type is instead split the segment by euclidean distance of `resolution` parameter.
     - e.g. `resolution = 1/20` for panda robot
 - see [problem.py](./python/plainmp/problem.py) for how to specify the motion validator.
