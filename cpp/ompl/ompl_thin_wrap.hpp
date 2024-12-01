@@ -1,12 +1,12 @@
 #pragma once
 
+#include <ertconnect/ERTConnect.h>
 #include <ompl/base/PlannerTerminationCondition.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
-// #include <ompl/geometric/planners/experience/ERTConnect.h>
 #include <Eigen/Dense>
 #include <optional>
 #include "algorithm_selector.hpp"
@@ -207,40 +207,40 @@ struct OMPLPlanner : public PlannerBase {
   }
 };
 
-// struct ERTConnectPlanner : public PlannerBase {
-//   ERTConnectPlanner(const std::vector<double>& lb,
-//                     const std::vector<double>& ub,
-//                     constraint::IneqConstraintBase::Ptr ineq_cst,
-//                     size_t max_is_valid_call,
-//                     const ValidatorConfig& vconfig)
-//       : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, vconfig) {
-//     auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
-//     setup_->setPlanner(ert_connect);
-//   }
-//
-//   void set_heuristic(const std::vector<std::vector<double>>& points) {
-//     auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
-//     const auto heuristic = geo_path.getStates();
-//     const auto ert_connect = setup_->getPlanner()->as<og::ERTConnect>();
-//     ert_connect->setExperience(heuristic);
-//   }
-//
-//   void set_parameters(std::optional<double> omega_min,
-//                       std::optional<double> omega_max,
-//                       std::optional<double> eps) {
-//     const auto planner = setup_->getPlanner();
-//     const auto ert_connect = planner->as<og::ERTConnect>();
-//     if (omega_min) {
-//       ert_connect->setExperienceFractionMin(*omega_min);
-//     }
-//     if (omega_max) {
-//       ert_connect->setExperienceFractionMax(*omega_max);
-//     }
-//     if (eps) {
-//       ert_connect->setExperienceTubularRadius(*eps);
-//     }
-//   }
-// };
+struct ERTConnectPlanner : public PlannerBase {
+  ERTConnectPlanner(const std::vector<double>& lb,
+                    const std::vector<double>& ub,
+                    constraint::IneqConstraintBase::Ptr ineq_cst,
+                    size_t max_is_valid_call,
+                    const ValidatorConfig& vconfig)
+      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, vconfig) {
+    auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
+    setup_->setPlanner(ert_connect);
+  }
+
+  void set_heuristic(const std::vector<std::vector<double>>& points) {
+    auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
+    const auto heuristic = geo_path.getStates();
+    const auto ert_connect = setup_->getPlanner()->as<og::ERTConnect>();
+    ert_connect->setExperience(heuristic);
+  }
+
+  void set_parameters(std::optional<double> omega_min,
+                      std::optional<double> omega_max,
+                      std::optional<double> eps) {
+    const auto planner = setup_->getPlanner();
+    const auto ert_connect = planner->as<og::ERTConnect>();
+    if (omega_min) {
+      ert_connect->setExperienceFractionMin(*omega_min);
+    }
+    if (omega_max) {
+      ert_connect->setExperienceFractionMax(*omega_max);
+    }
+    if (eps) {
+      ert_connect->setExperienceTubularRadius(*eps);
+    }
+  }
+};
 
 void setGlobalSeed(size_t seed) {
   ompl::RNG::setSeed(seed);

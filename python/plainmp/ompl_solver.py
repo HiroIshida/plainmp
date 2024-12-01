@@ -11,6 +11,7 @@ from plainmp.problem import Problem
 from plainmp.trajectory import Trajectory
 
 from ._plainmp.ompl import (  # noqa: F401
+    ERTConnectPlanner,
     OMPLPlanner,
     ValidatorConfig,
     ValidatorType,
@@ -158,15 +159,14 @@ class OMPLSolver:
             )
 
         if guess is not None:
-            pass
-            # planner = ERTConnectPlanner(
-            #     problem.lb,
-            #     problem.ub,
-            #     problem.global_ineq_const,
-            #     self.config.n_max_call,
-            #     vconfig,
-            # )
-            # planner.set_heuristic(guess.numpy())
+            planner = ERTConnectPlanner(
+                problem.lb,
+                problem.ub,
+                problem.global_ineq_const,
+                self.config.n_max_call,
+                vconfig,
+            )
+            planner.set_heuristic(guess.numpy())
         else:
             planner = OMPLPlanner(
                 problem.lb,
