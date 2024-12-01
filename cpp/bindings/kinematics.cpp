@@ -34,6 +34,10 @@ void bind_kinematics_submodule(py::module& m) {
                                      py::module_local())
       .def(py::init<std::string&>())
       .def("add_new_link", &_KinematicModel::add_new_link_py)
+      .def("set_joint_positions", &_KinematicModel::set_joint_angles,
+           py::arg("joint_ids"), py::arg("positions"),
+           py::arg("accurate") = true)
+      .def("get_joint_positions", &_KinematicModel::get_joint_angles)
       .def("get_joint_position_limits",
            &_KinematicModel::get_joint_position_limits)
       .def("get_link_ids", &_KinematicModel::get_link_ids)

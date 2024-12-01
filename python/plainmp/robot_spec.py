@@ -101,6 +101,18 @@ class RobotSpec(ABC):
                     )
         return _loaded_kin[self_id]
 
+    def reflect_joint_positions(self, table: Dict[str, float]) -> None:
+        # Some robot (e.g. PR2) has many joints but only a few joints are controlled.
+        # for example, say we want to control only the arm joints and other joints
+        # (e.g. torso or larm) are fixed.
+        # In this case, the user is responsible to reflect the joint positions
+        # other than the controlled joints to the kinematic model.
+        # This is because the kinematic model only updates the controlled joints
+        # in the planning process, while assuming the other joints are fixed.
+        kin = self.get_kin()
+        ids = kin.get_joint_ids(list(table.keys()))
+        kin.set_joint_positions(ids, list(table.values()))
+
     def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
         model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
         # Add end effectors defined in conf to the robot model as CascadedCoords
