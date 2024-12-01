@@ -1,5 +1,7 @@
 # plainmp  [![build & test](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml) [![format](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml)
 
+The project is licensed under the BSD 3 License (see [LICENSE](LICENSE)), except for the code in `cpp` directory which is licensed under the MPL2.0 (see [cpp/LICENSE-MPL2](cpp/LICENSE-MPL2)).
+
 plainmp provides:
 - Very fast motion planning (**less than 1ms** for moderate problems)
 - Collision-aware inverse kinematics (IK) solver
@@ -7,13 +9,12 @@ plainmp provides:
 - (Beta) Sampling-based constrained motion planning solver (e.g., whole-body humanoid)
 - (Beta) SQP-based constrained motion planning (will be used as smoother for sampling-based planner)
 
+Note that plainmp currently heavily relies on approximations of robot body by spheres.
 
-The implementation
-- is written in C++ (see [cpp directory](./cpp)) and wrapped by pybind11 (see [python directory](./python)).
-- is a rewrite of my previous projects [scikit-motionplan](https://github.com/HiroIshida/scikit-motionplan) and [tinyfk](https://github.com/HiroIshida/tinyfk) to achieve 100x speedup
-- relies on spheres approximations of robot body
-- depends on [OMPL](https://github.com/ompl/ompl) (with unmerged PR of [ERTConnect](https://github.com/ompl/ompl/pull/783)) for SBMP algorithms
-- deponds on [scikit-robt](https://github.com/iory/scikit-robot) framework for visualization and planning problem specifications
+Related/depeding projects:
+- plainmp is a rewrite of my previous projects [scikit-motionplan](https://github.com/HiroIshida/scikit-motionplan) and [tinyfk](https://github.com/HiroIshida/tinyfk) to achieve 100x speedup
+- plainmp depends on [OMPL](https://github.com/ompl/ompl) (with unmerged PR of [ERTConnect](https://github.com/ompl/ompl/pull/783)) for SBMP algorithms
+- plainmp deponds on [scikit-robt](https://github.com/iory/scikit-robot) framework for visualization and planning problem specifications
 
 ## Performance example
 panda dual bars: median 0.17 ms | panda ceiled dual bars: median 0.65 ms | fetch table: median 0.62 ms

@@ -16,7 +16,6 @@ setup(
     version="0.0.21",
     description="experimental",
     author="Hirokazu Ishida",
-    license="PolyForm NonCommercial 1.0.0",
     install_requires=["numpy", "scipy", "scikit-robot", "pyyaml", "ompl-thin", "robot_descriptions", "osqp"],
     packages=packages,
     package_dir={"": "python"},
