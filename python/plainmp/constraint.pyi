@@ -3,6 +3,7 @@ from typing import Sequence, Tuple
 import numpy as np
 from scipy.sparse import csc_matrix
 
+from plainmp.kinematics import KinematicModel
 from plainmp.psdf import SDFBase
 
 class ConstraintBase:
@@ -14,7 +15,15 @@ class ConstraintBase:
                 via Taylor expansion
         """
         ...
-    def evaluate(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]: ...
+    def evaluate(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Evaluate constraint value and jacobian
+        Args:
+            q: joint values (n,)
+        Returns:
+            value: constraint value (m,)
+            jacobian: constraint jacobian (m, n)
+        """
+        ...
 
 class EqConstraintBase(ConstraintBase): ...
 
@@ -24,7 +33,29 @@ class IneqConstraintBase(ConstraintBase):
 class ConfigPointCst(EqConstraintBase):
     def __init__(self, position: np.ndarray) -> None: ...
 
-class LinkPoseCst(EqConstraintBase): ...
+class LinkPoseCst(EqConstraintBase):
+    def __init__(
+        self,
+        kin: KinematicModel,
+        control_joint_names: Sequence[str],
+        with_base: bool,
+        target_link_names: Sequence[str],
+        target_poses: Sequence[np.ndarray],
+    ) -> None:
+        """Initialize link pose constraint
+        Args:
+            kin: kinematic model
+            control_joint_names: joint names to control
+            with_base: if True, base pose is also controlled
+            target_link_names: target link names
+            target_poses: target poses
+
+        Note:
+            target_link_names and target_poses must have the same length
+            If target_pose is 3d, it is interpreted as position only constraint
+            IF target_pose is 6d, it is interpreted as position and orientation constraint
+        """
+
 class RelativePoseCst(EqConstraintBase): ...
 class FixedZAxisCst(EqConstraintBase): ...
 
@@ -38,8 +69,22 @@ class SphereAttachmentSpec:
 class SphereCollisionCst(IneqConstraintBase):
     def set_sdf(self, sdf: SDFBase) -> None: ...
     def get_sdf(self) -> SDFBase: ...
-    def get_all_spheres(self) -> List[Tuple[np.ndarray, float]]: ...
-    def get_group_spheres(self) -> List[Tuple[np.ndarray, float]]: ...
+    def get_all_spheres(self) -> List[Tuple[np.ndarray, float]]:
+        """Return all spheres approximating the robot
+        Returns:
+            list of (center, radius)
+        """
+        ...
+    def get_group_spheres(self) -> List[Tuple[np.ndarray, float]]:
+        """Return all group spheres
+        Group sphere is computed in the constructor, which is a sphere that
+        surrounds all spheres attached to a specific link. This data structure
+        is used to speed up collision checking internally.
+
+        Returns:
+            list of (center, radius)
+        """
+        ...
 
 class ComInPolytopeCst(IneqConstraintBase): ...
 
