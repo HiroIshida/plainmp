@@ -13,7 +13,7 @@ else:
 
 setup(
     name="plainmp",
-    version="0.0.21",
+    version="0.0.22",
     description="experimental",
     author="Hirokazu Ishida",
     install_requires=["numpy", "scipy", "scikit-robot", "pyyaml", "robot_descriptions", "osqp"],
