@@ -11,7 +11,6 @@ from plainmp.problem import Problem
 from plainmp.trajectory import Trajectory
 
 from ._plainmp.ompl import (  # noqa: F401
-    ERTConnectPlanner,
     OMPLPlanner,
     ValidatorConfig,
     ValidatorType,
@@ -28,10 +27,6 @@ class Algorithm(Enum):
     RRTstar = "RRTstar"
     EST = "EST"
     BiEST = "BiEST"
-    BITstar = "BITstar"
-    BITstarStop = "BITstarStop"  # stop after first solution
-    AITstar = "AITstar"
-    AITstarStop = "AITstarStop"  # stop after first solution
 
     def is_unidirectional(self) -> bool:
         return self in [Algorithm.RRT, Algorithm.KPIECE1, Algorithm.LBKPIECE1]
@@ -163,14 +158,15 @@ class OMPLSolver:
             )
 
         if guess is not None:
-            planner = ERTConnectPlanner(
-                problem.lb,
-                problem.ub,
-                problem.global_ineq_const,
-                self.config.n_max_call,
-                vconfig,
-            )
-            planner.set_heuristic(guess.numpy())
+            pass
+            # planner = ERTConnectPlanner(
+            #     problem.lb,
+            #     problem.ub,
+            #     problem.global_ineq_const,
+            #     self.config.n_max_call,
+            #     vconfig,
+            # )
+            # planner.set_heuristic(guess.numpy())
         else:
             planner = OMPLPlanner(
                 problem.lb,

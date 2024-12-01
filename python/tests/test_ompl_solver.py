@@ -10,7 +10,7 @@ from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import FetchSpec
 from plainmp.utils import primitive_to_plainmp_sdf
 
-algos = (Algorithm.RRTConnect, Algorithm.KPIECE1, Algorithm.BITstarStop)
+algos = (Algorithm.RRTConnect, Algorithm.KPIECE1)
 test_conditions = [(True, algo, False) for algo in algos] + [(False, algo, False) for algo in algos]
 test_conditions.append((True, Algorithm.KPIECE1, True))
 test_conditions.append((True, Algorithm.RRT, True))

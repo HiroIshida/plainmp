@@ -13,9 +13,8 @@ add_subdirectory("third/urdf_parser")
 include_directories("third/urdf_parser/include")
 
 find_package(Boost REQUIRED COMPONENTS serialization)
-option(OMPL_REGISTRATION OFF)  # avoid popup in browser
-add_subdirectory(third/ompl)
-include_directories("third/ompl/src")
+find_package(ompl REQUIRED)
+include_directories(${OMPL_INCLUDE_DIRS})
 
 option(USE_VALGRIND "Use valgrind to profile the code" OFF)
 if(USE_VALGRIND)

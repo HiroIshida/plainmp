@@ -6,7 +6,7 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
-#include <ompl/geometric/planners/experience/ERTConnect.h>
+// #include <ompl/geometric/planners/experience/ERTConnect.h>
 #include <Eigen/Dense>
 #include <optional>
 #include "algorithm_selector.hpp"
@@ -204,60 +204,43 @@ struct OMPLPlanner : public PlannerBase {
       : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, vconfig) {
     const auto algo = get_algorithm(algo_name, csi_->si_, range);
     setup_->setPlanner(algo);
-
-    if (algo_name.compare("AITstarStop") == 0) {
-      auto pdef = setup_->getProblemDefinition();
-      auto objective =
-          std::make_shared<ob::PathLengthOptimizationObjective>(csi_->si_);
-      objective->setCostThreshold(
-          ob::Cost(std::numeric_limits<double>::infinity()));
-      pdef->setOptimizationObjective(objective);
-    }
-    if (algo_name.compare("AITstar") == 0 ||
-        algo_name.compare("AITstarStop") == 0) {
-      // probably ait star's bug: clear requires to pdef to be set already,
-      // which is usually set in solve() function but we need to set it now
-      auto pdef = setup_->getProblemDefinition();
-      algo->setProblemDefinition(pdef);
-      algo->setup();
-    }
   }
 };
 
-struct ERTConnectPlanner : public PlannerBase {
-  ERTConnectPlanner(const std::vector<double>& lb,
-                    const std::vector<double>& ub,
-                    constraint::IneqConstraintBase::Ptr ineq_cst,
-                    size_t max_is_valid_call,
-                    const ValidatorConfig& vconfig)
-      : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, vconfig) {
-    auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
-    setup_->setPlanner(ert_connect);
-  }
-
-  void set_heuristic(const std::vector<std::vector<double>>& points) {
-    auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
-    const auto heuristic = geo_path.getStates();
-    const auto ert_connect = setup_->getPlanner()->as<og::ERTConnect>();
-    ert_connect->setExperience(heuristic);
-  }
-
-  void set_parameters(std::optional<double> omega_min,
-                      std::optional<double> omega_max,
-                      std::optional<double> eps) {
-    const auto planner = setup_->getPlanner();
-    const auto ert_connect = planner->as<og::ERTConnect>();
-    if (omega_min) {
-      ert_connect->setExperienceFractionMin(*omega_min);
-    }
-    if (omega_max) {
-      ert_connect->setExperienceFractionMax(*omega_max);
-    }
-    if (eps) {
-      ert_connect->setExperienceTubularRadius(*eps);
-    }
-  }
-};
+// struct ERTConnectPlanner : public PlannerBase {
+//   ERTConnectPlanner(const std::vector<double>& lb,
+//                     const std::vector<double>& ub,
+//                     constraint::IneqConstraintBase::Ptr ineq_cst,
+//                     size_t max_is_valid_call,
+//                     const ValidatorConfig& vconfig)
+//       : PlannerBase(lb, ub, ineq_cst, max_is_valid_call, vconfig) {
+//     auto ert_connect = std::make_shared<og::ERTConnect>(csi_->si_);
+//     setup_->setPlanner(ert_connect);
+//   }
+//
+//   void set_heuristic(const std::vector<std::vector<double>>& points) {
+//     auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
+//     const auto heuristic = geo_path.getStates();
+//     const auto ert_connect = setup_->getPlanner()->as<og::ERTConnect>();
+//     ert_connect->setExperience(heuristic);
+//   }
+//
+//   void set_parameters(std::optional<double> omega_min,
+//                       std::optional<double> omega_max,
+//                       std::optional<double> eps) {
+//     const auto planner = setup_->getPlanner();
+//     const auto ert_connect = planner->as<og::ERTConnect>();
+//     if (omega_min) {
+//       ert_connect->setExperienceFractionMin(*omega_min);
+//     }
+//     if (omega_max) {
+//       ert_connect->setExperienceFractionMax(*omega_max);
+//     }
+//     if (eps) {
+//       ert_connect->setExperienceTubularRadius(*eps);
+//     }
+//   }
+// };
 
 void setGlobalSeed(size_t seed) {
   ompl::RNG::setSeed(seed);

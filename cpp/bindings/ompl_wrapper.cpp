@@ -34,18 +34,19 @@ void bind_ompl_wrapper_submodule(py::module& m) {
            py::arg("goal_sampler") = py::none(),
            py::arg("max_goal_sample_count") = py::none());
 
-  py::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner", py::module_local())
-      .def(py::init<std::vector<double>, std::vector<double>,
-                    constraint::IneqConstraintBase::Ptr, size_t,
-                    ValidatorConfig>())
-      .def("get_call_count", &OMPLPlanner::getCallCount)
-      .def("solve", &ERTConnectPlanner::solve, py::arg("start"),
-           py::arg("goal"), py::arg("simplify"),
-           py::arg("timeout") = py::none(),
-           py::arg("goal_sampler") = py::none(),
-           py::arg("max_goal_sample_count") = py::none())
-      .def("set_parameters", &ERTConnectPlanner::set_parameters)
-      .def("set_heuristic", &ERTConnectPlanner::set_heuristic);
+  // py::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner",
+  // py::module_local())
+  //     .def(py::init<std::vector<double>, std::vector<double>,
+  //                   constraint::IneqConstraintBase::Ptr, size_t,
+  //                   ValidatorConfig>())
+  //     .def("get_call_count", &OMPLPlanner::getCallCount)
+  //     .def("solve", &ERTConnectPlanner::solve, py::arg("start"),
+  //          py::arg("goal"), py::arg("simplify"),
+  //          py::arg("timeout") = py::none(),
+  //          py::arg("goal_sampler") = py::none(),
+  //          py::arg("max_goal_sample_count") = py::none())
+  //     .def("set_parameters", &ERTConnectPlanner::set_parameters)
+  //     .def("set_heuristic", &ERTConnectPlanner::set_heuristic);
 }
 
 }  // namespace plainmp::bindings
