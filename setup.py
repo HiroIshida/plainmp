@@ -16,7 +16,7 @@ setup(
     version="0.0.22",
     description="experimental",
     author="Hirokazu Ishida",
-    install_requires=["numpy", "scipy", "scikit-robot", "pyyaml", "robot_descriptions", "osqp"],
+    install_requires=["numpy", "scipy", "scikit-robot>=0.0.44", "pyyaml", "robot_descriptions", "osqp"],
     packages=packages,
     package_dir={"": "python"},
     package_data={"plainmp": ["*.pyi", "conf/*.yaml"]},
