@@ -21,11 +21,14 @@ self_collision_pairs:
   - [panda_link1, panda_link8]
   - [panda_link2, panda_link8]
 
+
+only_self_collision_links:
+  - panda_link0
+
 collision_spheres:
   # panda_link0 should be ignored because it is fixed to the world
   # Also, it is problematic to define ground collision box
   panda_link0:
-    only_self_collision: true
     spheres:
       - [-0.01, 0.0, 0.04, 0.09]
       - [-0.07, 0.0, 0.035, 0.07]

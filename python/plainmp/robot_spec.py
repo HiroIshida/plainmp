@@ -146,10 +146,18 @@ class RobotSpec(ABC):
         # the below reads the all the sphere specs from the yaml file
         # but if you want to use the sphere specs for the specific links
         # you can override this method
+
+        if "only_self_collision_links" in self.conf_dict:
+            # spheres of these links are only used for self collision
+            # not for the collision with the environment
+            only_self_colliision_links = set(self.conf_dict["only_self_collision_links"])
+        else:
+            only_self_colliision_links = set()
+
         d = self.conf_dict["collision_spheres"]
         sphere_specs = []
         for parent_link_name, vals in d.items():
-            only_self_collision = "only_self_collision" in vals  # flag
+            only_self_collision = parent_link_name in only_self_colliision_links
             spheres_d = vals["spheres"]
             radii = []
             positions = []
@@ -177,10 +185,12 @@ class RobotSpec(ABC):
             # Add self_collision_pairs only if exist in the conf file
             if "self_collision_pairs" in self.conf_dict:
                 self_collision_pairs = self.conf_dict["self_collision_pairs"]
+
             # Add self_body_collision_primitives only if exist
             if len(self.self_body_collision_primitives()) > 0:
                 sdfs = [primitive_to_plainmp_sdf(p) for p in self.self_body_collision_primitives()]
                 robot_anchor_sdf = UnionSDF(sdfs)
+
         with open(self.urdf_path, "r") as f:
             f.read()
         kin = self.get_kin()
