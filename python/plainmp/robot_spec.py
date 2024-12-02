@@ -350,6 +350,7 @@ class PR2SpecBase(RobotSpec):
         super().__init__(p, with_base=False)
         if not self.urdf_path.exists():
             from skrobot.models.pr2 import PR2  # noqa
+            PR2()  # this downloads the PR2 urdf into the cache
 
     @property
     def default_joint_positions(self) -> Dict[str, float]:
