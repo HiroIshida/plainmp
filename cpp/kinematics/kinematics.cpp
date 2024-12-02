@@ -149,9 +149,10 @@ void KinematicModel<Scalar>::init_transform_cache(
                           std::is_same<Scalar, float>::value,
                       "Scalar must be double or float");
       }
-      // HACK: assume that joint origin rotation is identity
-      // actually this is checked in the urdf loading time, so this must be ok
-      tf_plink_to_hlink_cache_[hid].is_quat_identity_ = true;
+
+      auto& quat = pjoint->parent_to_joint_origin_transform.quat();
+      bool is_approx_identity = (std::abs(quat.w() - 1.0) < 1e-6);
+      tf_plink_to_hlink_cache_[hid].is_quat_identity_ = is_approx_identity;
     }
   }
 }
