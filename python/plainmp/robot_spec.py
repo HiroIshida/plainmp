@@ -120,9 +120,28 @@ class RobotSpec(ABC):
         # other than the controlled joints to the kinematic model.
         # This is because the kinematic model only updates the controlled joints
         # in the planning process, while assuming the other joints are fixed.
+        # Note that kin model is shared among all the constraints.
         kin = self.get_kin()
         ids = kin.get_joint_ids(list(table.keys()))
         kin.set_joint_positions(ids, list(table.values()))
+
+    def reflect_skrobot_model_to_kin(self, robot_model: RobotModel) -> None:
+        # same comment as reflect_joint_positions method applies here
+        # this is the wrapper for the skrobot model. reflect the skrobot's joint angles to
+        # the plainmp's kinematic model
+        table = {}
+        for jn in robot_model.joint_names:
+            angle = robot_model.__dict__[jn].joint_angle()
+            table[jn] = angle
+        self.reflect_joint_positions(table)
+
+    def reflect_kin_to_skrobot_model(self, robot_model: RobotModel) -> None:
+        # inverse of reflect_skrobot_model_to_kin
+        joint_names = robot_model.joint_names
+        kin = self.get_kin()
+        joint_ids = kin.get_joint_ids(joint_names)
+        angles = kin.get_joint_positions(joint_ids)
+        robot_model.angle_vector(angles)
 
     def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
         model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
@@ -350,6 +369,7 @@ class PR2SpecBase(RobotSpec):
         super().__init__(p, with_base=False)
         if not self.urdf_path.exists():
             from skrobot.models.pr2 import PR2  # noqa
+
             PR2()  # this downloads the PR2 urdf into the cache
 
     @property
