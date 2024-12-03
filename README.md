@@ -1,9 +1,9 @@
 # plainmp  [![build & test](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml) [![format](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml)
 
-The project is licensed under the BSD 3 License (see [LICENSE](LICENSE)), except for the code in `cpp` directory which is licensed under the MPL2.0 (see [cpp/LICENSE-MPL2](cpp/LICENSE-MPL2)).
+The project is licensed under the BSD 3 License (see [LICENSE](./LICENSE-BSD3)), except for the code in `cpp` directory which is licensed under the MPL2.0 (see [cpp/LICENSE-MPL2](cpp/LICENSE-MPL2)).
 
 plainmp provides:
-- Fast motion planning (e.g., **less than 1ms** for moderate problems)
+- Fast sampling-based motion planning (e.g., **less than 1ms** for moderate problems using RRTConnect)
 - Collision-aware inverse kinematics (IK) solver
 - Flexible framework for defining various robot model and motion planning problems
 - Collision checking for primitives (sphere/box/cylinder...) and/or point cloud vs. robot
