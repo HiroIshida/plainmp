@@ -1,3 +1,13 @@
+/*
+ * plainmp - library for fast motion planning
+ *
+ * Copyright (C) 2024 Hirokazu Ishida
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/goals/GoalSampleableRegion.h>
 #include <memory>
