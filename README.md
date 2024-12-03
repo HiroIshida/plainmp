@@ -1,4 +1,4 @@
-# plainmp  [![build & test](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml) [![format](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml)
+# plainmp  [![build & test](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml) [![format](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14271046.svg)](https://doi.org/10.5281/zenodo.14271046)
 
 The project is licensed under the BSD 3 License (see [LICENSE](./LICENSE-BSD3)), except for the code in `cpp` directory which is licensed under the MPL2.0 (see [cpp/LICENSE-MPL2](cpp/LICENSE-MPL2)).
 
@@ -16,6 +16,7 @@ Related/depeding projects:
 - plainmp is a rewrite of my previous projects [scikit-motionplan](https://github.com/HiroIshida/scikit-motionplan) and [tinyfk](https://github.com/HiroIshida/tinyfk) to achieve 100x speedup
 - plainmp depends on [OMPL](https://github.com/ompl/ompl) (with unmerged PR of [ERTConnect](https://github.com/ompl/ompl/pull/783)) for SBMP algorithms
 - plainmp deponds on [scikit-robt](https://github.com/iory/scikit-robot) framework for visualization and planning problem specifications
+- [WIP] [benchmark_plainmp_and_vamp](https://github.com/HiroIshida/bench_plainmp_and_vamp) for benchmarking plainmp and [VAMP](https://github.com/KavrakiLab/vamp)
 
 ## Performance example
 panda dual bars: median 0.17 ms | panda ceiled dual bars: median 0.65 ms | fetch table: median 0.62 ms
