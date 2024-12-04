@@ -178,7 +178,9 @@ void KinematicModel<Scalar>::init_transform_cache(
 
       bool is_approx_identity =
           (std::abs(eigen_joint_orientation.w() - 1.0) < 1e-6);
-      tf_plink_to_hlink_cache_[hid].is_quat_identity_ = is_approx_identity;
+      // tf_plink_to_hlink_cache_[hid].is_quat_identity_ = is_approx_identity;
+      tf_plink_to_hlink_cache_[hid].rotation_type_ =
+          plainmp::spatial::RotationType::Identity;
     }
   }
 }

@@ -150,12 +150,14 @@ void KinematicModel<Scalar>::set_joint_angles_impl(
                 : tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
       }
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
-      tf_plink_to_hlink.is_quat_identity_ = false;
+      tf_plink_to_hlink.rotation_type_ =
+          plainmp::spatial::RotationType::Unknown;
     } else {
       Vector3&& trans = joint_axes_[joint_id] * joint_angles[i];
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans + trans;
       tf_plink_to_hlink.quat().setIdentity();
-      tf_plink_to_hlink.is_quat_identity_ = true;
+      tf_plink_to_hlink.rotation_type_ =
+          plainmp::spatial::RotationType::Identity;
     }
   }
 }
