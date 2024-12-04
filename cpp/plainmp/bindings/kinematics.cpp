@@ -28,6 +28,20 @@ class _KinematicModel : public KinematicModel<double> {
     return KinematicModel::add_new_link(parent_id, position, rpy,
                                         consider_rotation, link_name);
   }
+
+  std::vector<double> debug_get_link_pose(const std::string& link_name) {
+    size_t link_id = get_link_ids({link_name})[0];  // slow
+    auto pose = KinematicModel::get_link_pose(link_id);
+    std::vector<double> pose_vec(7);
+    pose_vec[0] = pose.trans().x();
+    pose_vec[1] = pose.trans().y();
+    pose_vec[2] = pose.trans().z();
+    pose_vec[3] = pose.quat().x();
+    pose_vec[4] = pose.quat().y();
+    pose_vec[5] = pose.quat().z();
+    pose_vec[6] = pose.quat().w();
+    return pose_vec;
+  }
 };
 
 void bind_kinematics_submodule(py::module& m) {
@@ -36,14 +50,17 @@ void bind_kinematics_submodule(py::module& m) {
       .def_readonly("name", &urdf::Link::name)
       .def_readonly("id", &urdf::Link::id);
 
+  // parent class
   py::class_<KinematicModel<double>, std::shared_ptr<KinematicModel<double>>>(
       m_kin, "KinematicModel_cpp", py::module_local());
 
+  // child "binding" class
   py::class_<_KinematicModel, std::shared_ptr<_KinematicModel>,
              KinematicModel<double>>(m_kin, "KinematicModel",
                                      py::module_local())
       .def(py::init<std::string&>())
       .def("add_new_link", &_KinematicModel::add_new_link_py)
+      .def("debug_get_link_pose", &_KinematicModel::debug_get_link_pose)
       .def("set_joint_positions", &_KinematicModel::set_joint_angles,
            py::arg("joint_ids"), py::arg("positions"),
            py::arg("accurate") = true)

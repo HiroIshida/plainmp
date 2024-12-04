@@ -14,6 +14,16 @@ class KinematicModel:
         rpy: np.ndarray,
         consider_rotation: bool,
     ) -> None: ...
+    def debug_get_link_pose(self, link_name: str) -> List[float]:
+        """Return the pose of the link in world frame
+        Args:
+            link_name: name of the link
+        Returns:
+            [x, y, z, qx, qy, qz, qw]
+        Note:
+            use this method mainly for debugging because it is not efficient
+        """
+        ...
     def get_joint_position_limits(self, joint_ids: List[int]) -> List[Tuple[float, float]]: ...
     def set_joint_positions(self, joint_ids: List[int], positions: List[float]) -> None: ...
     def get_joint_positions(self, joint_ids: List[int]) -> List[float]: ...
