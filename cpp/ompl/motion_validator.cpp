@@ -20,15 +20,38 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
   if (step_ratio == std::numeric_limits<double>::infinity()) {
     return true;
   }
+  /* double check the logic of the following code
+   * If step_ratio = 0.15, then
+   * n_test = floor(1/0.15) + 2 = 8
+   * TABLE_SEQUENCE[7] = [0, 7, 4, 2, 6, 5, 3, 1, 0, 0, 0, ...]
+   * This first index is already checked in the algrithm side (travel_rate = 0)
+   * second index is checked directly by isValid(s2) (travel_rate = 1)
+   * In the for loop, the travel_rate is computed in the following order
+   * i=2: travel_rate = 0.15 * 4 = 0.6
+   * i=3: travel_rate = 0.15 * 2 = 0.3
+   * i=4: travel_rate = 0.15 * 6 = 0.9
+   * i=5: travel_rate = 0.15 * 5 = 0.75
+   * i=6: travel_rate = 0.15 * 3 = 0.45
+   * i=7: travel_rate = 0.15 * 1 = 0.15
+   * so, travel rates of [0, 1.0, 0.6, 0.3, 0.9, 0.75, 0.45, 0.15] are checked
+   *
+   * TABLE_SEQUENCE is precomputed for n_test <= 128
+   * and SEQUENCE_TABLE size is 128
+   * if n_test = 128, SEQUENCE_TABLE.size() + 1 = 129, then proceed
+   * if n_test = 129, SEQUENCE_TABLE.size() + 1 = 130, then use naive method
+   */
 
   const auto space = si_->getStateSpace();
   size_t n_test = std::floor(1 / step_ratio) + 2;  // including start and end
   if (n_test < SEQUENCE_TABLE.size() + 1) {
-    // TABLE[i] for i+1 steps
+    // TABLE[i] for i+1 steps because n_test = 0 never happens
     auto& sequence = SEQUENCE_TABLE[n_test - 1];
-    // sequence[0] is already checked
-    // sequence[1] is the end, thus
+    // NOTE: OMPL's algorithm assumes that the first state is valid
+    // e.g., see comment in ompl::base::DiscreteMotionValidator::checkMotion of
+    // https://github.com/ompl/ompl/blob/main/src/ompl/base/src/DiscreteMotionValidator.cpp
     if (!si_->isValid(s2)) {
+      // This check corresponds to sequence[1] (which must be the end of the
+      // path) omit this from for loop to avoid unnecessary clamp operation
       return false;
     }
     // start from 2
