@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "primitive_com_in_polytope.hpp"
+#include "plainmp/constraints/primitive_com_in_polytope.hpp"
 
 namespace plainmp::constraint {
 ComInPolytopeCst::ComInPolytopeCst(

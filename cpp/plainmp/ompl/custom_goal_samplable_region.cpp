@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "custom_goal_samplable_region.hpp"
+#include "plainmp/ompl/custom_goal_samplable_region.hpp"
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
 namespace plainmp::ompl_wrapper {

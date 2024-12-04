@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "primitive_relative_pose.hpp"
+#include "plainmp/constraints/primitive_relative_pose.hpp"
 
 namespace plainmp::constraint {
 

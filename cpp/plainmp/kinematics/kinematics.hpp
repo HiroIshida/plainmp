@@ -23,7 +23,7 @@
 #include "urdf_model/pose.h"
 #include "urdf_parser/urdf_parser.h"
 
-#include "data_structure.hpp"
+#include "plainmp/kinematics/data_structure.hpp"
 
 namespace plainmp::kinematics {
 

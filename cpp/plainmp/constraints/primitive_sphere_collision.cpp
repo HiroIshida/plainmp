@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "primitive_sphere_collision.hpp"
+#include "plainmp/constraints/primitive_sphere_collision.hpp"
 
 namespace plainmp::constraint {
 

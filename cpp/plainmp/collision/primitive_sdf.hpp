@@ -19,7 +19,7 @@
 #include <optional>
 #include <vector>
 
-#include "kdtree.hpp"
+#include "plainmp/collision/kdtree.hpp"
 
 namespace plainmp::collision {
 

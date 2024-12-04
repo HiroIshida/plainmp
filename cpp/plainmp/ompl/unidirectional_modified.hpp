@@ -9,9 +9,9 @@
  */
 
 #pragma once
-#include "ompl/base/GoalTypes.h"
-#include "ompl/geometric/planners/kpiece/KPIECE1.h"
-#include "ompl/geometric/planners/rrt/RRT.h"
+#include <ompl/base/GoalTypes.h>
+#include <ompl/geometric/planners/kpiece/KPIECE1.h>
+#include <ompl/geometric/planners/rrt/RRT.h>
 
 namespace ompl {
 

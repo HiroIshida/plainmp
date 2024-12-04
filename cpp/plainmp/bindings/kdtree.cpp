@@ -8,9 +8,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "collision/kdtree.hpp"
+#include "plainmp/collision/kdtree.hpp"
 #include <vector>
-#include "bindings.hpp"
+#include "plainmp/bindings/bindings.hpp"
 
 using namespace plainmp::collision;
 

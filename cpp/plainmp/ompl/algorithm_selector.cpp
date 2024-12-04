@@ -16,7 +16,7 @@
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <optional>
-#include "unidirectional_modified.hpp"
+#include "plainmp/ompl/unidirectional_modified.hpp"
 
 namespace plainmp::ompl_wrapper {
 

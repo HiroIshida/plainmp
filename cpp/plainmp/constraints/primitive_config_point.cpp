@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "primitive_config_point.hpp"
+#include "plainmp/constraints/primitive_config_point.hpp"
 
 namespace plainmp::constraint {
 

@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "kinematics.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 #include <Eigen/Geometry>
 #include <cmath>
 #include <fstream>

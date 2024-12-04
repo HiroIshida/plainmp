@@ -16,7 +16,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
-#include "kinematics/kinematics.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 

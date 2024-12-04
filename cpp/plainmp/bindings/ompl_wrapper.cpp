@@ -10,9 +10,9 @@
 
 #include <pybind11/functional.h>
 #include <optional>
-#include "bindings.hpp"
-#include "constraints/primitive.hpp"
-#include "ompl/ompl_thin_wrap.hpp"
+#include "plainmp/bindings/bindings.hpp"
+#include "plainmp/constraints/primitive.hpp"
+#include "plainmp/ompl/ompl_thin_wrap.hpp"
 
 namespace plainmp::bindings {
 

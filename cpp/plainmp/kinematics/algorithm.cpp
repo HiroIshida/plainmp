@@ -12,7 +12,7 @@
 #include <cmath>
 #include <stack>
 #include <stdexcept>
-#include "kinematics.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 #include "urdf_model/pose.h"
 
 namespace plainmp::kinematics {

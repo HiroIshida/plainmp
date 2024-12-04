@@ -8,8 +8,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "bindings/bindings.hpp"
-#include "collision/primitive_sdf.hpp"
+#include "plainmp/bindings/bindings.hpp"
+#include "plainmp/collision/primitive_sdf.hpp"
 
 using namespace plainmp::collision;
 

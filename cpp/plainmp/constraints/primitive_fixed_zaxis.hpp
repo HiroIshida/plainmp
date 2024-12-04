@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "primitive.hpp"
+#include "plainmp/constraints/primitive.hpp"
 
 namespace plainmp::constraint {
 class FixedZAxisCst : public EqConstraintBase {

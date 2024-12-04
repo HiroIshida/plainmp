@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "bindings/bindings.hpp"
+#include "plainmp/bindings/bindings.hpp"
 
 namespace pb = plainmp::bindings;
 

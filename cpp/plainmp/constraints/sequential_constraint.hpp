@@ -10,7 +10,7 @@
 
 #include <Eigen/Sparse>
 #include <optional>
-#include "primitive.hpp"
+#include "plainmp/constraints/primitive.hpp"
 
 namespace plainmp::constraint {
 

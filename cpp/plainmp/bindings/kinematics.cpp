@@ -8,8 +8,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "kinematics/kinematics.hpp"
-#include "bindings.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
+#include "plainmp/bindings/bindings.hpp"
 
 using namespace plainmp::kinematics;
 

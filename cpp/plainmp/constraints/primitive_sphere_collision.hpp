@@ -8,8 +8,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "collision/primitive_sdf.hpp"
-#include "primitive.hpp"
+#include "plainmp/collision/primitive_sdf.hpp"
+#include "plainmp/constraints/primitive.hpp"
 
 namespace plainmp::constraint {
 

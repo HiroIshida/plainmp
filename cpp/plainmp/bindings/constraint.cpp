@@ -8,16 +8,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "bindings.hpp"
-#include "constraints/composite_constraint.hpp"
-#include "constraints/primitive.hpp"
-#include "constraints/primitive_com_in_polytope.hpp"
-#include "constraints/primitive_config_point.hpp"
-#include "constraints/primitive_fixed_zaxis.hpp"
-#include "constraints/primitive_link_pose.hpp"
-#include "constraints/primitive_relative_pose.hpp"
-#include "constraints/primitive_sphere_collision.hpp"
-#include "constraints/sequential_constraint.hpp"
+#include "plainmp/bindings/bindings.hpp"
+#include "plainmp/constraints/composite_constraint.hpp"
+#include "plainmp/constraints/primitive.hpp"
+#include "plainmp/constraints/primitive_com_in_polytope.hpp"
+#include "plainmp/constraints/primitive_config_point.hpp"
+#include "plainmp/constraints/primitive_fixed_zaxis.hpp"
+#include "plainmp/constraints/primitive_link_pose.hpp"
+#include "plainmp/constraints/primitive_relative_pose.hpp"
+#include "plainmp/constraints/primitive_sphere_collision.hpp"
+#include "plainmp/constraints/sequential_constraint.hpp"
 
 using namespace plainmp::constraint;
 using namespace plainmp::collision;

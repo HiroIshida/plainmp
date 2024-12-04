@@ -11,6 +11,7 @@
 #pragma once
 
 #include <ertconnect/ERTConnect.h>
+#include <ompl/base/MotionValidator.h>
 #include <ompl/base/PlannerTerminationCondition.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
@@ -19,11 +20,10 @@
 #include <ompl/geometric/SimpleSetup.h>
 #include <Eigen/Dense>
 #include <optional>
-#include "algorithm_selector.hpp"
-#include "constraints/primitive.hpp"
-#include "custom_goal_samplable_region.hpp"
-#include "motion_validator.hpp"
-#include "ompl/base/MotionValidator.h"
+#include "plainmp/constraints/primitive.hpp"
+#include "plainmp/ompl/algorithm_selector.hpp"
+#include "plainmp/ompl/custom_goal_samplable_region.hpp"
+#include "plainmp/ompl/motion_validator.hpp"
 
 namespace plainmp::ompl_wrapper {
 

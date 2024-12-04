@@ -8,10 +8,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "unidirectional_modified.hpp"
+#include "plainmp/ompl/unidirectional_modified.hpp"
+#include <ompl/base/goals/GoalSampleableRegion.h>
+#include <ompl/tools/config/SelfConfig.h>
 #include <limits>
-#include "ompl/base/goals/GoalSampleableRegion.h"
-#include "ompl/tools/config/SelfConfig.h"
 
 namespace ompl {
 namespace custom {

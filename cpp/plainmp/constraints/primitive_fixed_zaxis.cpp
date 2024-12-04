@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "primitive_fixed_zaxis.hpp"
+#include "plainmp/constraints/primitive_fixed_zaxis.hpp"
 
 namespace plainmp::constraint {
 

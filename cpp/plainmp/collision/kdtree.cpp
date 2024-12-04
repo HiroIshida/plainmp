@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "kdtree.hpp"
+#include "plainmp/collision/kdtree.hpp"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <limits>

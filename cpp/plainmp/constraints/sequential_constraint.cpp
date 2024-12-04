@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "sequential_constraint.hpp"
+#include "plainmp/constraints/sequential_constraint.hpp"
 
 namespace plainmp::constraint {
 

@@ -16,8 +16,8 @@
 #include <memory>
 #include <sstream>
 #include <utility>
-#include "kinematics/kinematics.hpp"
-#include "primitive.hpp"
+#include "plainmp/constraints/primitive.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 template <typename T>

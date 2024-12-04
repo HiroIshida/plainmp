@@ -10,7 +10,7 @@
 
 #include "motion_validator.hpp"
 #include <ompl/base/spaces/RealVectorStateSpace.h>
-#include "sequence_table.hpp"
+#include "plainmp/ompl/sequence_table.hpp"
 
 namespace plainmp::ompl_wrapper {
 
