@@ -13,29 +13,28 @@
 
 namespace plainmp::kinematics {
 
-enum class RotationType { AroundX, AroundY, AroundZ, Identity, Unknown };
+enum class RotAxis { PureX, PureY, PureZ, NoRotation, General };
 
 template <typename Scalar>
-RotationType determine_rotation_type(const Eigen::Quaternion<Scalar>& q) {
-  const auto qn = q.normalized();  // just in case
+RotAxis determine_rotation_type(const Eigen::Quaternion<Scalar>& q) {
+  const auto qn = q.normalized();
   const double e = 1e-6;
   // clang-format off
-    if (std::abs(std::abs(qn.w()) - 1.0) < e) return RotationType::Identity;
-    if (std::abs(std::abs(qn.x()) - 1.0) < e) return RotationType::AroundX;
-    if (std::abs(std::abs(qn.y()) - 1.0) < e) return RotationType::AroundY;
-    if (std::abs(std::abs(qn.z()) - 1.0) < e) return RotationType::AroundZ;
+  if (std::abs(qn.w()) > 1.0 - e) return RotAxis::NoRotation;
+  if (std::abs(qn.y()) < e && std::abs(qn.z()) < e) return RotAxis::PureX;
+  if (std::abs(qn.x()) < e && std::abs(qn.z()) < e) return RotAxis::PureY;
+  if (std::abs(qn.x()) < e && std::abs(qn.y()) < e) return RotAxis::PureZ;
   // clang-format on
-  return RotationType::Unknown;
+  return RotAxis::General;
 }
 
 template <typename Scalar>
 struct QuatTrans {
   using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
-  // NOTE: considering memory layout, (quat, trans) is much better than (trans,
-  // quat)
+  // NOTE: please keep (quat, trans, ...) memory layout
   Eigen::Quaternion<Scalar> quat_;
   Eigen::Matrix<Scalar, 3, 1> trans_;
-  RotationType rotation_type_ = RotationType::Unknown;
+  RotAxis rotation_type_ = RotAxis::General;
 
   inline QuatTrans<Scalar>& operator=(const QuatTrans<Scalar>& other) {
     quat_ = other.quat_;
@@ -62,16 +61,16 @@ struct QuatTrans {
     QuatTrans<Scalar> qt;
     qt.quat_ = Eigen::Quaternion<Scalar>::Identity();
     qt.trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
-    qt.rotation_type_ = RotationType::Identity;
+    qt.rotation_type_ = RotAxis::NoRotation;
     return qt;
   }
   void clear() {
     quat_ = Eigen::Quaternion<Scalar>::Identity();
     trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
-    rotation_type_ = RotationType::Identity;
+    rotation_type_ = RotAxis::NoRotation;
   }
   inline QuatTrans<Scalar> operator*(const QuatTrans<Scalar>& other) const {
-    if (other.rotation_type_ == RotationType::Identity) {
+    if (other.rotation_type_ == RotAxis::NoRotation) {
       return {quat_, trans_ + quat_ * other.trans_};
     } else {
       return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
@@ -81,7 +80,7 @@ struct QuatTrans {
   inline void quat_identity_sensitive_mult_and_assign(
       const QuatTrans<Scalar>& other,
       QuatTrans<Scalar>& result) const {
-    if (other.rotation_type_ == RotationType::Identity) {
+    if (other.rotation_type_ == RotAxis::NoRotation) {
       result.quat_ = quat_;
       result.trans_ = trans_ + quat_ * other.trans_;
     } else {
@@ -95,7 +94,7 @@ struct QuatTrans {
     // NOTE: in kin tree update, left side is from root => current transform
     // which is usually not quat-identity. but other is from pair-link-wise
     // transform thus more likely to be quat-identity. Thus...
-    if (other.rotation_type_ == RotationType::Identity) {
+    if (other.rotation_type_ == RotAxis::NoRotation) {
       return {quat_, trans_ + quat_ * other.trans_};
     } else {
       return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
@@ -171,7 +170,7 @@ struct QuatTrans {
   }
 
   static QuatTrans<Scalar> fromXYZ(const Vector3& xyz) {
-    return {Eigen::Quaternion<Scalar>::Identity(), xyz, RotationType::Identity};
+    return {Eigen::Quaternion<Scalar>::Identity(), xyz, RotAxis::NoRotation};
   }
   static QuatTrans<Scalar> fromXYZ(Scalar x, Scalar y, Scalar z) {
     return fromXYZ(Vector3(x, y, z));
