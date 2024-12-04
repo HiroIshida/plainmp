@@ -111,7 +111,7 @@ void KinematicModel<Scalar>::init_joint_info(
       }
 
       auto& jo_quat = joint_orientations_.back();
-      auto rot_axis = plainmp::spatial::determine_rotation_type(jo_quat);
+      auto rot_axis = determine_rotation_type(jo_quat);
       joint_attach_rot_axes_.push_back(rot_axis);
 
       joint_child_link_ids_.push_back(joint->getChildLink()->id);
@@ -141,7 +141,7 @@ void KinematicModel<Scalar>::init_joint_info(
   // check if all joint orientations are identity
   all_joint_orientation_identity_ = true;
   for (auto rot_axis : joint_attach_rot_axes_) {
-    bool identity = rot_axis == plainmp::spatial::RotAxis::NoRotation;
+    bool identity = rot_axis == RotAxis::NoRotation;
     all_joint_orientation_identity_ =
         all_joint_orientation_identity_ && identity;
   }
@@ -175,8 +175,7 @@ void KinematicModel<Scalar>::init_transform_cache(
                           std::is_same<Scalar, float>::value,
                       "Scalar must be double or float");
       }
-      auto rot_axis =
-          plainmp::spatial::determine_rotation_type(eigen_joint_orientation);
+      auto rot_axis = determine_rotation_type(eigen_joint_orientation);
       tf_plink_to_hlink_cache_[hid].rotation_type_ = rot_axis;
     }
   }
