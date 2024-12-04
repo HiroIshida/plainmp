@@ -145,7 +145,8 @@ void KinematicModel<Scalar>::set_joint_angles_impl(
         tf_plink_to_hlink.quat() = tf_pjoint_to_hlink_quat;
       } else {
         tf_plink_to_hlink.quat() =
-            joint_orientation_identity_flags_[joint_id]
+            (joint_attach_rot_axes_[joint_id] ==
+             plainmp::spatial::RotAxis::NoRotation)
                 ? tf_pjoint_to_hlink_quat
                 : tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
       }

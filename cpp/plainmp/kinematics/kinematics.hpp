@@ -71,7 +71,7 @@ class KinematicModel {
   std::vector<Vector3> joint_axes_;
   std::vector<Vector3> joint_positions_;
   std::vector<Quat> joint_orientations_;
-  std::vector<bool> joint_orientation_identity_flags_;
+  std::vector<plainmp::spatial::RotAxis> joint_attach_rot_axes_;
   bool all_joint_orientation_identity_;
   std::vector<int> joint_child_link_ids_;
   std::vector<Bound> joint_position_limits_;
