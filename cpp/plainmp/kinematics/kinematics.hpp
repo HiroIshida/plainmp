@@ -24,7 +24,7 @@
 #include "urdf_parser/urdf_parser.h"
 
 #include "plainmp/kinematics/data_structure.hpp"
-#include "plainmp/spatial/transform.hpp"
+#include "plainmp/kinematics/transform.hpp"
 
 namespace plainmp::kinematics {
 
@@ -50,7 +50,7 @@ enum class RotationType { IGNORE, RPY, XYZW };
 template <typename Scalar>
 class KinematicModel {
  public:  // members
-  using Transform = plainmp::spatial::QuatTrans<Scalar>;
+  using Transform = QuatTrans<Scalar>;
   using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
   using Quat = Eigen::Quaternion<Scalar>;
   using MatrixDynamic = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
