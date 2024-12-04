@@ -162,7 +162,7 @@ void KinematicModel<Scalar>::init_transform_cache(
           pjoint->parent_to_joint_origin_transform.position);
       auto eigen_joint_orientation = urdf_rotation_to_eigen_quaternion(
           pjoint->parent_to_joint_origin_transform.rotation);
-      plainmp::spatial::QuatTrans<double> parent_to_joint_origin_transform{
+      QuatTrans<double> parent_to_joint_origin_transform{
           eigen_joint_orientation, eigen_joint_position};
 
       if constexpr (std::is_same<Scalar, double>::value) {

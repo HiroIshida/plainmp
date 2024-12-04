@@ -11,7 +11,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-namespace plainmp::spatial {
+namespace plainmp::kinematics {
 
 template <typename Scalar>
 struct QuatTrans {
@@ -161,4 +161,4 @@ struct QuatTrans {
   }
 };
 
-}  // namespace plainmp::spatial
+}  // namespace plainmp::kinematics
