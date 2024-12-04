@@ -184,10 +184,9 @@ public:
   ///            FLOATING    N/A
   ///            PLANAR      plane normal axis
   ///            FIXED       N/A
-  Eigen::Vector3d axis;
+  Vector3 axis;
 
   unsigned int id;
-  bool is_origin_with_rotation;
 
   /// child Link element
   ///   child link frame is the same as the Joint frame
@@ -197,7 +196,7 @@ public:
   ///   origin specifies the transform from Parent Link to Joint Frame
   std::string parent_link_name;
   /// transform from Parent Link frame to Joint frame
-  QuatTrans<double>  parent_to_joint_origin_transform;
+  Pose  parent_to_joint_origin_transform;
 
   /// Joint Dynamics
   JointDynamicsSharedPtr dynamics;
@@ -214,6 +213,45 @@ public:
   /// Option to Mimic another Joint
   JointMimicSharedPtr mimic;
 
+  /// derivative of quaternion w.r.t angle
+  Rotation joint_quaternion_derivative(double angle)
+  {
+    double q1 = axis.x * 0.5 * cos(angle * 0.5);
+    double q2 = axis.y * 0.5 * cos(angle * 0.5);
+    double q3 = axis.z * 0.5 * cos(angle * 0.5);
+    double q4 = - 0.5 * sin(angle * 0.5);
+    Rotation rot(q1, q2, q3, q4); 
+    return rot;
+  }
+
+  Pose transform(double angle){
+      auto& axis = this->axis;
+      auto& type = this->type;
+
+      if(type == REVOLUTE || type==CONTINUOUS){
+          Pose tf;
+          double q1 = axis.x * sin(angle * 0.5);
+          double q2 = axis.y * sin(angle * 0.5);
+          double q3 = axis.z * sin(angle * 0.5);
+          double q4 = cos(angle * 0.5);
+          Rotation rot(q1, q2, q3, q4); 
+          tf.rotation = rot;
+          return tf;
+      }
+      if(type == PRISMATIC){
+          Pose tf;
+          tf.position.x = axis.x * angle;
+          tf.position.y = axis.y * angle;
+          tf.position.z = axis.z * angle;
+          return tf;
+      }
+      if(type == FIXED){
+        Pose tf;
+        return tf;
+      }
+      throw std::runtime_error("unsupported joint detected");
+  }
+
   void setChildLink(const LinkSharedPtr &child)
   { child_link_ = child; }
 
@@ -222,7 +260,7 @@ public:
 
   void clear()
   {
-    this->axis.setZero();
+    this->axis.clear();
     this->child_link_name.clear();
     this->parent_link_name.clear();
     this->parent_to_joint_origin_transform.clear();
@@ -232,13 +270,6 @@ public:
     this->calibration.reset();
     this->mimic.reset();
     this->type = UNKNOWN;
-
-    // check if the origin has rotation
-    auto rotmat = this->parent_to_joint_origin_transform.quat().toRotationMatrix();
-    this->is_origin_with_rotation = !rotmat.isApprox(Eigen::Matrix3d::Identity());
-    if(is_origin_with_rotation){
-      throw std::runtime_error("currently, origin with rotation is not supported");
-    }
   };
 
 private:

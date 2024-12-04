@@ -51,7 +51,6 @@
 namespace urdf{
 
 bool parsePose(Pose &pose, TiXmlElement* xml);
-bool parsePose(QuatTrans<double>& pose, TiXmlElement* xml);
 
 bool parseMaterial(Material &material, TiXmlElement *config, bool only_name_is_ok)
 {
@@ -590,7 +589,7 @@ bool exportInertial(Inertial &i, TiXmlElement *xml)
   mass_xml->SetAttribute("value", urdf_export_helpers::values2str(i.mass));
   inertial_xml->LinkEndChild(mass_xml);
 
-  // exportPose(i.origin, inertial_xml);
+  exportPose(i.origin, inertial_xml);
 
   TiXmlElement *inertia_xml = new TiXmlElement("inertia");
   inertia_xml->SetAttribute("ixx", urdf_export_helpers::values2str(i.ixx));
@@ -617,7 +616,7 @@ bool exportVisual(Visual &vis, TiXmlElement *xml)
   // </visual>
   TiXmlElement * visual_xml = new TiXmlElement("visual");
 
-  // exportPose(vis.origin, visual_xml);
+  exportPose(vis.origin, visual_xml);
 
   exportGeometry(vis.geometry, visual_xml);
 
@@ -640,7 +639,7 @@ bool exportCollision(Collision &col, TiXmlElement* xml)
   // </collision>
   TiXmlElement * collision_xml = new TiXmlElement("collision");
 
-  // exportPose(col.origin, collision_xml);
+  exportPose(col.origin, collision_xml);
 
   exportGeometry(col.geometry, collision_xml);
 

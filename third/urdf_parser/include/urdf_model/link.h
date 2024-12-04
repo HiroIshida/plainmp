@@ -132,13 +132,13 @@ class Inertial
 {
 public:
   Inertial() { this->clear(); };
-  QuatTrans<double> origin;
+  Pose origin;
   double mass;
   double ixx,ixy,ixz,iyy,iyz,izz;
 
   void clear()
   {
-    origin = QuatTrans<double>::Identity();
+    origin.clear();
     mass = 0;
     ixx = ixy = ixz = iyy = iyz = izz = 0;
   };
@@ -148,7 +148,7 @@ class Visual
 {
 public:
   Visual() { this->clear(); };
-  QuatTrans<double> origin;
+  Pose origin;
   GeometrySharedPtr geometry;
 
   std::string material_name;
@@ -156,7 +156,7 @@ public:
 
   void clear()
   {
-    origin = QuatTrans<double>::Identity();
+    origin.clear();
     material_name.clear();
     material.reset();
     geometry.reset();
@@ -170,12 +170,12 @@ class Collision
 {
 public:
   Collision() { this->clear(); };
-  QuatTrans<double> origin;
+  Pose origin;
   GeometrySharedPtr geometry;
 
   void clear()
   {
-    origin = QuatTrans<double>::Identity();
+    origin.clear();
     geometry.reset();
     name.clear();
   };
@@ -191,7 +191,6 @@ public:
   Link() { this->clear(); };
 
   std::string name;
-  bool consider_rotation;
 
   unsigned int id;
 
@@ -228,7 +227,6 @@ public:
   {
     this->id = -1; // meaning that the id is not initialized
     this->name.clear();
-    this->consider_rotation = true;
     this->inertial.reset();
     this->visual.reset();
     this->collision.reset();

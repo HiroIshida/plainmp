@@ -21,6 +21,14 @@ namespace plainmp::kinematics {
 template class KinematicModel<double>;
 template class KinematicModel<float>;
 
+auto urdf_vector3_to_eigen_vector3(const urdf::Vector3& v) {
+  return Eigen::Vector3d(v.x, v.y, v.z);
+}
+
+auto urdf_rotation_to_eigen_quaternion(const urdf::Rotation& r) {
+  return Eigen::Quaterniond(r.w, r.x, r.y, r.z);
+}
+
 template <typename Scalar>
 void KinematicModel<Scalar>::init_link_info(
     const std::vector<urdf::LinkSharedPtr>& links) {
@@ -36,18 +44,19 @@ void KinematicModel<Scalar>::init_link_info(
       // root link does not have parent
       link_parent_link_ids_[link->id] = std::numeric_limits<size_t>::max();
     }
-    link_consider_rotation_[link->id] = link->consider_rotation;
+    link_consider_rotation_[link->id] = true;
     for (const auto& child_link : link->child_links) {
       link_child_link_idss_[link->id].push_back(child_link->id);
     }
     if (link->inertial != nullptr) {
       com_link_ids_.push_back(link->id);
       link_masses_.push_back(link->inertial->mass);
+      auto eigen_vec =
+          urdf_vector3_to_eigen_vector3(link->inertial->origin.position);
       if constexpr (std::is_same<Scalar, double>::value) {
-        com_local_positions_.push_back(link->inertial->origin.trans());
+        com_local_positions_.push_back(eigen_vec);
       } else if constexpr (std::is_same<Scalar, float>::value) {
-        com_local_positions_.push_back(
-            link->inertial->origin.trans().cast<float>());
+        com_local_positions_.push_back(eigen_vec.cast<float>());
       } else {
         static_assert(std::is_same<Scalar, double>::value ||
                           std::is_same<Scalar, float>::value,
@@ -82,18 +91,19 @@ void KinematicModel<Scalar>::init_joint_info(
       joint->id = joint_counter;
       joint_types_.push_back(jtype);
 
+      auto eigen_joint_axis = urdf_vector3_to_eigen_vector3(joint->axis);
+      auto eigen_joint_position = urdf_vector3_to_eigen_vector3(
+          joint->parent_to_joint_origin_transform.position);
+      auto eigen_joint_orientation = urdf_rotation_to_eigen_quaternion(
+          joint->parent_to_joint_origin_transform.rotation);
       if constexpr (std::is_same<Scalar, double>::value) {
-        joint_axes_.push_back(joint->axis);
-        joint_positions_.push_back(
-            joint->parent_to_joint_origin_transform.trans());
-        joint_orientations_.push_back(
-            joint->parent_to_joint_origin_transform.quat());
+        joint_axes_.push_back(eigen_joint_axis);
+        joint_positions_.push_back(eigen_joint_position);
+        joint_orientations_.push_back(eigen_joint_orientation);
       } else if constexpr (std::is_same<Scalar, float>::value) {
-        joint_axes_.push_back(joint->axis.cast<float>());
-        joint_positions_.push_back(
-            joint->parent_to_joint_origin_transform.trans().cast<float>());
-        joint_orientations_.push_back(
-            joint->parent_to_joint_origin_transform.quat().cast<float>());
+        joint_axes_.push_back(eigen_joint_axis.cast<float>());
+        joint_positions_.push_back(eigen_joint_position.cast<float>());
+        joint_orientations_.push_back(eigen_joint_orientation.cast<float>());
       } else {
         static_assert(std::is_same<Scalar, double>::value ||
                           std::is_same<Scalar, float>::value,
@@ -148,20 +158,26 @@ void KinematicModel<Scalar>::init_transform_cache(
     if (pjoint != nullptr) {
       // HACK: if joint is not fixed, the value (origin_transform,
       // quat_identity) will be overwritten in the set_joint_angles(q)
+      auto eigen_joint_position = urdf_vector3_to_eigen_vector3(
+          pjoint->parent_to_joint_origin_transform.position);
+      auto eigen_joint_orientation = urdf_rotation_to_eigen_quaternion(
+          pjoint->parent_to_joint_origin_transform.rotation);
+      plainmp::spatial::QuatTrans<double> parent_to_joint_origin_transform{
+          eigen_joint_orientation, eigen_joint_position};
+
       if constexpr (std::is_same<Scalar, double>::value) {
-        tf_plink_to_hlink_cache_[hid] =
-            pjoint->parent_to_joint_origin_transform;
+        tf_plink_to_hlink_cache_[hid] = parent_to_joint_origin_transform;
       } else if constexpr (std::is_same<Scalar, float>::value) {
         tf_plink_to_hlink_cache_[hid] =
-            pjoint->parent_to_joint_origin_transform.cast<float>();
+            parent_to_joint_origin_transform.cast<float>();
       } else {
         static_assert(std::is_same<Scalar, double>::value ||
                           std::is_same<Scalar, float>::value,
                       "Scalar must be double or float");
       }
 
-      auto& quat = pjoint->parent_to_joint_origin_transform.quat();
-      bool is_approx_identity = (std::abs(quat.w() - 1.0) < 1e-6);
+      bool is_approx_identity =
+          (std::abs(eigen_joint_orientation.w() - 1.0) < 1e-6);
       tf_plink_to_hlink_cache_[hid].is_quat_identity_ = is_approx_identity;
     }
   }
