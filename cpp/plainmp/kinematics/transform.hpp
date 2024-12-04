@@ -16,6 +16,19 @@ namespace plainmp::kinematics {
 enum class RotationType { AroundX, AroundY, AroundZ, Identity, Unknown };
 
 template <typename Scalar>
+RotationType determine_rotation_type(const Eigen::Quaternion<Scalar>& q) {
+  const auto qn = q.normalized();  // just in case
+  const double e = 1e-6;
+  // clang-format off
+    if (std::abs(std::abs(qn.w()) - 1.0) < e) return RotationType::Identity;
+    if (std::abs(std::abs(qn.x()) - 1.0) < e) return RotationType::AroundX;
+    if (std::abs(std::abs(qn.y()) - 1.0) < e) return RotationType::AroundY;
+    if (std::abs(std::abs(qn.z()) - 1.0) < e) return RotationType::AroundZ;
+  // clang-format on
+  return RotationType::Unknown;
+}
+
+template <typename Scalar>
 struct QuatTrans {
   using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
   // NOTE: considering memory layout, (quat, trans) is much better than (trans,
