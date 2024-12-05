@@ -68,36 +68,20 @@ struct QuatTrans {
     trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
     rot_axis_ = RotAxis::NoRotation;
   }
+
   inline QuatTrans<Scalar> operator*(const QuatTrans<Scalar>& other) const {
-    if (other.rot_axis_ == RotAxis::NoRotation) {
-      return {quat_, trans_ + quat_ * other.trans_};
-    } else {
-      return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
-    }
+    Eigen::Quaternion<Scalar> q_result;
+    multiply_quaternions(quat_, other.quat_, q_result, this->rot_axis_,
+                         other.rot_axis_);
+    return {q_result, trans_ + quat_ * other.trans_};
   }
 
   inline void quat_identity_sensitive_mult_and_assign(
       const QuatTrans<Scalar>& other,
       QuatTrans<Scalar>& result) const {
-    if (other.rot_axis_ == RotAxis::NoRotation) {
-      result.quat_ = quat_;
-      result.trans_ = trans_ + quat_ * other.trans_;
-    } else {
-      result.quat_ = quat_ * other.quat_;
-      result.trans_ = trans_ + quat_ * other.trans_;
-    }
-  }
-
-  inline QuatTrans<Scalar> quat_identity_sensitive_mul(
-      const QuatTrans<Scalar>& other) const {
-    // NOTE: in kin tree update, left side is from root => current transform
-    // which is usually not quat-identity. but other is from pair-link-wise
-    // transform thus more likely to be quat-identity. Thus...
-    if (other.rot_axis_ == RotAxis::NoRotation) {
-      return {quat_, trans_ + quat_ * other.trans_};
-    } else {
-      return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
-    }
+    multiply_quaternions(quat_, other.quat_, result.quat_, this->rot_axis_,
+                         other.rot_axis_);
+    result.trans_ = trans_ + quat_ * other.trans_;
   }
 
   QuatTrans<Scalar> getInverse() const {
