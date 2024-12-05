@@ -21,6 +21,8 @@ void mult_quat_xaxis_norot(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = 0;
   q_out.w() = q_self.w();
 }
+template void mult_quat_xaxis_norot(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_xaxis_norot(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_xaxis_xaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -29,6 +31,8 @@ void mult_quat_xaxis_xaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = 0;
   q_out.w() = q_other.w() * q_self.w() - q_other.x() * q_self.x();
 }
+template void mult_quat_xaxis_xaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_xaxis_xaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_xaxis_yaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -37,6 +41,8 @@ void mult_quat_xaxis_yaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = q_other.y() * q_self.x();
   q_out.w() = q_other.w() * q_self.w();
 }
+template void mult_quat_xaxis_yaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_xaxis_yaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_xaxis_zaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -45,6 +51,8 @@ void mult_quat_xaxis_zaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = q_other.z() * q_self.w();
   q_out.w() = q_other.w() * q_self.w();
 }
+template void mult_quat_xaxis_zaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_xaxis_zaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_xaxis_general(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -53,6 +61,8 @@ void mult_quat_xaxis_general(const Eigen::Quaternion<Scalar>& q_self, const Eige
   q_out.z() = q_other.y() * q_self.x() + q_other.z() * q_self.w();
   q_out.w() = q_other.w() * q_self.w() - q_other.x() * q_self.x();
 }
+template void mult_quat_xaxis_general(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_xaxis_general(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_yaxis_norot(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -61,6 +71,8 @@ void mult_quat_yaxis_norot(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = 0;
   q_out.w() = q_self.w();
 }
+template void mult_quat_yaxis_norot(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_yaxis_norot(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_yaxis_xaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -69,6 +81,8 @@ void mult_quat_yaxis_xaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = -q_other.x() * q_self.y();
   q_out.w() = q_other.w() * q_self.w();
 }
+template void mult_quat_yaxis_xaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_yaxis_xaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_yaxis_yaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -77,6 +91,8 @@ void mult_quat_yaxis_yaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = 0;
   q_out.w() = q_other.w() * q_self.w() - q_other.y() * q_self.y();
 }
+template void mult_quat_yaxis_yaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_yaxis_yaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_yaxis_zaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -85,6 +101,8 @@ void mult_quat_yaxis_zaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = q_other.z() * q_self.w();
   q_out.w() = q_other.w() * q_self.w();
 }
+template void mult_quat_yaxis_zaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_yaxis_zaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_yaxis_general(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -93,6 +111,8 @@ void mult_quat_yaxis_general(const Eigen::Quaternion<Scalar>& q_self, const Eige
   q_out.z() = -q_other.x() * q_self.y() + q_other.z() * q_self.w();
   q_out.w() = q_other.w() * q_self.w() - q_other.y() * q_self.y();
 }
+template void mult_quat_yaxis_general(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_yaxis_general(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_zaxis_norot(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -101,6 +121,8 @@ void mult_quat_zaxis_norot(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = q_self.z();
   q_out.w() = q_self.w();
 }
+template void mult_quat_zaxis_norot(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_zaxis_norot(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_zaxis_xaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -109,6 +131,8 @@ void mult_quat_zaxis_xaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = q_other.w() * q_self.z();
   q_out.w() = q_other.w() * q_self.w();
 }
+template void mult_quat_zaxis_xaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_zaxis_xaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_zaxis_yaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -117,6 +141,8 @@ void mult_quat_zaxis_yaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = q_other.w() * q_self.z();
   q_out.w() = q_other.w() * q_self.w();
 }
+template void mult_quat_zaxis_yaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_zaxis_yaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_zaxis_zaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -125,6 +151,8 @@ void mult_quat_zaxis_zaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen:
   q_out.z() = q_other.w() * q_self.z() + q_other.z() * q_self.w();
   q_out.w() = q_other.w() * q_self.w() - q_other.z() * q_self.z();
 }
+template void mult_quat_zaxis_zaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_zaxis_zaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_zaxis_general(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -133,6 +161,8 @@ void mult_quat_zaxis_general(const Eigen::Quaternion<Scalar>& q_self, const Eige
   q_out.z() = q_other.w() * q_self.z() + q_other.z() * q_self.w();
   q_out.w() = q_other.w() * q_self.w() - q_other.z() * q_self.z();
 }
+template void mult_quat_zaxis_general(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_zaxis_general(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_general_norot(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -141,6 +171,8 @@ void mult_quat_general_norot(const Eigen::Quaternion<Scalar>& q_self, const Eige
   q_out.z() = q_self.z();
   q_out.w() = q_self.w();
 }
+template void mult_quat_general_norot(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_general_norot(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_general_xaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -149,6 +181,8 @@ void mult_quat_general_xaxis(const Eigen::Quaternion<Scalar>& q_self, const Eige
   q_out.z() = q_other.w() * q_self.z() - q_other.x() * q_self.y();
   q_out.w() = q_other.w() * q_self.w() - q_other.x() * q_self.x();
 }
+template void mult_quat_general_xaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_general_xaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_general_yaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -157,6 +191,8 @@ void mult_quat_general_yaxis(const Eigen::Quaternion<Scalar>& q_self, const Eige
   q_out.z() = q_other.w() * q_self.z() + q_other.y() * q_self.x();
   q_out.w() = q_other.w() * q_self.w() - q_other.y() * q_self.y();
 }
+template void mult_quat_general_yaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_general_yaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_general_zaxis(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -165,6 +201,8 @@ void mult_quat_general_zaxis(const Eigen::Quaternion<Scalar>& q_self, const Eige
   q_out.z() = q_other.w() * q_self.z() + q_other.z() * q_self.w();
   q_out.w() = q_other.w() * q_self.w() - q_other.z() * q_self.z();
 }
+template void mult_quat_general_zaxis(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_general_zaxis(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 template <typename Scalar>
 void mult_quat_general_general(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out) {
@@ -173,6 +211,8 @@ void mult_quat_general_general(const Eigen::Quaternion<Scalar>& q_self, const Ei
   q_out.z() = q_other.w() * q_self.z() - q_other.x() * q_self.y() + q_other.y() * q_self.x() + q_other.z() * q_self.w();
   q_out.w() = q_other.w() * q_self.w() - q_other.x() * q_self.x() - q_other.y() * q_self.y() - q_other.z() * q_self.z();
 }
+template void mult_quat_general_general(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);
+template void mult_quat_general_general(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);
 
 
 } // namespace plainmp::kinematics// clang-format on

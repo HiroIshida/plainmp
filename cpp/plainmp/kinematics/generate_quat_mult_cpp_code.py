@@ -50,6 +50,11 @@ def generate_impl_definition_code(rot_axis1: RotAxis, rot_axis2: RotAxis):
     cpp_source_code += f"  q_out.z() = {result[3]};\n".replace("*", " * ")
     cpp_source_code += f"  q_out.w() = {result[0]};\n".replace("*", " * ")
     cpp_source_code += "}\n"
+
+    # template instantiation for float and double
+    cpp_source_code += f"template void {function_name}(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);\n"
+    cpp_source_code += f"template void {function_name}(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);\n"
+
     return cpp_source_code
 
 
@@ -58,6 +63,10 @@ def generate_header_signature_code(rot_axis1: RotAxis, rot_axis2: RotAxis):
     cpp_source_code = ""
     cpp_source_code += "template <typename Scalar>\n"
     cpp_source_code += f"void {function_name}(const Eigen::Quaternion<Scalar>& q_self, const Eigen::Quaternion<Scalar>& q_other, Eigen::Quaternion<Scalar>& q_out);\n"
+
+    # extern template instantiation for float and double
+    cpp_source_code += f"extern template void {function_name}(const Eigen::Quaternion<float>&, const Eigen::Quaternion<float>&, Eigen::Quaternion<float>&);\n"
+    cpp_source_code += f"extern template void {function_name}(const Eigen::Quaternion<double>&, const Eigen::Quaternion<double>&, Eigen::Quaternion<double>&);\n"
     return cpp_source_code
 
 

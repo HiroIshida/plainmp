@@ -65,7 +65,7 @@ constexpr MultTable<Scalar> make_mult_table() {
   table[static_cast<int>(RotAxis::General)][static_cast<int>(RotAxis::PureZ)] =
       mult_quat_general_zaxis;
   table[static_cast<int>(RotAxis::General)]
-       [static_cast<int>(RotAxis::General)] = mult_quat_general_norot;
+       [static_cast<int>(RotAxis::General)] = mult_quat_general_general;
 
   return table;
 }
