@@ -33,7 +33,7 @@ struct QuatTrans {
   // NOTE: please keep (quat, trans, ...) memory layout
   Eigen::Quaternion<Scalar> quat_;
   Eigen::Matrix<Scalar, 3, 1> trans_;
-  RotAxis rotation_type_ = RotAxis::General;
+  RotAxis rot_axis_ = RotAxis::General;
 
   inline QuatTrans<Scalar>& operator=(const QuatTrans<Scalar>& other) {
     quat_ = other.quat_;
@@ -46,7 +46,7 @@ struct QuatTrans {
   QuatTrans<ScalarTo> cast() const {
     auto&& quat_new = quat_.template cast<ScalarTo>();
     auto&& trans_new = trans_.template cast<ScalarTo>();
-    return {quat_new, trans_new, rotation_type_};
+    return {quat_new, trans_new, rot_axis_};
   }
 
   // acceessor
@@ -60,16 +60,16 @@ struct QuatTrans {
     QuatTrans<Scalar> qt;
     qt.quat_ = Eigen::Quaternion<Scalar>::Identity();
     qt.trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
-    qt.rotation_type_ = RotAxis::NoRotation;
+    qt.rot_axis_ = RotAxis::NoRotation;
     return qt;
   }
   void clear() {
     quat_ = Eigen::Quaternion<Scalar>::Identity();
     trans_ = Eigen::Matrix<Scalar, 3, 1>::Zero();
-    rotation_type_ = RotAxis::NoRotation;
+    rot_axis_ = RotAxis::NoRotation;
   }
   inline QuatTrans<Scalar> operator*(const QuatTrans<Scalar>& other) const {
-    if (other.rotation_type_ == RotAxis::NoRotation) {
+    if (other.rot_axis_ == RotAxis::NoRotation) {
       return {quat_, trans_ + quat_ * other.trans_};
     } else {
       return {quat_ * other.quat_, trans_ + quat_ * other.trans_};
@@ -79,7 +79,7 @@ struct QuatTrans {
   inline void quat_identity_sensitive_mult_and_assign(
       const QuatTrans<Scalar>& other,
       QuatTrans<Scalar>& result) const {
-    if (other.rotation_type_ == RotAxis::NoRotation) {
+    if (other.rot_axis_ == RotAxis::NoRotation) {
       result.quat_ = quat_;
       result.trans_ = trans_ + quat_ * other.trans_;
     } else {
@@ -93,7 +93,7 @@ struct QuatTrans {
     // NOTE: in kin tree update, left side is from root => current transform
     // which is usually not quat-identity. but other is from pair-link-wise
     // transform thus more likely to be quat-identity. Thus...
-    if (other.rotation_type_ == RotAxis::NoRotation) {
+    if (other.rot_axis_ == RotAxis::NoRotation) {
       return {quat_, trans_ + quat_ * other.trans_};
     } else {
       return {quat_ * other.quat_, trans_ + quat_ * other.trans_};

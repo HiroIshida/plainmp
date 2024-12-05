@@ -176,7 +176,7 @@ void KinematicModel<Scalar>::init_transform_cache(
                       "Scalar must be double or float");
       }
       auto rot_axis = determine_rotation_type(eigen_joint_orientation);
-      tf_plink_to_hlink_cache_[hid].rotation_type_ = rot_axis;
+      tf_plink_to_hlink_cache_[hid].rot_axis_ = rot_axis;
     }
   }
 }
