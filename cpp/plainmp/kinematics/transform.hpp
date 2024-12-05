@@ -10,10 +10,9 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include "plainmp/kinematics/quaternion_mult.hpp"
 
 namespace plainmp::kinematics {
-
-enum class RotAxis { PureX, PureY, PureZ, NoRotation, General };
 
 template <typename Scalar>
 RotAxis determine_rotation_type(const Eigen::Quaternion<Scalar>& q) {
