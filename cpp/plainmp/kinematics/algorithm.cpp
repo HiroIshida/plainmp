@@ -13,6 +13,7 @@
 #include <stack>
 #include <stdexcept>
 #include "plainmp/kinematics/kinematics.hpp"
+#include "plainmp/kinematics/quaternion_mult.hpp"
 #include "urdf_model/pose.h"
 
 namespace plainmp::kinematics {
@@ -143,14 +144,18 @@ void KinematicModel<Scalar>::set_joint_angles_impl(
 
       if constexpr (all_quat_identity) {
         tf_plink_to_hlink.quat() = tf_pjoint_to_hlink_quat;
+        tf_plink_to_hlink.rot_axis_ = joint_transform_rot_axes_[joint_id];
       } else {
-        tf_plink_to_hlink.quat() =
-            (joint_attach_rot_axes_[joint_id] == RotAxis::NoRotation)
-                ? tf_pjoint_to_hlink_quat
-                : tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
+        if (joint_attach_rot_axes_[joint_id] == RotAxis::NoRotation) {
+          tf_plink_to_hlink.quat() = tf_pjoint_to_hlink_quat;
+          tf_plink_to_hlink.rot_axis_ = joint_transform_rot_axes_[joint_id];
+        } else {
+          tf_plink_to_hlink.quat() =
+              tf_plink_to_pjoint_quat * tf_pjoint_to_hlink_quat;
+          tf_plink_to_hlink.rot_axis_ = RotAxis::General;
+        }
       }
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans;
-      tf_plink_to_hlink.rot_axis_ = RotAxis::General;
     } else {
       Vector3&& trans = joint_axes_[joint_id] * joint_angles[i];
       tf_plink_to_hlink.trans() = tf_plink_to_pjoint_trans + trans;

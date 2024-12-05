@@ -14,6 +14,7 @@
 #include <fstream>
 #include <functional>
 #include <stdexcept>
+#include "plainmp/kinematics/quaternion_mult.hpp"
 #include "urdf_model/pose.h"
 
 namespace plainmp::kinematics {
@@ -110,10 +111,26 @@ void KinematicModel<Scalar>::init_joint_info(
                       "Scalar must be double or float");
       }
 
+      // joint attach rot axis
       auto& jo_quat = joint_orientations_.back();
       auto rot_axis = determine_rotation_type(jo_quat);
       joint_attach_rot_axes_.push_back(rot_axis);
 
+      // joint transform rot axis
+      // check that eigen_joint_axis has norm of 1
+      double eps = 1e-6;
+      if (std::abs(eigen_joint_axis.norm() - 1.0) > eps) {
+        throw std::runtime_error("joint axis must have norm of 1");
+      }
+      if (std::abs(eigen_joint_axis.x() - 1.0) < eps) {
+        joint_transform_rot_axes_.push_back(RotAxis::PureX);
+      } else if (std::abs(eigen_joint_axis.y() - 1.0) < eps) {
+        joint_transform_rot_axes_.push_back(RotAxis::PureY);
+      } else if (std::abs(eigen_joint_axis.z() - 1.0) < eps) {
+        joint_transform_rot_axes_.push_back(RotAxis::PureZ);
+      } else {
+        joint_transform_rot_axes_.push_back(RotAxis::General);
+      }
       joint_child_link_ids_.push_back(joint->getChildLink()->id);
       joint_name_id_map_[joint->name] = joint_counter;
 
