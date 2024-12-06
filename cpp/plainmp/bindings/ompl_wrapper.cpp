@@ -39,6 +39,7 @@ void bind_ompl_wrapper_submodule(py::module& m) {
                     constraint::IneqConstraintBase::Ptr, size_t,
                     ValidatorConfig, std::string, std::optional<double>>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
+      .def("get_ns_internal", &OMPLPlanner::get_ns_internal)
       .def("solve", &OMPLPlanner::solve, py::arg("start"), py::arg("goal"),
            py::arg("simplify"), py::arg("timeout") = py::none(),
            py::arg("goal_sampler") = py::none(),
@@ -49,6 +50,7 @@ void bind_ompl_wrapper_submodule(py::module& m) {
                     constraint::IneqConstraintBase::Ptr, size_t,
                     ValidatorConfig>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
+      .def("get_ns_internal", &OMPLPlanner::get_ns_internal)
       .def("solve", &ERTConnectPlanner::solve, py::arg("start"),
            py::arg("goal"), py::arg("simplify"),
            py::arg("timeout") = py::none(),
