@@ -19,6 +19,7 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <Eigen/Dense>
+#include <chrono>
 #include <optional>
 #include "plainmp/constraints/primitive.hpp"
 #include "plainmp/ompl/algorithm_selector.hpp"
@@ -172,6 +173,7 @@ struct PlannerBase {
     if (timeout) {  // override
       ptc = ob::timedPlannerTerminationCondition(*timeout);
     }
+    auto start_time = std::chrono::steady_clock::now();
     const auto result = setup_->solve(ptc);
     if (not result) {
       return {};
@@ -184,6 +186,11 @@ struct PlannerBase {
     if (simplify) {
       setup_->simplifySolution(ptc);
     }
+    auto end_time = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        end_time - start_time);
+    ns_internal_measurement_ = elapsed.count();
+
     const auto p = setup_->getSolutionPath().as<og::PathGeometric>();
     auto& states = p->getStates();
     const size_t dim = start.size();
@@ -199,8 +206,13 @@ struct PlannerBase {
   }
 
   size_t getCallCount() const { return csi_->is_valid_call_count_; }
+  size_t get_ns_internal() const {
+    // for benchmarking with other libraries using internal measurement
+    return ns_internal_measurement_;
+  }
   std::unique_ptr<CollisionAwareSpaceInformation> csi_;
   std::unique_ptr<og::SimpleSetup> setup_;
+  size_t ns_internal_measurement_;  // last measurement
 };
 
 struct OMPLPlanner : public PlannerBase {

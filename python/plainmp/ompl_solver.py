@@ -60,6 +60,7 @@ class OMPLSolverResult:
     time_elapsed: Optional[float]
     n_call: int
     terminate_state: TerminateState
+    ns_internal: Optional[int] = None  # internal measurement in nanoseconds
 
     @property
     def success(self) -> bool:
@@ -192,6 +193,11 @@ class OMPLSolver:
             return OMPLSolverResult(None, None, -1, TerminateState.FAIL_PLANNING)
         else:
             n_call = planner.get_call_count()
+            ns_internal = planner.get_ns_internal()
             return OMPLSolverResult(
-                Trajectory(list(result)), time.time() - ts, n_call, TerminateState.SUCCESS
+                Trajectory(list(result)),
+                time.time() - ts,
+                n_call,
+                TerminateState.SUCCESS,
+                ns_internal,
             )
