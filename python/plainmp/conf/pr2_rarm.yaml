@@ -9,6 +9,16 @@ control_joint_names:
   - r_wrist_flex_joint
   - r_wrist_roll_joint
 
+only_self_collision_links:
+  - l_upper_arm_link
+  - l_elbow_flex_link
+  - l_forearm_link
+  - l_gripper_palm_link
+  - l_gripper_r_finger_link
+  - l_gripper_l_finger_link
+  - l_shoulder_pan_link
+  - base_link
+
 self_collision_pairs:
   # rarm => larm
   - [r_gripper_palm_link, l_upper_arm_link]
