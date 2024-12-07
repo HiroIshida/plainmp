@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Sequence, Union
 
 import numpy as np
 from skrobot.coordinates import Coordinates
@@ -7,6 +7,18 @@ from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
 
 import plainmp.psdf as psdf
+
+
+def box_to_grid_poitns(box: Box, N_points: Union[int, Sequence[int]]) -> np.ndarray:
+    if isinstance(N_points, int):
+        N_points = [N_points, N_points, N_points]
+    x, y, z = np.array(box.extents) * 0.5
+    xlin = np.linspace(-x, x, N_points[0])
+    ylin = np.linspace(-y, y, N_points[1])
+    zlin = np.linspace(-z, z, N_points[2])
+    grid_points_local = np.array(np.meshgrid(xlin, ylin, zlin)).T.reshape(-1, 3)
+    grid_points_world = box.transform_vector(grid_points_local)
+    return grid_points_world
 
 
 def primitive_to_plainmp_sdf(shape: Union[Sphere, Box, Cylinder]) -> psdf.SDFBase:
