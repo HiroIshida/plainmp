@@ -60,7 +60,6 @@ class RelativePoseCst(EqConstraintBase): ...
 class FixedZAxisCst(EqConstraintBase): ...
 
 class SphereAttachmentSpec:
-    postfix: str
     parent_link_name: str
     relative_positions: np.ndarray
     radii: np.ndarray
