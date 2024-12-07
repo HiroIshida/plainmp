@@ -39,7 +39,8 @@ class OMPLSolverConfig:
     n_max_ik_trial: int = 100
     algorithm: Algorithm = Algorithm.RRTConnect
     algorithm_range: Optional[float] = 2.0
-    simplify: bool = False
+    shortcut: bool = False  # post-processing shortcut
+    bspline: bool = False  # post-processing bspline
     ertconnect_eps: float = 5.0  # used only when ertconnect is selected
     timeout: Optional[float] = None
     use_goal_sampler: bool = (
@@ -184,7 +185,8 @@ class OMPLSolver:
         result = planner.solve(
             problem.start,
             q_goal,
-            self.config.simplify,
+            self.config.shortcut,
+            self.config.bspline,
             timeout_remain,
             goal_sampler,
             self.config.max_goal_sampler_count,

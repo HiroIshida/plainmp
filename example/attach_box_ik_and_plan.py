@@ -71,7 +71,7 @@ if __name__ == "__main__":
     sdf = UnionSDF([primitive_to_plainmp_sdf(shelf), GroundSDF(0.0)])
     ineq_cst.set_sdf(sdf)
     problem = Problem(q_start, lb, ub, q_goal, ineq_cst, None, 0.03, "euclidean")
-    result = OMPLSolver(OMPLSolverConfig(simplify=True)).solve(problem)
+    result = OMPLSolver(OMPLSolverConfig(shortcut=True)).solve(problem)
     print(f"elapsed time to solve motion planning: {result.time_elapsed:.3f} sec")
 
     if args.visualize:
