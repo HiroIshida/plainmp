@@ -137,7 +137,8 @@ struct PlannerBase {
   std::optional<Eigen::MatrixXd> solve(
       const std::vector<double>& start,
       const std::optional<std::vector<double>>& goal,
-      bool simplify,
+      bool shoftcut,
+      bool bspline,
       std::optional<double> timeout,
       const std::optional<GoalSamplerFn>& goal_sampler,
       std::optional<size_t> max_goal_sample_count = std::nullopt) {
@@ -183,15 +184,20 @@ struct PlannerBase {
           "reporeted to be solved. But reject it because it'S approx solution");
       return {};
     }
-    if (simplify) {
-      setup_->simplifySolution(ptc);
+    auto p = setup_->getSolutionPath().as<og::PathGeometric>();
+    og::PathSimplifier simplifier(csi_->si_);
+
+    if(shoftcut) {
+      simplifier.shortcutPath(*p);
+    }
+    if(bspline) {
+      simplifier.smoothBSpline(*p);
     }
     auto end_time = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
         end_time - start_time);
     ns_internal_measurement_ = elapsed.count();
 
-    const auto p = setup_->getSolutionPath().as<og::PathGeometric>();
     auto& states = p->getStates();
     const size_t dim = start.size();
 
