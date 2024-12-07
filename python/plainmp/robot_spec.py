@@ -8,8 +8,14 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import yaml
-from skrobot.coordinates import CascadedCoords, Coordinates
-from skrobot.coordinates.math import matrix2quaternion, rpy_angle, rpy_matrix, wxyz2xyzw
+from skrobot.coordinates import CascadedCoords, Coordinates, Transform
+from skrobot.coordinates.math import (
+    matrix2quaternion,
+    quaternion2matrix,
+    rpy_angle,
+    rpy_matrix,
+    wxyz2xyzw,
+)
 from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
 from skrobot.models.urdf import RobotModelFromURDF
@@ -207,7 +213,25 @@ class RobotSpec(ABC):
         ub[ub == np.inf] = np.pi * 2
         return lb, ub
 
-    def get_sphere_specs(self) -> List[SphereAttachmentSpec]:
+    def transform_points_wrt_link(
+        self, points: np.ndarray, link_name: str, q: np.ndarray
+    ) -> np.ndarray:
+        """Transform points from the world frame to the link frame
+        The computation is done by the kinematic model
+        Args:
+            points: 3D points in the world frame
+            link_name: link name
+            q: joint angles
+        """
+        kin = self.get_kin()
+        # TODO: this is not efficient. If performance is critical, we need to do it in c++ side
+        kin.set_joint_positions(kin.get_joint_ids(self.control_joint_names), q)
+        x, y, z, qx, qy, qz, qw = kin.debug_get_link_pose(link_name)
+        mat = quaternion2matrix([qw, qx, qy, qz])
+        tf_link_to_world = Transform(np.array([x, y, z]), mat)
+        return tf_link_to_world.inverse_transformation().transform_vector(points)
+
+    def parse_sphere_specs(self) -> List[SphereAttachmentSpec]:
         # the below reads the all the sphere specs from the yaml file
         # but if you want to use the sphere specs for the specific links
         # you can override this method
@@ -235,13 +259,39 @@ class RobotSpec(ABC):
             positions = np.array(positions).transpose()
             spec = SphereAttachmentSpec(parent_link_name, positions, radii, only_self_collision)
             sphere_specs.append(spec)
+
+        parent_link_name_set = set([spec.parent_link_name for spec in sphere_specs])
+        assert len(parent_link_name_set) == len(sphere_specs), "duplicated parent link name"
         return sphere_specs
 
     def create_fixed_zaxis_const(self, link_name: str) -> FixedZAxisCst:
         return FixedZAxisCst(self.get_kin(), self.control_joint_names, self.with_base, link_name)
 
-    def create_collision_const(self, self_collision: bool = True) -> SphereCollisionCst:
-        sphere_specs = self.get_sphere_specs()
+    def create_collision_const(
+        self, self_collision: bool = True, attachements: Sequence[SphereAttachmentSpec] = tuple()
+    ) -> SphereCollisionCst:
+        """Create a collision constraint from the conf file
+        Args:
+            self_collision: If True, self collision is considered
+            attachement: Extra attachment specs to be considered
+        """
+        sphere_specs = self.parse_sphere_specs()
+
+        if len(attachements) > 0:  # merge the attachements
+            for att in attachements:
+                parent_link = att.parent_link_name
+                merged = False
+                for spec in sphere_specs:
+                    if spec.parent_link_name == parent_link:
+                        spec.relative_positions = np.hstack(
+                            [spec.relative_positions, att.relative_positions]
+                        )
+                        spec.radii = np.hstack([spec.radii, att.radii])
+                        merged = True
+                        break
+                if not merged:
+                    sphere_specs.append(att)
+
         self_collision_pairs = []
         robot_anchor_sdf = None
         if self_collision:
@@ -289,6 +339,13 @@ class RobotSpec(ABC):
         return self.create_pose_const(link_names, pose_list)
 
     def create_pose_const(self, link_names: List[str], link_poses: List[np.ndarray]) -> LinkPoseCst:
+        """This constraint allows you to specify target poses for multiple links in a kinematic chain.
+        Each pose can be specified in one of three formats:
+        - 3D position only (x, y, z)
+        - 6D pose with position and RPY angles (x, y, z, roll, pitch, yaw)
+        - 7D pose with position and quaternion (x, y, z, qx, qy, qz, qw)
+        """
+        assert len(link_names) == len(link_poses)
         return LinkPoseCst(
             self.get_kin(), self.control_joint_names, self.with_base, link_names, link_poses
         )
@@ -308,6 +365,7 @@ class RobotSpec(ABC):
     def create_attached_box_collision_const(
         self, box: Box, parent_link_name: str, relative_position: np.ndarray, n_grid: int = 6
     ) -> SphereCollisionCst:
+        # Deprecated. Use create_collision_const with attachements instead.
         extent = box._extents
         grid = np.meshgrid(
             np.linspace(-0.5 * extent[0], 0.5 * extent[0], n_grid),
@@ -428,9 +486,9 @@ class JaxonSpec(RobotSpec):
         if not self.urdf_path.exists():
             from robot_descriptions.jaxon_description import URDF_PATH  # noqa
 
-    def get_sphere_specs(self) -> List[SphereAttachmentSpec]:
+    def parse_sphere_specs(self) -> List[SphereAttachmentSpec]:
         # because legs are on the ground, we don't need to consider the spheres on the legs
-        specs = super().get_sphere_specs()
+        specs = super().parse_sphere_specs()
         filtered = []
 
         ignore_list = ["RLEG_LINK5", "LLEG_LINK5"]

@@ -65,8 +65,10 @@ void bind_constraint_submodule(py::module& m) {
   py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
       .def(py::init<const std::string&, const Eigen::Matrix3Xd&,
                     Eigen::VectorXd, bool>())
-      .def_readonly("parent_link_name",
-                    &SphereAttachmentSpec::parent_link_name);
+      .def_readonly("parent_link_name", &SphereAttachmentSpec::parent_link_name)
+      .def_readwrite("relative_positions",
+                     &SphereAttachmentSpec::relative_positions)
+      .def_readwrite("radii", &SphereAttachmentSpec::radii);
 
   py::class_<SphereCollisionCst, SphereCollisionCst::Ptr, IneqConstraintBase>(
       cst_m, "SphereCollisionCst")
