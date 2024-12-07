@@ -63,8 +63,8 @@ void bind_constraint_submodule(py::module& m) {
       .def("pdate_kintree", &FixedZAxisCst::update_kintree)
       .def("evaluate", &FixedZAxisCst::evaluate);
   py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
-      .def(py::init<const std::string&, const std::string&,
-                    const Eigen::Matrix3Xd&, Eigen::VectorXd, bool>())
+      .def(py::init<const std::string&, const Eigen::Matrix3Xd&,
+                    Eigen::VectorXd, bool>())
       .def_readonly("parent_link_name",
                     &SphereAttachmentSpec::parent_link_name);
 

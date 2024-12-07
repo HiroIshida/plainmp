@@ -14,7 +14,6 @@
 namespace plainmp::constraint {
 
 struct SphereAttachmentSpec {
-  std::string postfix;
   std::string parent_link_name;
   Eigen::Matrix3Xd relative_positions;
   Eigen::VectorXd radii;

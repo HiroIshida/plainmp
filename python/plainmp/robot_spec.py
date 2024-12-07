@@ -233,9 +233,7 @@ class RobotSpec(ABC):
                 positions.append(center)
             radii = np.array(radii)
             positions = np.array(positions).transpose()
-            spec = SphereAttachmentSpec(
-                "yaml-colsphere", parent_link_name, positions, radii, only_self_collision
-            )
+            spec = SphereAttachmentSpec(parent_link_name, positions, radii, only_self_collision)
             sphere_specs.append(spec)
         return sphere_specs
 
@@ -324,9 +322,7 @@ class RobotSpec(ABC):
         points_from_center = grid_points - box.worldpos()
         points_from_link = points_from_center + relative_position
         radii = np.zeros(len(points_from_link))
-        spec = SphereAttachmentSpec(
-            "grid-box", parent_link_name, points_from_link.transpose(), radii, False
-        )
+        spec = SphereAttachmentSpec(parent_link_name, points_from_link.transpose(), radii, False)
 
         cst = SphereCollisionCst(
             self.get_kin(),
