@@ -1,5 +1,7 @@
 # plainmp  [![build & test](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml) [![format](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14271046.svg)](https://doi.org/10.5281/zenodo.14271046)
 
+![result](https://github.com/user-attachments/assets/fde49de1-f583-4f1d-933b-5853cea6bccc)
+
 The project is licensed under the BSD 3 License (see [LICENSE](./LICENSE-BSD3)), except for the code in `cpp` directory which is licensed under the MPL2.0 (see [cpp/LICENSE-MPL2](cpp/LICENSE-MPL2)).
 
 plainmp provides:
