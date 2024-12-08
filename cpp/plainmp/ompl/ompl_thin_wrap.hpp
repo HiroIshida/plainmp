@@ -187,10 +187,10 @@ struct PlannerBase {
     auto p = setup_->getSolutionPath().as<og::PathGeometric>();
     og::PathSimplifier simplifier(csi_->si_);
 
-    if(shoftcut) {
+    if (shoftcut) {
       simplifier.shortcutPath(*p);
     }
-    if(bspline) {
+    if (bspline) {
       simplifier.smoothBSpline(*p);
     }
     auto end_time = std::chrono::steady_clock::now();
