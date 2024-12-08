@@ -52,6 +52,7 @@ class KinematicModel {
  public:  // members
   using Transform = QuatTrans<Scalar>;
   using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
   using Quat = Eigen::Quaternion<Scalar>;
   using MatrixDynamic = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   using Bound = std::pair<Scalar, Scalar>;
@@ -97,12 +98,12 @@ class KinematicModel {
   virtual ~KinematicModel() {}
 
   void set_joint_angles(const std::vector<size_t>& joint_ids,
-                        const std::vector<Scalar>& joint_angles,
+                        const Vector& joint_angles,
                         bool high_accuracy = true);
 
   template <bool approx, bool all_quat_identity>
   void set_joint_angles_impl(const std::vector<size_t>& joint_ids,
-                             const std::vector<Scalar>& joint_angles);
+                             const Vector& joint_angles);
 
   inline Transform get_base_pose() const { return base_pose_; }
 

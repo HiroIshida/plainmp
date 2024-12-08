@@ -33,18 +33,17 @@ class ConstraintBase {
         control_joint_ids_(kin->get_joint_ids(control_joint_names)),
         with_base_(with_base) {}
 
-  void update_kintree(const std::vector<double>& q, bool high_accuracy = true) {
+  void update_kintree(const Eigen::VectorXd& q, bool high_accuracy = true) {
     if (with_base_) {
-      std::vector<double> q_head(control_joint_ids_.size());
-      std::copy(q.begin(), q.begin() + control_joint_ids_.size(),
-                q_head.begin());
-      kin_->set_joint_angles(control_joint_ids_, q_head);
+      const size_t n_joint = control_joint_ids_.size();
+      const auto q_joint = q.head(n_joint);
+      kin_->set_joint_angles(control_joint_ids_, q_joint);
       Transform pose;
       size_t head = control_joint_ids_.size();
-      pose.trans().x() = q[head];
-      pose.trans().y() = q[head + 1];
-      pose.trans().z() = q[head + 2];
-      pose.setQuaternionFromRPY(q[head + 3], q[head + 4], q[head + 5]);
+      pose.trans().x() = q[n_joint];
+      pose.trans().y() = q[n_joint + 1];
+      pose.trans().z() = q[n_joint + 2];
+      pose.setQuaternionFromRPY(q[n_joint + 3], q[n_joint + 4], q[n_joint + 5]);
       kin_->set_base_pose(pose);
     } else {
       kin_->set_joint_angles(control_joint_ids_, q, high_accuracy);
@@ -60,7 +59,7 @@ class ConstraintBase {
   }
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate(
-      const std::vector<double>& q) {
+      const Eigen::VectorXd& q) {
     update_kintree(q);
     post_update_kintree();
     return evaluate_dirty();
@@ -93,7 +92,7 @@ class IneqConstraintBase : public ConstraintBase {
  public:
   using Ptr = std::shared_ptr<IneqConstraintBase>;
   using ConstraintBase::ConstraintBase;
-  bool is_valid(const std::vector<double>& q) {
+  bool is_valid(const Eigen::VectorXd& q) {
     update_kintree(q, false);
     post_update_kintree();
     return is_valid_dirty();

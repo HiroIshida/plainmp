@@ -66,8 +66,7 @@ std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
   size_t x_head = 0;
   size_t c_head = 0;
   for (size_t t = 0; t < T_; ++t) {
-    std::vector<double> q(x.segment(x_head, q_dim_).data(),
-                          x.segment(x_head, q_dim_).data() + q_dim_);
+    const auto q = x.segment(x_head, q_dim_);
     // we assume that all the constraints share the same kinematic tree
     // thus updating one of the constraints propagates the update to all
     if (constraints_seq_[t].size() == 0) {
