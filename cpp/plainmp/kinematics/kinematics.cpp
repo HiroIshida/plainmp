@@ -137,7 +137,7 @@ void KinematicModel<Scalar>::init_joint_info(
     }
   }
   num_dof_ = joint_name_id_map_.size();
-  joint_angles_.resize(num_dof_, 0.0);
+  joint_angles_ = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::Zero(num_dof_);
 
   // check if all joint orientations are identity
   all_joint_orientation_identity_ = true;
@@ -223,13 +223,6 @@ KinematicModel<Scalar>::KinematicModel(const std::string& xml_string) {
   this->init_transform_cache(links);
   this->set_base_pose(Transform::Identity());
   this->update_rptable();
-}
-
-template <typename Scalar>
-void KinematicModel<Scalar>::set_init_angles() {
-  std::vector<Scalar> joint_angles(num_dof_, 0.0);
-  joint_angles_ = joint_angles;
-  clear_cache();
 }
 
 template <typename Scalar>

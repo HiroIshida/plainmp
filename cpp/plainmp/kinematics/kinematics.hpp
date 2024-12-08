@@ -78,7 +78,7 @@ class KinematicModel {
   std::vector<Bound> joint_position_limits_;
 
   std::unordered_map<std::string, int> joint_name_id_map_;
-  std::vector<Scalar> joint_angles_;
+  Vector joint_angles_;
   Transform base_pose_;
 
   RelevancePredicateTable rptable_;
@@ -116,8 +116,6 @@ class KinematicModel {
     transform_cache_.clear();
     transform_cache_.set_cache(root_link_id_, base_pose_);
   }
-
-  void set_init_angles();
 
   std::vector<Scalar> get_joint_angles(
       const std::vector<size_t>& joint_ids) const;
