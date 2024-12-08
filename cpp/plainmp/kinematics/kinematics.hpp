@@ -151,10 +151,6 @@ class KinematicModel {
   MatrixDynamic get_com_jacobian(const std::vector<size_t>& joint_ids,
                                  bool with_base);
 
-  void set_joint_angle(size_t joint_id, Scalar angle) {
-    joint_angles_[joint_id] = angle;
-  }
-
   size_t add_new_link(size_t parent_id,
                       const std::array<Scalar, 3>& position,
                       const std::array<Scalar, 3>& rpy,
