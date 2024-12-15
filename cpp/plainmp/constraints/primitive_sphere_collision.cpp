@@ -9,6 +9,8 @@
  */
 
 #include "plainmp/constraints/primitive_sphere_collision.hpp"
+#include <numeric>
+#include <unordered_set>
 
 namespace plainmp::constraint {
 
@@ -47,6 +49,70 @@ void SphereGroup::create_sphere_position_cache(
   this->is_sphere_positions_dirty = false;
 }
 
+std::vector<size_t> reorder_spheres_for_informative_collision_check(
+    const Eigen::Matrix3Xd& positions) {
+  std::vector<size_t> visited;
+  std::unordered_set<size_t> unvisited;
+  unvisited.reserve(positions.cols());
+  for (size_t i = 0; i < positions.cols(); i++) {
+    unvisited.insert(i);
+  }
+
+  auto first_unvisited = *unvisited.begin();  // anything is fine
+  visited.push_back(first_unvisited);
+  unvisited.erase(first_unvisited);
+
+  for (size_t i = 0; i < positions.cols() - 1; i++) {
+    double max_dist = 0.0;
+    std::unordered_set<size_t>::iterator it_max_idx = unvisited.begin();
+
+    for (auto it_unvisited = unvisited.begin(); it_unvisited != unvisited.end();
+         it_unvisited++) {
+      double min_dist_to_visited = std::numeric_limits<double>::max();
+      size_t idx_unvisited = *it_unvisited;
+      for (size_t idx_visited : visited) {
+        double dist =
+            (positions.col(idx_unvisited) - positions.col(idx_visited)).norm();
+        if (dist < min_dist_to_visited) {
+          min_dist_to_visited = dist;
+        }
+      }
+      if (min_dist_to_visited > max_dist) {
+        max_dist = min_dist_to_visited;
+        it_max_idx = it_unvisited;
+      }
+    }
+
+    visited.push_back(*it_max_idx);
+    unvisited.erase(it_max_idx);
+  }
+
+  if (visited.size() != positions.cols()) {
+    throw std::runtime_error(
+        "(cpp) Not all spheres are visited. This should not happen.");
+  }
+  return visited;
+}
+
+void SphereGroup::max_distance_reorder() {
+  const auto informative_order =
+      reorder_spheres_for_informative_collision_check(
+          sphere_relative_positions);
+  Eigen::Matrix3Xd reordered_positions(3, sphere_relative_positions.cols());
+  Eigen::VectorXd reordered_radii(sphere_relative_positions.cols());
+
+  for (size_t i = 0; i < sphere_relative_positions.cols(); i++) {
+    reordered_positions.col(i) =
+        sphere_relative_positions.col(informative_order[i]);
+    reordered_radii[i] = radii[informative_order[i]];
+  }
+
+  // update
+  sphere_relative_positions = reordered_positions;
+  radii = reordered_radii;
+  clear_cache();
+};
+
 SphereCollisionCst::SphereCollisionCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
@@ -80,6 +146,13 @@ SphereCollisionCst::SphereCollisionCst(
                               spec.relative_positions, group_center,
                               Eigen::Matrix3d::Zero(), Eigen::Vector3d::Zero(),
                               true, sphere_position_cache, true});
+
+    // 2024/12/16: This optimization is likely improve the performance of
+    // collision checking and probably never make it worse. However, currently,
+    // the performance improvement is not significant or visible.
+    for (auto& group : sphere_groups_) {
+      group.max_distance_reorder();
+    }
   }
 
   for (const auto& pair : selcol_group_pairs) {
