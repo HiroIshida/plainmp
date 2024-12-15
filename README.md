@@ -22,7 +22,10 @@ Related/depeding projects:
 - plainmp is a rewrite of my previous projects [scikit-motionplan](https://github.com/HiroIshida/scikit-motionplan) and [tinyfk](https://github.com/HiroIshida/tinyfk) to achieve 100x speedup
 - plainmp depends on [OMPL](https://github.com/ompl/ompl) (with unmerged PR of [ERTConnect](https://github.com/ompl/ompl/pull/783)) for SBMP algorithms
 - plainmp deponds on [scikit-robt](https://github.com/iory/scikit-robot) framework for visualization and planning problem specifications
-- [WIP] [benchmark_plainmp_and_vamp](https://github.com/HiroIshida/bench_plainmp_and_vamp) for benchmarking plainmp and [VAMP](https://github.com/KavrakiLab/vamp)
+- [benchmark](https://github.com/HiroIshida/bench_plainmp_and_vamp) with [VAMP](https://github.com/KavrakiLab/vamp) (the world fastest motion planner as of 2024) shows that
+    - AMD Ryzen 7 7840HS (256-bit AVX) VAMP is faster (1.3x, 1.1x, 4.8x, 12.5x)
+    - ARM Neoverse-N1 (128-bit NEON) both seems to be comparable (0.53x, 0.41x, 2.2x, 4.8x)
+    - x-s are time ratio plainmp/VAMP for 4 different settings with resolution of 1/32
 
 ## Performance example
 panda dual bars: median 0.17 ms | panda ceiled dual bars: median 0.65 ms | fetch table: median 0.62 ms
@@ -55,6 +58,9 @@ Then try examples in [example directory](./example) with `--visualize` option. N
 ```bash
 pip uninstall -y pyrender && pip install git+https://github.com/mmatl/pyrender.git --no-cache-dir
 ```
+
+## Troubleshooting
+- Segmentation faults and other C++ runtime errors may occur when multiple OMPL versions are present - typically when installed via both from Ubuntu and ROS. To temporarily resolve this, disable ROS workspace sourcing in your shell or remove either OMPL installation.
 
 ## How to add a new robot model
 - (step 1) Prepare a URDF file. Note that [robot_description](https://github.com/robot-descriptions/robot_descriptions.py) package might be useful.

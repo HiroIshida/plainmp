@@ -41,8 +41,7 @@ void bind_ompl_wrapper_submodule(py::module& m) {
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("get_ns_internal", &OMPLPlanner::get_ns_internal)
       .def("solve", &OMPLPlanner::solve, py::arg("start"), py::arg("goal"),
-           py::arg("shortcut"), py::arg("bspline"),
-           py::arg("timeout") = py::none(),
+           py::arg("shortcut"), py::arg("bspline"), py::arg("timeout") = py::none(),
            py::arg("goal_sampler") = py::none(),
            py::arg("max_goal_sample_count") = py::none());
 
