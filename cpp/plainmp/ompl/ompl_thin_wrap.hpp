@@ -66,8 +66,7 @@ struct CollisionAwareSpaceInformation {
       : si_(nullptr),
         ineq_cst_(ineq_cst),
         is_valid_call_count_(0),
-        max_is_valid_call_(max_is_valid_call),
-        tmp_vec_(lb.size()) {
+        max_is_valid_call_(max_is_valid_call) {
     const auto space = bound2space(lb, ub);
     si_ = std::make_shared<ob::SpaceInformation>(space);
 
@@ -109,17 +108,16 @@ struct CollisionAwareSpaceInformation {
 
   bool is_valid(const ob::State* state) {
     auto rs = state->as<ob::RealVectorStateSpace::StateType>();
-    std::memcpy(tmp_vec_.data(), rs->values, tmp_vec_.size() * sizeof(double));
+    const Eigen::Map<Eigen::VectorXd> tmp_vec(rs->values,
+                                              si_->getStateDimension());
     this->is_valid_call_count_++;
-    return ineq_cst_->is_valid(tmp_vec_);
+    return ineq_cst_->is_valid(tmp_vec);
   }
 
   ob::SpaceInformationPtr si_;
   constraint::IneqConstraintBase::Ptr ineq_cst_;
   size_t is_valid_call_count_;
   const size_t max_is_valid_call_;
-  std::vector<double>
-      tmp_vec_;  // to avoid dynamic allocation (used in is_valid)
 };
 
 struct PlannerBase {
@@ -187,10 +185,10 @@ struct PlannerBase {
     auto p = setup_->getSolutionPath().as<og::PathGeometric>();
     og::PathSimplifier simplifier(csi_->si_);
 
-    if(shoftcut) {
+    if (shoftcut) {
       simplifier.shortcutPath(*p);
     }
-    if(bspline) {
+    if (bspline) {
       simplifier.smoothBSpline(*p);
     }
     auto end_time = std::chrono::steady_clock::now();

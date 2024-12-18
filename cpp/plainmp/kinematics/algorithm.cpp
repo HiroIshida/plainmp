@@ -91,7 +91,7 @@ template class KinematicModel<float>;
 template <typename Scalar>
 void KinematicModel<Scalar>::set_joint_angles(
     const std::vector<size_t>& joint_ids,
-    const std::vector<Scalar>& joint_angles,
+    const Vector& joint_angles,
     bool high_accuracy) {
   if (high_accuracy) {
     if (all_joint_orientation_identity_) {
@@ -113,7 +113,7 @@ template <typename Scalar>
 template <bool approx, bool all_quat_identity>
 void KinematicModel<Scalar>::set_joint_angles_impl(
     const std::vector<size_t>& joint_ids,
-    const std::vector<Scalar>& joint_angles) {
+    const Vector& joint_angles) {
   Quat tf_pjoint_to_hlink_quat;  // pre-allocate
 
   for (size_t i = 0; i < joint_ids.size(); i++) {

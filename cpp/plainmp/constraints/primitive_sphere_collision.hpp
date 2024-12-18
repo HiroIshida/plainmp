@@ -39,6 +39,8 @@ struct SphereGroup {
   Eigen::Matrix3Xd sphere_positions_cache;
   bool is_sphere_positions_dirty;
 
+  void max_distance_reorder();
+
   inline void clear_cache() {
     is_group_sphere_position_dirty = true;
     is_sphere_positions_dirty = true;
