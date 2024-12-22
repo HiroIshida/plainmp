@@ -36,7 +36,7 @@ class CompositeConstraintBase {
     }
   }
 
-  void update_kintree(const std::vector<double>& q, bool high_accuracy = true) {
+  void update_kintree(const Eigen::VectorXd& q, bool high_accuracy = true) {
     constraints_.front()->update_kintree(q, high_accuracy);
     for (auto& cst : constraints_) {
       cst->post_update_kintree();
@@ -44,7 +44,7 @@ class CompositeConstraintBase {
   }
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate(
-      const std::vector<double>& q) {
+      const Eigen::VectorXd q) {
     update_kintree(q);
 
     size_t dim = this->cst_dim();
@@ -95,7 +95,7 @@ class IneqCompositeCst
  public:
   using Ptr = std::shared_ptr<IneqCompositeCst>;
   using CompositeConstraintBase::CompositeConstraintBase;
-  bool is_valid(const std::vector<double>& q) {
+  bool is_valid(const Eigen::VectorXd& q) {
     update_kintree(q, false);
     for (const auto& cst : constraints_) {
       if (!cst->is_valid_dirty())

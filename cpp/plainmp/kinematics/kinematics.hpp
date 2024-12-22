@@ -52,6 +52,7 @@ class KinematicModel {
  public:  // members
   using Transform = QuatTrans<Scalar>;
   using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+  using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
   using Quat = Eigen::Quaternion<Scalar>;
   using MatrixDynamic = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   using Bound = std::pair<Scalar, Scalar>;
@@ -77,7 +78,7 @@ class KinematicModel {
   std::vector<Bound> joint_position_limits_;
 
   std::unordered_map<std::string, int> joint_name_id_map_;
-  std::vector<Scalar> joint_angles_;
+  Vector joint_angles_;
   Transform base_pose_;
 
   RelevancePredicateTable rptable_;
@@ -97,12 +98,12 @@ class KinematicModel {
   virtual ~KinematicModel() {}
 
   void set_joint_angles(const std::vector<size_t>& joint_ids,
-                        const std::vector<Scalar>& joint_angles,
+                        const Vector& joint_angles,
                         bool high_accuracy = true);
 
   template <bool approx, bool all_quat_identity>
   void set_joint_angles_impl(const std::vector<size_t>& joint_ids,
-                             const std::vector<Scalar>& joint_angles);
+                             const Vector& joint_angles);
 
   inline Transform get_base_pose() const { return base_pose_; }
 
@@ -115,8 +116,6 @@ class KinematicModel {
     transform_cache_.clear();
     transform_cache_.set_cache(root_link_id_, base_pose_);
   }
-
-  void set_init_angles();
 
   std::vector<Scalar> get_joint_angles(
       const std::vector<size_t>& joint_ids) const;
@@ -150,10 +149,6 @@ class KinematicModel {
 
   MatrixDynamic get_com_jacobian(const std::vector<size_t>& joint_ids,
                                  bool with_base);
-
-  void set_joint_angle(size_t joint_id, Scalar angle) {
-    joint_angles_[joint_id] = angle;
-  }
 
   size_t add_new_link(size_t parent_id,
                       const std::array<Scalar, 3>& position,

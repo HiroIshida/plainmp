@@ -1,9 +1,13 @@
 name: MPL license check
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - dev
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+      - dev
 jobs:
   check-license-text:
     runs-on: ubuntu-latest
