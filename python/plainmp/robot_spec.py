@@ -246,7 +246,13 @@ class RobotSpec(ABC):
         d = self.conf_dict["collision_spheres"]
         sphere_specs = []
         for parent_link_name, vals in d.items():
-            only_self_collision = parent_link_name in only_self_colliision_links
+            if self.base_type == BaseType.FIXED:
+                only_self_collision = parent_link_name in only_self_colliision_links
+            else:
+                # If base is moving, we need to consider all the spheres for collision
+                # against the environment.
+                only_self_collision = False
+
             spheres_d = vals["spheres"]
             radii = []
             positions = []
