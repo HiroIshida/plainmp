@@ -9,6 +9,7 @@
  */
 
 #include "plainmp/constraints/primitive.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 class FixedZAxisCst : public EqConstraintBase {
@@ -16,7 +17,7 @@ class FixedZAxisCst : public EqConstraintBase {
   using Ptr = std::shared_ptr<FixedZAxisCst>;
   FixedZAxisCst(std::shared_ptr<kin::KinematicModel<double>> kin,
                 const std::vector<std::string>& control_joint_names,
-                bool with_base,
+                kin::BaseType base_type,
                 const std::string& link_name);
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;

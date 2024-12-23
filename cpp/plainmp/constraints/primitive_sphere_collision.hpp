@@ -58,7 +58,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   SphereCollisionCst(
       std::shared_ptr<kin::KinematicModel<double>> kin,
       const std::vector<std::string>& control_joint_names,
-      bool with_base,
+      kin::BaseType base_type,
       const std::vector<SphereAttachmentSpec>& sphere_specs,
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
       std::optional<plainmp::collision::SDFBase::Ptr> fixed_sdf);

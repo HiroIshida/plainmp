@@ -21,6 +21,7 @@
 
 using namespace plainmp::constraint;
 using namespace plainmp::collision;
+using namespace plainmp::kinematics;
 
 namespace plainmp::bindings {
 
@@ -34,7 +35,7 @@ void bind_constraint_submodule(py::module& m) {
   py::class_<ConfigPointCst, ConfigPointCst::Ptr, EqConstraintBase>(
       cst_m, "ConfigPointCst")
       .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
-                    const std::vector<std::string>&, bool,
+                    const std::vector<std::string>&, BaseType,
                     const Eigen::VectorXd&>())
       .def("update_kintree", &ConfigPointCst::update_kintree)
       .def("evaluate", &ConfigPointCst::evaluate)
@@ -42,7 +43,7 @@ void bind_constraint_submodule(py::module& m) {
   py::class_<LinkPoseCst, LinkPoseCst::Ptr, EqConstraintBase>(cst_m,
                                                               "LinkPoseCst")
       .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
-                    const std::vector<std::string>&, bool,
+                    const std::vector<std::string>&, BaseType,
                     const std::vector<std::string>&,
                     const std::vector<Eigen::VectorXd>&>())
       .def("update_kintree", &LinkPoseCst::update_kintree)
@@ -51,15 +52,16 @@ void bind_constraint_submodule(py::module& m) {
   py::class_<RelativePoseCst, RelativePoseCst::Ptr, EqConstraintBase>(
       cst_m, "RelativePoseCst")
       .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
-                    const std::vector<std::string>&, bool, const std::string&,
-                    const std::string&, const Eigen::Vector3d&>())
+                    const std::vector<std::string>&, BaseType,
+                    const std::string&, const std::string&,
+                    const Eigen::Vector3d&>())
       .def("update_kintree", &RelativePoseCst::update_kintree)
       .def("evaluate", &RelativePoseCst::evaluate);
   py::class_<FixedZAxisCst, FixedZAxisCst::Ptr, EqConstraintBase>(
       cst_m, "FixedZAxisCst")
-      .def(
-          py::init<std::shared_ptr<kin::KinematicModel<double>>,
-                   const std::vector<std::string>&, bool, const std::string&>())
+      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+                    const std::vector<std::string>&, BaseType,
+                    const std::string&>())
       .def("pdate_kintree", &FixedZAxisCst::update_kintree)
       .def("evaluate", &FixedZAxisCst::evaluate);
   py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
@@ -73,7 +75,7 @@ void bind_constraint_submodule(py::module& m) {
   py::class_<SphereCollisionCst, SphereCollisionCst::Ptr, IneqConstraintBase>(
       cst_m, "SphereCollisionCst")
       .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
-                    const std::vector<std::string>&, bool,
+                    const std::vector<std::string>&, BaseType,
                     const std::vector<SphereAttachmentSpec>&,
                     const std::vector<std::pair<std::string, std::string>>&,
                     std::optional<SDFBase::Ptr>>())
@@ -93,7 +95,7 @@ void bind_constraint_submodule(py::module& m) {
   py::class_<ComInPolytopeCst, ComInPolytopeCst::Ptr, IneqConstraintBase>(
       cst_m, "ComInPolytopeCst")
       .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
-                    const std::vector<std::string>&, bool, BoxSDF::Ptr,
+                    const std::vector<std::string>&, BaseType, BoxSDF::Ptr,
                     const std::vector<AppliedForceSpec>&>())
       .def("update_kintree", &ComInPolytopeCst::update_kintree)
       .def("is_valid", &ComInPolytopeCst::is_valid)

@@ -46,6 +46,7 @@ struct RelevancePredicateTable {
 };
 
 enum class RotationType { IGNORE, RPY, XYZW };
+enum class BaseType { FIXED, PLANAR, FLOATING };
 
 template <typename Scalar>
 class KinematicModel {
@@ -137,18 +138,18 @@ class KinematicModel {
   MatrixDynamic get_jacobian(size_t elink_id,
                              const std::vector<size_t>& joint_ids,
                              RotationType rot_type = RotationType::IGNORE,
-                             bool with_base = false);
+                             BaseType base_type = BaseType::FIXED);
 
   MatrixDynamic get_attached_point_jacobian(
       size_t plink_id,
       Vector3 global_pos,  // TODO: provide relative pos is clearner though
       const std::vector<size_t>& joint_ids,
-      bool with_base = false);
+      BaseType base_type = BaseType::FIXED);
 
   Vector3 get_com();
 
   MatrixDynamic get_com_jacobian(const std::vector<size_t>& joint_ids,
-                                 bool with_base);
+                                 BaseType base_type = BaseType::FIXED);
 
   size_t add_new_link(size_t parent_id,
                       const std::array<Scalar, 3>& position,

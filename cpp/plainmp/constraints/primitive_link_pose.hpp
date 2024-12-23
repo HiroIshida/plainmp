@@ -17,7 +17,7 @@ class LinkPoseCst : public EqConstraintBase {
   using Ptr = std::shared_ptr<LinkPoseCst>;
   LinkPoseCst(std::shared_ptr<kin::KinematicModel<double>> kin,
               const std::vector<std::string>& control_joint_names,
-              bool with_base,
+              kin::BaseType base_type,
               const std::vector<std::string>& link_names,
               const std::vector<Eigen::VectorXd>& poses);
 

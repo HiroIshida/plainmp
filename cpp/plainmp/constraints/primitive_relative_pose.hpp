@@ -9,6 +9,7 @@
  */
 
 #include "plainmp/constraints/primitive.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 
@@ -17,7 +18,7 @@ class RelativePoseCst : public EqConstraintBase {
   using Ptr = std::shared_ptr<RelativePoseCst>;
   RelativePoseCst(std::shared_ptr<kin::KinematicModel<double>> kin,
                   const std::vector<std::string>& control_joint_names,
-                  bool with_base,
+                  kin::BaseType base_type,
                   const std::string& link_name1,
                   const std::string& link_name2,
                   const Eigen::Vector3d& relative_pose);

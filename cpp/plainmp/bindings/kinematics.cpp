@@ -69,6 +69,11 @@ void bind_kinematics_submodule(py::module& m) {
            &_KinematicModel::get_joint_position_limits)
       .def("get_link_ids", &_KinematicModel::get_link_ids)
       .def("get_joint_ids", &_KinematicModel::get_joint_ids);
+
+  py::enum_<BaseType>(m_kin, "BaseType")
+      .value("FIXED", BaseType::FIXED)
+      .value("FLOATING", BaseType::FLOATING)
+      .value("PLANAR", BaseType::PLANAR);
 }
 
 }  // namespace plainmp::bindings

@@ -9,15 +9,16 @@
  */
 
 #include "plainmp/constraints/primitive_com_in_polytope.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 ComInPolytopeCst::ComInPolytopeCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
-    bool with_base,
+    kin::BaseType base_type,
     plainmp::collision::BoxSDF::Ptr polytope_sdf,
     const std::vector<AppliedForceSpec> applied_forces)
-    : IneqConstraintBase(kin, control_joint_names, with_base),
+    : IneqConstraintBase(kin, control_joint_names, base_type),
       polytope_sdf_(polytope_sdf) {
   auto w = polytope_sdf_->get_width();
   w[2] = 1000;  // adhoc to represent infinite height
@@ -53,7 +54,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
   Eigen::MatrixXd jac(cst_dim(), q_dim());
 
   auto com = kin_->get_com();
-  auto com_jaco = kin_->get_com_jacobian(control_joint_ids_, q_dim());
+  auto com_jaco = kin_->get_com_jacobian(control_joint_ids_, base_type_);
   if (force_link_ids_.size() > 0) {
     double vertical_force_sum = 1.0;  // 1.0 for normalized self
     for (size_t j = 0; j < force_link_ids_.size(); ++j) {
@@ -63,7 +64,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
       com += force * pose.trans();
 
       com_jaco += kin_->get_jacobian(force_link_ids_[j], control_joint_ids_,
-                                     kin::RotationType::IGNORE, with_base_) *
+                                     kin::RotationType::IGNORE, base_type_) *
                   force;
     }
     double inv = 1.0 / vertical_force_sum;
