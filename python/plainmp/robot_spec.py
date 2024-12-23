@@ -31,7 +31,7 @@ from plainmp.constraint import (
     SphereAttachmentSpec,
     SphereCollisionCst,
 )
-from plainmp.kinematics import KinematicModel
+from plainmp.kinematics import BaseType, KinematicModel
 from plainmp.psdf import BoxSDF, Pose, UnionSDF
 from plainmp.utils import primitive_to_plainmp_sdf
 
@@ -65,7 +65,7 @@ class RotType(Enum):
 
 
 class RobotSpec(ABC):
-    def __init__(self, conf_file: Path, with_base: bool):
+    def __init__(self, conf_file: Path, base_type: BaseType = BaseType.FIXED):
         if str(conf_file) not in _loaded_yamls:
             with open(conf_file, "r") as f:
                 self.conf_dict = yaml.safe_load(f)
@@ -83,7 +83,7 @@ class RobotSpec(ABC):
             _loaded_yamls[str(conf_file)] = self.conf_dict
         else:
             self.conf_dict = _loaded_yamls[str(conf_file)]
-        self.with_base = with_base
+        self.base_type = base_type
         self.uuid = str(uuid.uuid4())
 
     def get_kin(self) -> KinematicModel:
@@ -265,7 +265,7 @@ class RobotSpec(ABC):
         return sphere_specs
 
     def create_fixed_zaxis_const(self, link_name: str) -> FixedZAxisCst:
-        return FixedZAxisCst(self.get_kin(), self.control_joint_names, self.with_base, link_name)
+        return FixedZAxisCst(self.get_kin(), self.control_joint_names, self.base_type, link_name)
 
     def create_collision_const(
         self, self_collision: bool = True, attachements: Sequence[SphereAttachmentSpec] = tuple()
@@ -310,7 +310,7 @@ class RobotSpec(ABC):
         cst = SphereCollisionCst(
             kin,
             self.control_joint_names,
-            self.with_base,
+            self.base_type,
             sphere_specs,
             self_collision_pairs,
             robot_anchor_sdf,
@@ -318,7 +318,7 @@ class RobotSpec(ABC):
         return cst
 
     def create_config_point_const(self, q: np.ndarray) -> ConfigPointCst:
-        return ConfigPointCst(self.get_kin(), self.control_joint_names, self.with_base, q)
+        return ConfigPointCst(self.get_kin(), self.control_joint_names, self.base_type, q)
 
     def create_pose_const_from_coords(
         self, link_names: List[str], link_poses: List[Coordinates], rot_types: List[RotType]
@@ -347,7 +347,7 @@ class RobotSpec(ABC):
         """
         assert len(link_names) == len(link_poses)
         return LinkPoseCst(
-            self.get_kin(), self.control_joint_names, self.with_base, link_names, link_poses
+            self.get_kin(), self.control_joint_names, self.base_type, link_names, link_poses
         )
 
     def create_relative_pose_const(
@@ -356,7 +356,7 @@ class RobotSpec(ABC):
         return RelativePoseCst(
             self.get_kin(),
             self.control_joint_names,
-            self.with_base,
+            self.base_type,
             link_name1,
             link_name2,
             relative_position,
@@ -385,7 +385,7 @@ class RobotSpec(ABC):
         cst = SphereCollisionCst(
             self.get_kin(),
             self.control_joint_names,
-            self.with_base,
+            self.base_type,
             [spec],
             [],
             None,
@@ -394,10 +394,9 @@ class RobotSpec(ABC):
 
 
 class FetchSpec(RobotSpec):
-    def __init__(self, with_base: bool = False):
-        # set with_base = True only in testing
+    def __init__(self, base_type: BaseType = BaseType.FIXED):
         p = Path(__file__).parent / "conf" / "fetch.yaml"
-        super().__init__(p, with_base)
+        super().__init__(p, base_type)
         if not self.urdf_path.exists():
             from skrobot.models.fetch import Fetch  # noqa
 
@@ -418,9 +417,9 @@ class FetchSpec(RobotSpec):
 
 
 class PR2SpecBase(RobotSpec):
-    def __init__(self):
+    def __init__(self, base_type: BaseType = BaseType.FIXED):
         p = Path(__file__).parent / "conf" / self.get_yaml_file_name()
-        super().__init__(p, with_base=False)
+        super().__init__(p, base_type=base_type)
         if not self.urdf_path.exists():
             from skrobot.models.pr2 import PR2  # noqa
 
@@ -468,7 +467,7 @@ class PR2DualarmSpec(PR2SpecBase):
 class PandaSpec(RobotSpec):
     def __init__(self):
         p = Path(__file__).parent / "conf" / "panda.yaml"
-        super().__init__(p, with_base=False)
+        super().__init__(p, base_type=BaseType.FIXED)
         if not self.urdf_path.exists():
             from skrobot.models.panda import Panda  # noqa
 
@@ -480,7 +479,7 @@ class JaxonSpec(RobotSpec):
 
     def __init__(self, gripper_collision: bool = True):
         p = Path(__file__).parent / "conf" / "jaxon.yaml"
-        super().__init__(p, with_base=True)  # jaxon is free-floating, so with_base=True
+        super().__init__(p, base_type=BaseType.FLOATING)
         self.gripper_collision = gripper_collision
 
         if not self.urdf_path.exists():
@@ -540,7 +539,7 @@ class JaxonSpec(RobotSpec):
             specs.append(AppliedForceSpec("LARM_LINK7", 0.5 * total_force_on_arm))
 
         return ComInPolytopeCst(
-            self.get_kin(), self.control_joint_names, self.with_base, com_box, specs
+            self.get_kin(), self.control_joint_names, self.base_type, com_box, specs
         )
 
     @property
