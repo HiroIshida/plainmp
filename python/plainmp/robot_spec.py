@@ -149,6 +149,25 @@ class RobotSpec(ABC):
         angles = kin.get_joint_positions(joint_ids)
         robot_model.angle_vector(angles)
 
+    def extract_skrobot_model_q(
+        self, robot_model: RobotModel, base_type: BaseType = BaseType.FIXED
+    ) -> np.ndarray:
+        angles = []
+        for joint in self.control_joint_names:
+            angle = robot_model.__dict__[joint].joint_angle()
+            angles.append(angle)
+
+        if base_type == BaseType.FLOATING:
+            # TODO: should we return in rpz or quaternion?
+            assert False, "Not implemented yet"
+
+        if base_type == BaseType.PLANAR:
+            x, y, _ = robot_model.worldpos()
+            yaw, _, _ = rpy_angle(robot_model.worldrot())[0]
+            angles.extend([x, y, yaw])
+
+        return np.array(angles)
+
     def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
         model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
         # Add custom links defined in conf to the robot model as CascadedCoords
