@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 import numpy as np
 
@@ -33,6 +33,8 @@ class Problem:
         if self.validator_type == "euclidean":
             assert isinstance(self.resolution, float), "not implemented yet"
         elif self.validator_type == "box":
+            if isinstance(self.resolution, (List, Tuple)):
+                self.resolution = np.array(self.resolution)
             assert isinstance(self.resolution, np.ndarray), "not implemented yet"
         else:
             raise ValueError(f"Unknown validator type: {self.validator_type}")
