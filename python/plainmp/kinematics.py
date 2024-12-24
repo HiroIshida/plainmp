@@ -1,1 +1,1 @@
-from ._plainmp.kinematics import KinematicModel  # noqa
+from ._plainmp.kinematics import BaseType, KinematicModel  # noqa

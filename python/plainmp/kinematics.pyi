@@ -1,6 +1,10 @@
+from enum import Enum
 from typing import List, Tuple
 
-import numpy as np
+class BaseType(Enum):
+    FIXED = 0
+    FLOATING = 1
+    PLANAR = 2
 
 class KinematicModel:
     def __init__(self, urdf_string: str) -> None: ...

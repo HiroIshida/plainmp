@@ -9,6 +9,7 @@
  */
 
 #include "plainmp/constraints/primitive.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 
@@ -17,7 +18,7 @@ class ConfigPointCst : public EqConstraintBase {
   using Ptr = std::shared_ptr<ConfigPointCst>;
   ConfigPointCst(std::shared_ptr<kin::KinematicModel<double>> kin,
                  const std::vector<std::string>& control_joint_names,
-                 bool with_base,
+                 kin::BaseType base_type,
                  const Eigen::VectorXd& q);
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   size_t cst_dim() const { return q_.size(); }

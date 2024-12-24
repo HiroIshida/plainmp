@@ -73,6 +73,12 @@ jobs:
           run_example "example/fetch_plan.py" "--pcloud" || exit 1
           run_example "example/panda_plan.py" || exit 1
           run_example "example/panda_plan.py" "--difficult" || exit 1
+          run_example "example/pr2_rarm_ik_and_plan.py" || exit 1
+          run_example "example/pr2_rarm_ik_and_plan.py" "--simplify" || exit 1
+          run_example "example/pr2_dualarm_ik_and_plan.py" || exit 1
+          run_example "example/pr2_dualarm_ik_and_plan.py" "--simplify" || exit 1
+          run_example "example/pr2_with_mobile_base.py" || exit 1
+          run_example "example/pr2_with_mobile_base.py" "--simplify" || exit 1
           run_example "example/attach_box_ik_and_plan.py" || exit 1
           run_example "example/beta/humanoid_planning.py" || exit 1
           run_example "example/beta/humanoid_lift_and_place_box.py" || exit 1

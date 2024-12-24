@@ -9,15 +9,16 @@
  */
 
 #include "plainmp/constraints/primitive_link_pose.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 
 LinkPoseCst::LinkPoseCst(std::shared_ptr<kin::KinematicModel<double>> kin,
                          const std::vector<std::string>& control_joint_names,
-                         bool with_base,
+                         kin::BaseType base_type,
                          const std::vector<std::string>& link_names,
                          const std::vector<Eigen::VectorXd>& poses)
-    : EqConstraintBase(kin, control_joint_names, with_base),
+    : EqConstraintBase(kin, control_joint_names, base_type),
       link_ids_(kin_->get_link_ids(link_names)),
       poses_(poses) {
   for (auto& pose : poses_) {
@@ -38,20 +39,20 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty() {
       vals.segment(head, 3) = pose.trans() - poses_[i];
       jac.block(head, 0, 3, q_dim()) =
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
-                             kin::RotationType::IGNORE, with_base_);
+                             kin::RotationType::IGNORE, base_type_);
       head += 3;
     } else if (poses_[i].size() == 6) {
       vals.segment(head, 3) = pose.trans() - poses_[i].head(3);
       vals.segment(head + 3, 3) = pose.getRPY() - poses_[i].tail(3);
       jac.block(head, 0, 6, q_dim()) = kin_->get_jacobian(
-          link_ids_[i], control_joint_ids_, kin::RotationType::RPY, with_base_);
+          link_ids_[i], control_joint_ids_, kin::RotationType::RPY, base_type_);
       head += 6;
     } else {
       vals.segment(head, 3) = pose.trans() - poses_[i].head(3);
       vals.segment(head + 3, 4) = pose.quat().coeffs() - poses_[i].tail(4);
       jac.block(head, 0, 7, q_dim()) =
           kin_->get_jacobian(link_ids_[i], control_joint_ids_,
-                             kin::RotationType::XYZW, with_base_);
+                             kin::RotationType::XYZW, base_type_);
       head += 7;
     }
   }

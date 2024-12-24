@@ -9,15 +9,16 @@
  */
 
 #include "plainmp/constraints/primitive_fixed_zaxis.hpp"
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 
 FixedZAxisCst::FixedZAxisCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
-    bool with_base,
+    kin::BaseType base_type,
     const std::string& link_name)
-    : EqConstraintBase(kin, control_joint_names, with_base),
+    : EqConstraintBase(kin, control_joint_names, base_type),
       link_id_(kin_->get_link_ids({link_name})[0]) {
   aux_link_ids_.clear();
   {
@@ -49,11 +50,11 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
   Eigen::MatrixXd jac_plus1_x(3, q_dim());
   Eigen::MatrixXd jac_plus1_y(3, q_dim());
   jac_here = kin_->get_jacobian(link_id_, control_joint_ids_,
-                                kin::RotationType::IGNORE, with_base_);
+                                kin::RotationType::IGNORE, base_type_);
   jac_plus1_x = kin_->get_jacobian(aux_link_ids_[0], control_joint_ids_,
-                                   kin::RotationType::IGNORE, with_base_);
+                                   kin::RotationType::IGNORE, base_type_);
   jac_plus1_y = kin_->get_jacobian(aux_link_ids_[1], control_joint_ids_,
-                                   kin::RotationType::IGNORE, with_base_);
+                                   kin::RotationType::IGNORE, base_type_);
   Eigen::MatrixXd jac(2, q_dim());
   jac.row(0) = jac_plus1_x.row(2) - jac_here.row(2);
   jac.row(1) = jac_plus1_y.row(2) - jac_here.row(2);

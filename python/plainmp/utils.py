@@ -7,6 +7,7 @@ from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
 
 import plainmp.psdf as psdf
+from plainmp.kinematics import BaseType
 
 
 def box_to_grid_poitns(box: Box, N_points: Union[int, Sequence[int]]) -> np.ndarray:
@@ -40,17 +41,26 @@ def set_robot_state(
     robot_model: RobotModel,
     joint_names: List[str],
     angles: np.ndarray,
-    floating_base: bool = False,
+    base_type: BaseType = BaseType.FIXED,
 ) -> None:
-    if floating_base:
+    if base_type == BaseType.FIXED:
+        assert len(joint_names) == len(angles)
+        av_joint = angles
+    elif base_type == BaseType.FLOATING:
         assert len(joint_names) + 6 == len(angles)
         av_joint, av_base = angles[:-6], angles[-6:]
         xyz, rpy = av_base[:3], av_base[3:]
         co = Coordinates(pos=xyz, rot=rpy_matrix(*np.flip(rpy)))
         robot_model.newcoords(co)
+    elif base_type == BaseType.PLANAR:
+        assert len(joint_names) + 3 == len(angles)
+        av_joint, av_base = angles[:-3], angles[-3:]
+        xyz = [av_base[0], av_base[1], 0.0]
+        rpy = [0.0, 0.0, av_base[2]]
+        co = Coordinates(pos=xyz, rot=rpy_matrix(*np.flip(rpy)))
+        robot_model.newcoords(co)
     else:
-        assert len(joint_names) == len(angles)
-        av_joint = angles
+        assert False
 
     for joint_name, angle in zip(joint_names, av_joint):
         robot_model.__dict__[joint_name].joint_angle(angle)

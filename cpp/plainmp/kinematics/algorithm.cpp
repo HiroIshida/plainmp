@@ -217,10 +217,12 @@ typename KinematicModel<Scalar>::MatrixDynamic
 KinematicModel<Scalar>::get_jacobian(size_t elink_id,
                                      const std::vector<size_t>& joint_ids,
                                      RotationType rot_type,
-                                     bool with_base) {
+                                     BaseType base_type) {
   const size_t dim_jacobi = 3 + (rot_type == RotationType::RPY) * 3 +
                             (rot_type == RotationType::XYZW) * 4;
-  const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
+  const size_t dim_dof = joint_ids.size() +
+                         (base_type == BaseType::FLOATING) * 6 +
+                         (base_type == BaseType::PLANAR) * 3;
 
   const auto& tf_rlink_to_elink = get_link_pose(elink_id);
   auto& epos = tf_rlink_to_elink.trans();
@@ -275,14 +277,15 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
 
   Transform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
   Vector3 rpy_rlink_to_blink;
-  if (with_base) {
+  if (base_type != BaseType::FIXED) {
     tf_rlink_to_blink = get_link_pose(root_link_id_);
     tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
     rpy_rlink_to_blink = tf_rlink_to_blink.getRPY();
     tf_blink_to_elink = tf_blink_to_rlink * tf_rlink_to_elink;
   }
 
-  if (with_base) {
+  constexpr Scalar eps = 1e-7;
+  if (base_type == BaseType::FLOATING) {
     const size_t n_joint = joint_ids.size();
     jacobian(0, n_joint + 0) = 1.0;
     jacobian(1, n_joint + 1) = 1.0;
@@ -291,7 +294,6 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
     // we resort to numerical method to base pose jacobian (just because I don't
     // have time)
     // TODO(HiroIshida): compute using analytical method.
-    constexpr Scalar eps = 1e-7;
     for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
       const size_t idx_col = n_joint + 3 + rpy_idx;
 
@@ -311,11 +313,34 @@ KinematicModel<Scalar>::get_jacobian(size_t elink_id,
         jacobian.template block<3, 1>(3, idx_col) = (erpy_tweaked - erpy) / eps;
       }
       if (rot_type == RotationType::XYZW) {
-        // jacobian.template block<4, 1>(3, idx_col) = (pose_out.q.coeffs() -
-        // erot).toEigen() / eps;
         jacobian.template block<4, 1>(3, idx_col) =
             (pose_out.quat().coeffs() - erot.coeffs()) / eps;
       }
+    }
+  } else if (base_type == BaseType::PLANAR) {
+    const size_t n_joint = joint_ids.size();
+    jacobian(0, n_joint + 0) = 1.0;
+    jacobian(1, n_joint + 1) = 1.0;
+
+    auto rpy_tweaked = rpy_rlink_to_blink;
+    rpy_tweaked[2] += eps;
+
+    Transform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
+    tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
+    Transform tf_rlink_to_elink_tweaked =
+        tf_rlink_to_blink_tweaked * tf_blink_to_elink;
+    auto pose_out = tf_rlink_to_elink_tweaked;
+
+    const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
+    jacobian.template block<3, 1>(0, n_joint + 2) = pos_diff / eps;
+    if (rot_type == RotationType::RPY) {
+      auto erpy_tweaked = pose_out.getRPY();
+      jacobian.template block<3, 1>(3, n_joint + 2) =
+          (erpy_tweaked - erpy) / eps;
+    }
+    if (rot_type == RotationType::XYZW) {
+      jacobian.template block<4, 1>(3, n_joint + 2) =
+          (pose_out.quat().coeffs() - erot.coeffs()) / eps;
     }
   }
   return jacobian;
@@ -327,8 +352,10 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
     size_t plink_id,
     Vector3 apoint_global_pos,
     const std::vector<size_t>& joint_ids,
-    bool with_base) {
-  const int dim_dof = joint_ids.size() + (with_base ? 6 : 0);
+    BaseType base_type) {
+  const size_t dim_dof = joint_ids.size() +
+                         (base_type == BaseType::FLOATING) * 6 +
+                         (base_type == BaseType::PLANAR) * 3;
   MatrixDynamic jacobian = MatrixDynamic::Zero(3, dim_dof);
 
   // NOTE: the following logic is copied from get_jacobian()
@@ -359,23 +386,20 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
   tf_rlink_to_elink.trans() = apoint_global_pos;
   Transform tf_rlink_to_blink, tf_blink_to_rlink, tf_blink_to_elink;
   Vector3 rpy_rlink_to_blink;
-  if (with_base) {
+  if (base_type != BaseType::FIXED) {
     tf_rlink_to_blink = get_link_pose(root_link_id_);
     tf_blink_to_rlink = tf_rlink_to_blink.getInverse();
     rpy_rlink_to_blink = tf_rlink_to_blink.getRPY();
     tf_blink_to_elink = tf_blink_to_rlink * tf_rlink_to_elink;
   }
 
-  if (with_base) {
+  constexpr Scalar eps = 1e-7;
+  if (base_type == BaseType::FLOATING) {
     const size_t n_joint = joint_ids.size();
     jacobian(0, n_joint + 0) = 1.0;
     jacobian(1, n_joint + 1) = 1.0;
     jacobian(2, n_joint + 2) = 1.0;
 
-    // we resort to numerical method to base pose jacobian (just because I don't
-    // have time)
-    // TODO(HiroIshida): compute using analytical method.
-    constexpr Scalar eps = 1e-7;
     for (size_t rpy_idx = 0; rpy_idx < 3; rpy_idx++) {
       const size_t idx_col = n_joint + 3 + rpy_idx;
 
@@ -391,6 +415,22 @@ KinematicModel<Scalar>::get_attached_point_jacobian(
       const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
       jacobian.template block<3, 1>(0, idx_col) = pos_diff / eps;
     }
+  } else if (base_type == BaseType::PLANAR) {
+    const size_t n_joint = joint_ids.size();
+    jacobian(0, n_joint + 0) = 1.0;
+    jacobian(1, n_joint + 1) = 1.0;
+
+    auto rpy_tweaked = rpy_rlink_to_blink;
+    rpy_tweaked[2] += eps;
+
+    Transform tf_rlink_to_blink_tweaked = tf_rlink_to_blink;
+    tf_rlink_to_blink_tweaked.setQuaternionFromRPY(rpy_tweaked);
+    Transform tf_rlink_to_elink_tweaked =
+        tf_rlink_to_blink_tweaked * tf_blink_to_elink;
+    auto pose_out = tf_rlink_to_elink_tweaked;
+
+    const auto pos_diff = pose_out.trans() - tf_rlink_to_elink.trans();
+    jacobian.template block<3, 1>(0, n_joint + 2) = pos_diff / eps;
   }
   return jacobian;
 }
@@ -414,9 +454,11 @@ typename KinematicModel<Scalar>::Vector3 KinematicModel<Scalar>::get_com() {
 template <typename Scalar>
 typename KinematicModel<Scalar>::MatrixDynamic
 KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t>& joint_ids,
-                                         bool with_base) {
+                                         BaseType base_type) {
   constexpr size_t jac_rank = 3;
-  const size_t dim_dof = joint_ids.size() + with_base * 6;
+  const size_t dim_dof = joint_ids.size() +
+                         (base_type == BaseType::FLOATING) * 6 +
+                         (base_type == BaseType::PLANAR) * 3;
   MatrixDynamic jac_average = MatrixDynamic::Zero(jac_rank, dim_dof);
   Scalar mass_total = 0.0;
   for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
@@ -425,7 +467,7 @@ KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t>& joint_ids,
         tf_base_to_link.trans() +
         tf_base_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
     auto jac = this->get_attached_point_jacobian(
-        com_link_ids_[iter], tf_base_to_com_trans, joint_ids, with_base);
+        com_link_ids_[iter], tf_base_to_com_trans, joint_ids, base_type);
     mass_total += link_masses_[iter];
     jac_average += link_masses_[iter] * jac;
   }

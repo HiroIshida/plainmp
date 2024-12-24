@@ -11,6 +11,7 @@
 #include "plainmp/constraints/primitive_sphere_collision.hpp"
 #include <numeric>
 #include <unordered_set>
+#include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
 
@@ -116,11 +117,11 @@ void SphereGroup::max_distance_reorder() {
 SphereCollisionCst::SphereCollisionCst(
     std::shared_ptr<kin::KinematicModel<double>> kin,
     const std::vector<std::string>& control_joint_names,
-    bool with_base,
+    kin::BaseType base_type,
     const std::vector<SphereAttachmentSpec>& sphere_specs,
     const std::vector<std::pair<std::string, std::string>>& selcol_group_pairs,
     std::optional<plainmp::collision::SDFBase::Ptr> fixed_sdf)
-    : IneqConstraintBase(kin, control_joint_names, with_base),
+    : IneqConstraintBase(kin, control_joint_names, base_type),
       fixed_sdf_(fixed_sdf == std::nullopt ? nullptr : *fixed_sdf) {
   for (size_t i = 0; i < sphere_specs.size(); i++) {
     auto& spec = sphere_specs[i];
@@ -311,7 +312,7 @@ double SphereCollisionCst::evaluate_ext_collision(
     }
     auto&& sphere_jac = kin_->get_attached_point_jacobian(
         sphere_groups_[*min_group_idx].parent_link_id, min_sphere_trans,
-        control_joint_ids_, with_base_);
+        control_joint_ids_, base_type_);
     grad_out = sphere_jac.transpose() * grad;
     return min_val_other;
   }
@@ -369,9 +370,9 @@ double SphereCollisionCst::evaluate_self_collision(
 
     Eigen::Vector3d center_diff = center1 - center2;
     auto&& jac1 = kin_->get_attached_point_jacobian(
-        group1.parent_link_id, center1, control_joint_ids_, with_base_);
+        group1.parent_link_id, center1, control_joint_ids_, base_type_);
     auto&& jac2 = kin_->get_attached_point_jacobian(
-        group2.parent_link_id, center2, control_joint_ids_, with_base_);
+        group2.parent_link_id, center2, control_joint_ids_, base_type_);
     double norminv = 1.0 / center_diff.norm();
     grad = norminv * center_diff.transpose() * (jac1 - jac2);
     return dist_min;
