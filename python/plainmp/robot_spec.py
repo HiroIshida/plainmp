@@ -201,6 +201,14 @@ class RobotSpec(ABC):
                 co = Coordinates(position, rotmat)
                 obj.newcoords(co)
                 self_collision_primitives.append(obj)
+
+        if self.base_type != BaseType.FIXED and len(self_collision_primitives) > 0:
+            err_msg = "self_body_collision_primitives are only used for the fixed base robot.\n"
+            err_msg += "Please define collision spheres instead of primitives for\n"
+            err_msg += "the robot with the floating/planar base."
+            # TODO: maybe auto-generate spheres from the primitives??
+            raise ValueError(err_msg)
+
         return self_collision_primitives
 
     def angle_bounds(self) -> Tuple[np.ndarray, np.ndarray]:

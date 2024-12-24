@@ -16,7 +16,7 @@ from plainmp.constraint import (
 )
 from plainmp.kinematics import BaseType
 from plainmp.psdf import BoxSDF, Pose
-from plainmp.robot_spec import FetchSpec
+from plainmp.robot_spec import FetchSpec, PR2RarmSpec
 
 
 def jac_numerical(const, q0: np.ndarray, eps: float) -> np.ndarray:
@@ -69,13 +69,13 @@ def check_sparse_structure(
 base_types = (BaseType.FIXED, BaseType.FLOATING, BaseType.PLANAR)
 
 
-def base_type_to_fetch_dof(base_type):
+def base_type_to_dof(base_type, joint_dof: int = 8):
     if base_type == BaseType.FIXED:
-        return 8
+        return joint_dof
     elif base_type == BaseType.PLANAR:
-        return 8 + 3
+        return joint_dof + 3
     elif base_type == BaseType.FLOATING:
-        return 8 + 6
+        return joint_dof + 6
     else:
         assert False
 
@@ -83,7 +83,7 @@ def base_type_to_fetch_dof(base_type):
 @pytest.mark.parametrize("base_type", base_types)
 def test_config_pose_constraint(base_type):
     fs = FetchSpec(base_type=base_type)
-    dof = base_type_to_fetch_dof(base_type)
+    dof = base_type_to_dof(base_type)
     q = np.random.randn(dof)
     cst = fs.create_config_point_const(q)
     if base_type != BaseType.FIXED:
@@ -102,7 +102,7 @@ def test_link_pose_constraint(base_type: BaseType, with_rpy: bool):
 
     fs = FetchSpec(base_type=base_type)
     cst = fs.create_gripper_pose_const(pose)
-    dof = base_type_to_fetch_dof(base_type)
+    dof = base_type_to_dof(base_type)
     if base_type != BaseType.FIXED:
         check_jacobian(cst, dof, std=0.1)
     else:
@@ -115,7 +115,7 @@ def test_link_pose_constraint_multi_link(base_type: BaseType):
     pose2 = [0.7, 0.0, 0.7]
     fs = FetchSpec(base_type=base_type)
     cst = fs.create_pose_const(["gripper_link", "wrist_roll_link"], [pose1, pose2])
-    dof = base_type_to_fetch_dof(base_type)
+    dof = base_type_to_dof(base_type)
     if base_type != BaseType.FIXED:
         check_jacobian(cst, dof, std=0.1)
     else:
@@ -126,7 +126,7 @@ def test_link_pose_constraint_multi_link(base_type: BaseType):
 def test_relative_pose_constraint(base_type: BaseType):
     fs = FetchSpec(base_type=base_type)
     cst = fs.create_relative_pose_const("head_pan_link", "gripper_link", np.ones(3))
-    dof = base_type_to_fetch_dof(base_type)
+    dof = base_type_to_dof(base_type)
     if base_type != BaseType.FIXED:
         check_jacobian(cst, dof, std=0.1)
     else:
@@ -137,7 +137,7 @@ def test_relative_pose_constraint(base_type: BaseType):
 def test_fixed_z_axis_constraint(base_type: BaseType):
     fs = FetchSpec(base_type=base_type)
     cst = fs.create_fixed_zaxis_const("gripper_link")
-    dof = base_type_to_fetch_dof(base_type)
+    dof = base_type_to_dof(base_type)
     if base_type != BaseType.FIXED:
         check_jacobian(cst, dof, std=0.1)
     else:
@@ -148,10 +148,10 @@ def test_fixed_z_axis_constraint(base_type: BaseType):
 def test_collision_free_constraint(base_type: BaseType):
     sdf = BoxSDF([1, 1, 1], Pose([0.5, 0.5, 0.5], np.eye(3)))
     for self_collision in [False, True]:
-        fs = FetchSpec(base_type=base_type)
-        cst = fs.create_collision_const(self_collision)
+        ps = PR2RarmSpec(base_type=base_type)
+        cst = ps.create_collision_const(self_collision)
         cst.set_sdf(sdf)
-        dof = base_type_to_fetch_dof(base_type)
+        dof = base_type_to_dof(base_type, joint_dof=7)
         if base_type != BaseType.FIXED:
             check_jacobian(cst, dof, std=0.1)
             check_eval_is_valid_consistency(cst, dof, std=0.1)
@@ -169,7 +169,7 @@ def test_com_in_polytope_constraint(base_type, with_force: bool):
     if with_force:
         afspecs.append(AppliedForceSpec("gripper_link", 2.0))
     cst = ComInPolytopeCst(fs.get_kin(), fs.control_joint_names, base_type, sdf, afspecs)
-    dof = base_type_to_fetch_dof(base_type)
+    dof = base_type_to_dof(base_type)
     if base_type != BaseType.FIXED:
         check_jacobian(cst, dof, std=0.1)
         check_eval_is_valid_consistency(cst, dof, std=0.1)
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     base_type = BaseType.FLOATING
     fs = FetchSpec(base_type=base_type)
     cst = fs.create_gripper_pose_const(pose)
-    dof = base_type_to_fetch_dof(base_type)
+    dof = base_type_to_dof(base_type)
     if base_type != BaseType.FIXED:
         check_jacobian(cst, dof, std=0.1)
     else:
