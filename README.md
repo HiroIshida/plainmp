@@ -7,6 +7,7 @@ The project is licensed under the BSD 3 License (see [LICENSE](./LICENSE-BSD3)),
 plainmp provides:
 - Fast sampling-based motion planning (e.g., **less than 1ms** for moderate problems using RRTConnect)
 - Collision-aware inverse kinematics (IK) solver
+- Motion planning/IK for various models (e.g. movable base, dual-arm, object attachment)
 - Flexible framework for defining various robot model and motion planning problems
 - Collision checking for primitives (sphere/box/cylinder...) and/or point cloud vs. robot
 - (Beta) Sampling-based constrained motion planning solver (e.g., whole-body humanoid)
@@ -22,7 +23,7 @@ Related/depeding projects:
 - plainmp is a rewrite of my previous projects [scikit-motionplan](https://github.com/HiroIshida/scikit-motionplan) and [tinyfk](https://github.com/HiroIshida/tinyfk) to achieve 100x speedup
 - plainmp depends on [OMPL](https://github.com/ompl/ompl) (with unmerged PR of [ERTConnect](https://github.com/ompl/ompl/pull/783)) for SBMP algorithms
 - plainmp deponds on [scikit-robt](https://github.com/iory/scikit-robot) framework for visualization and planning problem specifications
-- [benchmark](https://github.com/HiroIshida/bench_plainmp_and_vamp) with [VAMP](https://github.com/KavrakiLab/vamp) (the world fastest motion planner as of 2024) shows that
+- [benchmark](https://github.com/HiroIshida/bench_plainmp_and_vamp) with [VAMP](https://github.com/KavrakiLab/vamp) (the world fastest motion planner as of 2024 to my knowledge) shows that
     - AMD Ryzen 7 7840HS (256-bit AVX) VAMP is faster (1.3x, 1.1x, 4.8x, 12.5x)
     - ARM Neoverse-N1 (128-bit NEON) both seems to be comparable (0.53x, 0.41x, 2.2x, 4.8x)
     - x-s are time ratio plainmp/VAMP for 4 different settings with resolution of 1/32
