@@ -47,7 +47,7 @@ if __name__ == "__main__":
     q_goal = ik_result.q
     resolution = np.ones(len(spec.control_joint_names)) * 0.05
     problem = Problem(q_start, lb, ub, q_goal, ineq_cst, None, resolution)
-    ompl_solver = OMPLSolver(OMPLSolverConfig(simplify=args.simplify))
+    ompl_solver = OMPLSolver(OMPLSolverConfig(shortcut=args.simplify))
     mp_result = ompl_solver.solve(problem)
     assert mp_result.success
     print(f"elapsed time to solve RRTConnect: {mp_result.time_elapsed * 1000:.2f} [ms]")

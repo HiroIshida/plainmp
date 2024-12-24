@@ -27,7 +27,7 @@ if __name__ == "__main__":
     default_joint_positions = spec.default_joint_positions
     default_joint_positions["torso_lift_joint"] = 0.1
     spec.reflect_joint_positions(default_joint_positions)
-    ineq_cst = spec.create_collision_const(self_collision=False)
+    ineq_cst = spec.create_collision_const(self_collision=True)
     psdf = primitive_to_plainmp_sdf(table)
     ineq_cst.set_sdf(psdf)
     lb_joints, ub_joints = spec.angle_bounds()
