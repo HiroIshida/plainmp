@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List, Tuple
 
+import numpy as np
+
 class BaseType(Enum):
     FIXED = 0
     FLOATING = 1
@@ -29,6 +31,18 @@ class KinematicModel:
         """
         ...
     def get_joint_position_limits(self, joint_ids: List[int]) -> List[Tuple[float, float]]: ...
-    def set_joint_positions(self, joint_ids: List[int], positions: List[float]) -> None: ...
+    def set_joint_positions(self, joint_ids: List[int], positions: np.ndarray) -> None: ...
     def get_joint_positions(self, joint_ids: List[int]) -> List[float]: ...
+    def set_base_pose(self, pose_vec: np.ndarray) -> None:
+        """Set the base pose of the robot
+        Args:
+            pose_vec: [x, y, z, qx, qy, qz, qw]
+        """
+        ...
+    def get_base_pose(self) -> np.ndarray:
+        """Get the base pose of the robot
+        Returns:
+            [x, y, z, qx, qy, qz, qw]
+        """
+        ...
     def get_joint_ids(self, joint_names: List[str]) -> List[int]: ...
