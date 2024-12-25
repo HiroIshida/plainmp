@@ -176,13 +176,13 @@ SphereCollisionCst::SphereCollisionCst(
 }
 
 bool SphereCollisionCst::is_valid_dirty() {
-  if (all_sdfs_cache_.size() == 0) {
-    throw std::runtime_error("(cpp) No SDFs are set");
-  }
-  if (!check_ext_collision()) {
+  if (ext_colliision_enabled() && !check_ext_collision()) {
     return false;
   }
-  return check_self_collision();
+  if (self_collision_enabled()) {
+    return check_self_collision();
+  }
+  return true;
 }
 
 bool SphereCollisionCst::check_ext_collision() {
@@ -381,19 +381,16 @@ double SphereCollisionCst::evaluate_self_collision(
 
 std::pair<Eigen::VectorXd, Eigen::MatrixXd>
 SphereCollisionCst::evaluate_dirty() {
-  if (all_sdfs_cache_.size() == 0) {
-    throw std::runtime_error("(cpp) No SDFs are set");
-  }
   Eigen::MatrixXd jac(cst_dim(), q_dim());
   Eigen::VectorXd vals(cst_dim());
-  if (selcol_group_id_pairs_.size() > 0) {
-    double val_ext = evaluate_ext_collision(jac.row(0));
-    vals[0] = val_ext;
-    double val_self = evaluate_self_collision(jac.row(1));
-    vals[1] = val_self;
-  } else {
-    double val = evaluate_ext_collision(jac.row(0));
-    vals[0] = val;
+
+  size_t head = 0;
+  if (ext_colliision_enabled()) {
+    vals[head] = evaluate_ext_collision(jac.row(head));
+    head++;
+  }
+  if (self_collision_enabled()) {
+    vals[head] = evaluate_self_collision(jac.row(head));
   }
   return {vals, jac};
 }
