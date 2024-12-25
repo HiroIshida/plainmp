@@ -159,6 +159,20 @@ def test_collision_free_constraint(base_type: BaseType):
             check_jacobian(cst, dof)
             check_eval_is_valid_consistency(cst, dof)
 
+    # if self collision and ext collision is not set
+    # then it should always return True
+    ps = PR2RarmSpec(base_type=base_type)
+    cst = ps.create_collision_const(self_collision=False)
+    dof = base_type_to_dof(base_type, joint_dof=7)
+    for _ in range(30):
+        q = np.random.randn(dof)
+        assert cst.is_valid(q)
+        value, jac = cst.evaluate(q)
+        assert len(value) == 0
+        assert jac.shape[0] == 0
+        assert jac.shape[1] == dof
+        print(jac.shape)
+
 
 @pytest.mark.parametrize("base_type", base_types)
 @pytest.mark.parametrize("with_force", [False, True])

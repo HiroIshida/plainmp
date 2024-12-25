@@ -86,12 +86,17 @@ class SphereCollisionCst : public IneqConstraintBase {
   double evaluate_self_collision(
       Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad);
 
-  size_t cst_dim() const override {
-    if (selcol_group_id_pairs_.size() == 0) {
-      return 1;
-    } else {
-      return 2;
-    }
+  inline bool ext_colliision_enabled() const {
+    // NOTE: anchored primitives for self collision is also considered
+    // as a part of external collision
+    return (all_sdfs_cache_.size() > 0);
+  }
+  inline bool self_collision_enabled() const {
+    return (selcol_group_id_pairs_.size() > 0);
+  }
+  inline size_t cst_dim() const override {
+    return (ext_colliision_enabled() ? 1 : 0) +
+           (self_collision_enabled() ? 1 : 0);
   }
   std::string get_name() const override { return "SphereCollisionCst"; }
   std::vector<std::pair<Eigen::Vector3d, double>> get_group_spheres();
