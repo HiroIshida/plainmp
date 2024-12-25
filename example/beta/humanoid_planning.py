@@ -8,6 +8,7 @@ from skrobot.viewers import PyrenderViewer
 
 from plainmp.constraint import EqCompositeCst, IneqCompositeCst
 from plainmp.ik import solve_ik
+from plainmp.kinematics import BaseType
 from plainmp.manifold_rrt.manifold_rrt_solver import ManiRRTConfig, ManiRRTConnectSolver
 from plainmp.nlp_solver import SQPBasedSolver, SQPBasedSolverConfig
 from plainmp.parallel import ParallelSolver
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     if args.visualize:
         v = PyrenderViewer()
         robot = jspec.get_robot_model(with_mesh=True)
-        set_robot_state(robot, jspec.control_joint_names, ik_ret.q, True)
+        set_robot_state(robot, jspec.control_joint_names, ik_ret.q, BaseType.FLOATING)
         ground = Box([2, 2, 0.01])
         v.add(ground)
         v.add(table)
@@ -87,7 +88,7 @@ if __name__ == "__main__":
         v.show()
         time.sleep(2)
         for q in ret.traj:
-            set_robot_state(robot, jspec.control_joint_names, q, True)
+            set_robot_state(robot, jspec.control_joint_names, q, BaseType.FLOATING)
             v.redraw()
             time.sleep(0.15)
         time.sleep(20)

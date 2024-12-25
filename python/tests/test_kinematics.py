@@ -1,6 +1,11 @@
 import numpy as np
 import pytest
-from skrobot.coordinates.math import quaternion2matrix, xyzw2wxyz
+from skrobot.coordinates import Coordinates
+from skrobot.coordinates.math import (
+    quaternion2matrix,
+    rotation_matrix_from_quat,
+    xyzw2wxyz,
+)
 
 from plainmp.robot_spec import (
     FetchSpec,
@@ -60,3 +65,26 @@ def _test_get_link_pose(spec: RobotSpec):
 )
 def test_get_link_pose(spec):
     _test_get_link_pose(spec)
+
+
+def test_skrobot_kin_base_mirror():
+    spec = FetchSpec()
+    model = spec.get_robot_model()
+    kin = spec.get_kin()
+
+    # skrobot => kin
+    co = Coordinates([1, 2, 3], [0.1, 0.2, 0.3])
+    model.newcoords(co)
+    spec.reflect_skrobot_model_to_kin(model)
+    pose_vec = kin.get_base_pose()
+    pos, quat = pose_vec[:3], pose_vec[3:]
+    mat = rotation_matrix_from_quat(xyzw2wxyz(quat))
+    np.testing.assert_allclose(pos, co.worldpos(), atol=1e-3)
+    np.testing.assert_allclose(mat, co.worldrot(), atol=1e-3)
+
+    # kin => skrobot
+    kin.set_base_pose([4, 5, 6, 0, 0, 0, 1.0])  # whatever
+    spec.reflect_kin_to_skrobot_model(model)
+    pos, rotmat = model.worldpos(), model.worldrot()
+    np.testing.assert_allclose(pos, [4, 5, 6], atol=1e-3)
+    np.testing.assert_allclose(rotmat, np.eye(3), atol=1e-3)

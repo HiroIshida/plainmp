@@ -15,6 +15,7 @@ from skrobot.coordinates.math import (
     rpy_angle,
     rpy_matrix,
     wxyz2xyzw,
+    xyzw2wxyz,
 )
 from skrobot.model.primitives import Box, Cylinder, Sphere
 from skrobot.model.robot_model import RobotModel
@@ -140,6 +141,8 @@ class RobotSpec(ABC):
             angle = robot_model.__dict__[jn].joint_angle()
             table[jn] = angle
         self.reflect_joint_positions(table)
+        pose_vec = self.coordinates_to_pose_vec(robot_model.worldcoords(), RotType.XYZW)
+        self.get_kin().set_base_pose(pose_vec)
 
     def reflect_kin_to_skrobot_model(self, robot_model: RobotModel) -> None:
         # inverse of reflect_skrobot_model_to_kin
@@ -148,6 +151,11 @@ class RobotSpec(ABC):
         joint_ids = kin.get_joint_ids(joint_names)
         angles = kin.get_joint_positions(joint_ids)
         robot_model.angle_vector(angles)
+
+        pose_vec = kin.get_base_pose()
+        position, quat = pose_vec[:3], pose_vec[3:]
+        co = Coordinates(position, xyzw2wxyz(quat))
+        robot_model.newcoords(co)
 
     def extract_skrobot_model_q(
         self, robot_model: RobotModel, base_type: BaseType = BaseType.FIXED
@@ -358,16 +366,7 @@ class RobotSpec(ABC):
     ) -> LinkPoseCst:
         pose_list = []
         for co, rt in zip(link_poses, rot_types):
-            pos = co.worldpos()
-            if rt == RotType.RPY:
-                ypr = rpy_angle(co.rotation)[0]
-                rpy = [ypr[2], ypr[1], ypr[0]]
-                pose = np.hstack([pos, rpy])
-            elif rt == RotType.XYZW:
-                quat_wxyz = matrix2quaternion(co.rotation)
-                pose = np.hstack([pos, wxyz2xyzw(quat_wxyz)])
-            else:
-                pose = pos
+            pose = self.coordinates_to_pose_vec(co, rt)
             pose_list.append(pose)
         return self.create_pose_const(link_names, pose_list)
 
@@ -424,6 +423,26 @@ class RobotSpec(ABC):
             None,
         )
         return cst
+
+    @staticmethod
+    def coordinates_to_pose_vec(co: Coordinates, rot_type: RotType) -> np.ndarray:
+        """convert skrobot coordinates to the pose vector
+        Args:
+            co: skrobot coordinates
+        Returns:
+            pose vector: [x, y, z, orientation...]
+        where orientation depends on the rot_type
+        """
+        pos = co.worldpos()
+        if rot_type == RotType.RPY:
+            ypr = rpy_angle(co.rotation)[0]
+            rpy = [ypr[2], ypr[1], ypr[0]]
+            return np.hstack([pos, rpy])
+        elif rot_type == RotType.XYZW:
+            quat_wxyz = matrix2quaternion(co.rotation)
+            return np.hstack([pos, wxyz2xyzw(quat_wxyz)])
+        else:
+            return pos
 
 
 class FetchSpec(RobotSpec):
@@ -547,18 +566,14 @@ class JaxonSpec(RobotSpec):
         # set reset manip pose
         for jn, angle in zip(self.control_joint_names, self.reset_manip_pose_q):
             robot_model.__dict__[jn].joint_angle(angle)
-
-        def skcoords_to_xyzrpy(co):
-            pos = co.worldpos()
-            ypr = rpy_angle(co.rotation)[0]
-            rpy = [ypr[2], ypr[1], ypr[0]]
-            return np.hstack([pos, rpy])
-
         rleg = robot_model.rleg_end_coords.copy_worldcoords()
         lleg = robot_model.lleg_end_coords.copy_worldcoords()
         return self.create_pose_const(
             ["rleg_end_coords", "lleg_end_coords"],
-            [skcoords_to_xyzrpy(rleg), skcoords_to_xyzrpy(lleg)],
+            [
+                self.coordinates_to_pose_vec(rleg, RotType.RPY),
+                self.coordinates_to_pose_vec(lleg, RotType.RPY),
+            ],
         )
 
     def create_default_com_const(
