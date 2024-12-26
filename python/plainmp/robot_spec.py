@@ -490,6 +490,19 @@ class PR2SpecBase(RobotSpec):
         pass
 
 
+class PR2BaseOnlySpec(PR2SpecBase):
+    def __init__(self):
+        super().__init__(BaseType.PLANAR)
+
+    def get_yaml_file_name(self) -> str:
+        return "pr2_base_only.yaml"
+
+    def create_base_pose_const(self, pose3d: np.ndarray) -> LinkPoseCst:
+        x, y, yaw = pose3d
+        target = np.array([x, y, 0.0, 0.0, 0.0, yaw])
+        return self.create_pose_const(["base_footprint"], [target])
+
+
 class PR2RarmSpec(PR2SpecBase):
     def get_yaml_file_name(self) -> str:
         return "pr2_rarm.yaml"
