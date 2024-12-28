@@ -1,0 +1,10 @@
+urdf_path: ~/.skrobot/pr2_description/pr2.urdf
+
+control_joint_names: []  # no control joint
+
+# don't need to check any self collision
+
+include:
+  - pr2_common/collision_spheres.yaml
+  - pr2_common/aux.yaml
+

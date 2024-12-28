@@ -67,6 +67,10 @@ struct CollisionAwareSpaceInformation {
         ineq_cst_(ineq_cst),
         is_valid_call_count_(0),
         max_is_valid_call_(max_is_valid_call) {
+    if (!ineq_cst_) {
+      throw std::runtime_error(
+          "ineq_cst is nullptr. You should provide a constraint");
+    }
     const auto space = bound2space(lb, ub);
     si_ = std::make_shared<ob::SpaceInformation>(space);
 
