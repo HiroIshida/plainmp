@@ -11,21 +11,30 @@ from plainmp.robot_spec import FetchSpec
 from plainmp.utils import primitive_to_plainmp_sdf
 
 algos = (Algorithm.RRTConnect, Algorithm.KPIECE1)
-test_conditions = [(True, algo, False) for algo in algos] + [(False, algo, False) for algo in algos]
-test_conditions.append((True, Algorithm.KPIECE1, True))
-test_conditions.append((True, Algorithm.RRT, True))
+test_conditions = [(True, algo, False, False) for algo in algos] + [
+    (False, algo, False, False) for algo in algos
+]
+test_conditions.append((True, Algorithm.KPIECE1, True, False))
+test_conditions.append((True, Algorithm.RRT, True, False))
+test_conditions.append(
+    (True, Algorithm.RRTConnect, False, True)
+)  # test without inequality constraint
 
 
-@pytest.mark.parametrize("goal_is_pose,algo,use_goal_sampler", test_conditions)
-def test_ompl_solver(goal_is_pose: bool, algo: Algorithm, use_goal_sampler: bool):
+@pytest.mark.parametrize("goal_is_pose,algo,use_goal_sampler,no_ineq_cst", test_conditions)
+def test_ompl_solver(
+    goal_is_pose: bool, algo: Algorithm, use_goal_sampler: bool, no_ineq_cst: bool
+):
     fetch = FetchSpec()
-    cst = fetch.create_collision_const()
-
-    table = Box([1.0, 2.0, 0.05], with_sdf=True)
-    table.translate([1.0, 0.0, 0.8])
-    ground = Box([2.0, 2.0, 0.05], with_sdf=True)
-    sdf = UnionSDF([primitive_to_plainmp_sdf(table), primitive_to_plainmp_sdf(ground)])
-    cst.set_sdf(sdf)
+    if no_ineq_cst:
+        cst = None
+    else:
+        cst = fetch.create_collision_const()
+        table = Box([1.0, 2.0, 0.05], with_sdf=True)
+        table.translate([1.0, 0.0, 0.8])
+        ground = Box([2.0, 2.0, 0.05], with_sdf=True)
+        sdf = UnionSDF([primitive_to_plainmp_sdf(table), primitive_to_plainmp_sdf(ground)])
+        cst.set_sdf(sdf)
     lb, ub = fetch.angle_bounds()
     start = np.array([0.0, 1.31999949, 1.40000015, -0.20000077, 1.71999929, 0.0, 1.6600001, 0.0])
     if goal_is_pose:

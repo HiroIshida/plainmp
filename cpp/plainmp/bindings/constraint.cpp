@@ -100,6 +100,22 @@ void bind_constraint_submodule(py::module& m) {
       .def("update_kintree", &ComInPolytopeCst::update_kintree)
       .def("is_valid", &ComInPolytopeCst::is_valid)
       .def("evaluate", &ComInPolytopeCst::evaluate);
+
+  py::class_<NullEqConstraint, NullEqConstraint::Ptr, EqConstraintBase>(
+      cst_m, "NullEqConstraint")
+      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+                    const std::vector<std::string>&, BaseType>())
+      .def("update_kintree", &NullEqConstraint::update_kintree)
+      .def("evaluate", &NullEqConstraint::evaluate);
+
+  py::class_<NullIneqConstraint, NullIneqConstraint::Ptr, IneqConstraintBase>(
+      cst_m, "NullIneqConstraint")
+      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+                    const std::vector<std::string>&, BaseType>())
+      .def("update_kintree", &NullIneqConstraint::update_kintree)
+      .def("evaluate", &NullEqConstraint::evaluate)
+      .def("is_valid", &NullIneqConstraint::is_valid);
+
   py::class_<EqCompositeCst, EqCompositeCst::Ptr>(cst_m, "EqCompositeCst")
       .def(py::init<std::vector<EqConstraintBase::Ptr>>())
       .def("update_kintree", &EqCompositeCst::update_kintree)

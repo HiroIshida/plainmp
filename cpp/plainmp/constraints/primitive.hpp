@@ -112,4 +112,27 @@ class IneqConstraintBase : public ConstraintBase {
   virtual bool is_valid_dirty() = 0;
 };
 
+class NullEqConstraint : public EqConstraintBase {
+ public:
+  using Ptr = std::shared_ptr<NullEqConstraint>;
+  using EqConstraintBase::EqConstraintBase;
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override {
+    return {Eigen::VectorXd::Zero(0), Eigen::MatrixXd::Zero(0, q_dim())};
+  }
+  size_t cst_dim() const override { return 0; }
+  std::string get_name() const override { return "NullEqConstraint"; }
+};
+
+class NullIneqConstraint : public IneqConstraintBase {
+ public:
+  using Ptr = std::shared_ptr<NullIneqConstraint>;
+  using IneqConstraintBase::IneqConstraintBase;
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override {
+    return {Eigen::VectorXd::Zero(0), Eigen::MatrixXd::Zero(0, q_dim())};
+  }
+  size_t cst_dim() const override { return 0; }
+  std::string get_name() const override { return "NullIneqConstraint"; }
+  bool is_valid_dirty() override { return true; }
+};
+
 };  // namespace plainmp::constraint
