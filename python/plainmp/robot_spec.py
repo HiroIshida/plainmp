@@ -362,8 +362,13 @@ class RobotSpec(ABC):
         return ConfigPointCst(self.get_kin(), self.control_joint_names, self.base_type, q)
 
     def create_pose_const_from_coords(
-        self, link_names: List[str], link_poses: List[Coordinates], rot_types: List[RotType]
+        self,
+        link_names: List[str],
+        link_poses: List[Coordinates],
+        rot_types: Optional[List[RotType]] = None,
     ) -> LinkPoseCst:
+        if rot_types is None:
+            rot_types = [RotType.XYZW] * len(link_poses)
         pose_list = []
         for co, rt in zip(link_poses, rot_types):
             pose = self.coordinates_to_pose_vec(co, rt)
