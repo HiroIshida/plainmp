@@ -9,7 +9,7 @@ from plainmp.ompl_solver import OMPLSolver
 from plainmp.problem import Problem
 from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import PandaSpec
-from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
+from plainmp.utils import primitive_to_plainmp_sdf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -52,7 +52,8 @@ if __name__ == "__main__":
     if args.visualize:
         v = PyrenderViewer()
         robot_model = spec.get_robot_model(with_mesh=True)
-        set_robot_state(robot_model, spec.control_joint_names, q1)
+        spec.set_skrobot_model_state(robot_model, q1)
+
         co = robot_model.panda_hand.copy_worldcoords()
         v.add(Sphere(0.05, color=[255, 0, 0]).translate(co.worldpos()))
 
@@ -62,7 +63,7 @@ if __name__ == "__main__":
         v.show()
         input("Press Enter to replay the path")
         for q in ret.traj.resample(50):
-            set_robot_state(robot_model, spec.control_joint_names, q)
+            spec.set_skrobot_model_state(robot_model, q)
             v.redraw()
             time.sleep(0.2)
         time.sleep(1000)

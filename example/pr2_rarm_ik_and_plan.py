@@ -10,7 +10,7 @@ from plainmp.ik import solve_ik
 from plainmp.ompl_solver import OMPLSolver, OMPLSolverConfig
 from plainmp.problem import Problem
 from plainmp.robot_spec import PR2RarmSpec
-from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
+from plainmp.utils import primitive_to_plainmp_sdf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -58,14 +58,14 @@ if __name__ == "__main__":
         robot_model = spec.get_robot_model(with_mesh=True)
         for name, angle in default_joint_positions.items():
             robot_model.__dict__[name].joint_angle(angle)
-        set_robot_state(robot_model, spec.control_joint_names, ik_result.q)
+        spec.set_skrobot_model_state(robot_model, ik_result.q)
         viewer.add(Axis.from_coords(target_coords))
         viewer.add(robot_model)
         viewer.add(table)
         viewer.show()
         input("Press Enter to show the planned path")
         for q in mp_result.traj.resample(50):
-            set_robot_state(robot_model, spec.control_joint_names, q)
+            spec.set_skrobot_model_state(robot_model, q)
             viewer.redraw()
             time.sleep(0.15)
         time.sleep(1000)

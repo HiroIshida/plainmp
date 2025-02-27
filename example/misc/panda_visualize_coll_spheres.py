@@ -6,7 +6,6 @@ from skrobot.models.urdf import RobotModelFromURDF
 from skrobot.viewers import PyrenderViewer
 
 from plainmp.robot_spec import PandaSpec
-from plainmp.utils import set_robot_state
 
 s = PandaSpec()
 cst = s.create_collision_const()
@@ -16,7 +15,7 @@ lb, ub = s.angle_bounds()
 q = np.random.uniform(lb, ub)
 cst.update_kintree(q, True)
 model = RobotModelFromURDF(urdf_file=str(s.urdf_path))
-set_robot_state(model, s.control_joint_names, q)
+s.set_skrobot_model_state(model, q)
 
 sk_all_spheres = []
 for center, r in cst.get_all_spheres():

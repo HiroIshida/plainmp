@@ -9,7 +9,7 @@ from plainmp.ompl_solver import OMPLSolver, set_log_level_none
 from plainmp.problem import Problem
 from plainmp.psdf import CloudSDF, GroundSDF, UnionSDF
 from plainmp.robot_spec import FetchSpec
-from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
+from plainmp.utils import primitive_to_plainmp_sdf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         robot_model = fs.get_robot_model(with_mesh=True)
 
         # get goal point
-        set_robot_state(robot_model, fs.control_joint_names, q_goal)
+        fs.set_skrobot_model_state(robot_model, q_goal)
         co = robot_model.gripper_link.copy_worldcoords()
 
         v = PyrenderViewer()
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         v.show()
         input("Press Enter to replay the path")
         for q in ret.traj.resample(50):
-            set_robot_state(robot_model, fs.control_joint_names, q)
+            fs.set_skrobot_model_state(robot_model, q)
             v.redraw()
             time.sleep(0.2)
         time.sleep(1000)

@@ -9,7 +9,7 @@ from skrobot.viewers import PyrenderViewer
 from plainmp.ik import solve_ik
 from plainmp.psdf import CloudSDF
 from plainmp.robot_spec import FetchSpec
-from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
+from plainmp.utils import primitive_to_plainmp_sdf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     if args.visualize:
         fetch = Fetch()
-        set_robot_state(fetch, fs.control_joint_names, ret.q)
+        fs.set_skrobot_model_state(fetch, ret.q)
         v = PyrenderViewer()
         v.add(fetch)
         v.add(table)

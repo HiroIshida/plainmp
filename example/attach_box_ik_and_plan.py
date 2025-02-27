@@ -11,7 +11,7 @@ from plainmp.ompl_solver import OMPLSolver, OMPLSolverConfig
 from plainmp.problem import Problem
 from plainmp.psdf import GroundSDF, UnionSDF
 from plainmp.robot_spec import PandaSpec
-from plainmp.utils import box_to_grid_poitns, primitive_to_plainmp_sdf, set_robot_state
+from plainmp.utils import box_to_grid_poitns, primitive_to_plainmp_sdf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     if args.visualize:
         # visualization
         robot = spec.get_robot_model(with_mesh=True)
-        set_robot_state(robot, spec.control_joint_names, ik_res.q)
+        spec.set_skrobot_model_state(robot, ik_res.q)
         ground_vis = Box([2.0, 2.0, 0.03])
         v = PyrenderViewer()
         v.add(robot)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         robot.__dict__["panda_hand"].assoc(cardboard_box)
 
         for q in result.traj.resample(30):
-            set_robot_state(robot, spec.control_joint_names, q)
+            spec.set_skrobot_model_state(robot, q)
             v.redraw()
             time.sleep(0.1)
         time.sleep(1000)

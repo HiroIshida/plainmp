@@ -6,7 +6,6 @@ from skrobot.models.fetch import Fetch
 from skrobot.viewers import PyrenderViewer
 
 from plainmp.robot_spec import FetchSpec
-from plainmp.utils import set_robot_state
 
 fs = FetchSpec()
 cst = fs.create_collision_const()
@@ -14,7 +13,7 @@ q = np.zeros(8)
 cst.update_kintree(q, True)
 
 fetch = Fetch()
-set_robot_state(fetch, fs.control_joint_names, q)
+fs.set_skrobot_model_state(fetch, q)
 v = PyrenderViewer()
 v.add(fetch)
 for center, r in cst.get_group_spheres():

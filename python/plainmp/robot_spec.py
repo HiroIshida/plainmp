@@ -34,7 +34,7 @@ from plainmp.constraint import (
 )
 from plainmp.kinematics import BaseType, KinematicModel
 from plainmp.psdf import BoxSDF, Pose, UnionSDF
-from plainmp.utils import primitive_to_plainmp_sdf
+from plainmp.utils import primitive_to_plainmp_sdf, set_robot_state
 
 _loaded_urdf_models: Dict[str, URDF] = {}
 _loaded_yamls: Dict[str, Dict] = {}  # loading yaml is quite slow
@@ -156,6 +156,9 @@ class RobotSpec(ABC):
         position, quat = pose_vec[:3], pose_vec[3:]
         co = Coordinates(position, xyzw2wxyz(quat))
         robot_model.newcoords(co)
+
+    def set_skrobot_model_state(self, robot_model: RobotModel, q: np.ndarray) -> None:
+        set_robot_state(robot_model, self.control_joint_names, q, base_type=self.base_type)
 
     def extract_skrobot_model_q(
         self, robot_model: RobotModel, base_type: BaseType = BaseType.FIXED
