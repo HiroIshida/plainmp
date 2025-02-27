@@ -42,7 +42,7 @@ N_MAX_CACHE = 200
 _loaded_kin: "OrderedDict[str, KinematicModel]" = OrderedDict()
 
 
-def load_urdf_model_using_cache(file_path: Path, deepcopy: bool = True, with_mesh: bool = False):
+def load_urdf_model_using_cache(file_path: Path, with_mesh: bool = False, deepcopy: bool = True):
     file_path = file_path.expanduser()
     assert file_path.exists()
     key = str(file_path)
@@ -179,8 +179,10 @@ class RobotSpec(ABC):
 
         return np.array(angles)
 
-    def get_robot_model(self, with_mesh: bool = False) -> RobotModel:
-        model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh)
+    def get_robot_model(self, with_mesh: bool = False, deepcopy: bool = True) -> RobotModel:
+        # deepcopy is recommended to avoid the side effect of the skrobot model's internal
+        # but it is not efficient. If performance is critical, you may want to set deepcopy=False
+        model = load_urdf_model_using_cache(self.urdf_path, with_mesh=with_mesh, deepcopy=deepcopy)
         # Add custom links defined in conf to the robot model as CascadedCoords
         if "custom_links" in self.conf_dict:
             for name in self.conf_dict["custom_links"].keys():
