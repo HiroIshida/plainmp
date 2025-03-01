@@ -89,6 +89,7 @@ class SDFBase {
     }
     return vals;
   }
+  virtual std::shared_ptr<SDFBase> clone() const = 0;
   virtual void rotate_z(const double angle) = 0;
   virtual void translate(const Eigen::Vector3d& translation) = 0;
   virtual double evaluate(const Point& p) const = 0;
@@ -99,6 +100,17 @@ struct UnionSDF : public SDFBase {
   using Ptr = std::shared_ptr<UnionSDF>;
   SDFType get_type() const override { return SDFType::UNION; }
   UnionSDF(std::vector<SDFBase::Ptr> sdfs) : sdfs_(sdfs) {}
+
+  UnionSDF(const UnionSDF& other) {
+    sdfs_.resize(other.sdfs_.size());
+    for (size_t i = 0; i < other.sdfs_.size(); i++) {
+      sdfs_[i] = other.sdfs_[i]->clone();
+    }
+  }
+
+  std::shared_ptr<SDFBase> clone() const override {
+    return std::make_shared<UnionSDF>(*this);
+  }
 
   void rotate_z(const double angle) override {
     for (auto& sdf : sdfs_) {
@@ -195,6 +207,11 @@ struct GroundSDF : public PrimitiveSDFBase {
     ub = Eigen::Vector3d(std::numeric_limits<double>::infinity(),
                          std::numeric_limits<double>::infinity(), 0.0);
   }
+
+  std::shared_ptr<SDFBase> clone() const override {
+    return std::make_shared<GroundSDF>(height_);
+  }
+
   void rotate_z(const double angle) override {
     throw std::runtime_error("GroundSDF does not support rotation");
   }
@@ -262,6 +279,10 @@ struct BoxSDF : public TransformableSDFBase {
   }
 
   const Eigen::Vector3d& get_width() const { return width_; }
+
+  std::shared_ptr<SDFBase> clone() const override {
+    return std::make_shared<BoxSDF>(width_, pose);
+  }
 
   double evaluate(const Point& p) const override {
     Eigen::Vector3d sdists;
@@ -392,6 +413,10 @@ struct CylinderSDF : public TransformableSDFBase {
     ub = world_vertices.rowwise().maxCoeff();
   }
 
+  std::shared_ptr<SDFBase> clone() const override {
+    return std::make_shared<CylinderSDF>(r_cylinder_, height_, pose);
+  }
+
   double evaluate(const Point& p) const override {
     double z_signed_dist, xdot_abs, ydot_abs;
     if (pose.z_axis_aligned_) {
@@ -480,6 +505,10 @@ struct SphereSDF : public TransformableSDFBase {
            (r_sphere_ + radius) * (r_sphere_ + radius);
   }
 
+  std::shared_ptr<SDFBase> clone() const override {
+    return std::make_shared<SphereSDF>(r_sphere_, pose);
+  }
+
  private:
   double r_sphere_;
   double rsq_sphere_;
@@ -507,6 +536,10 @@ struct CloudSDF : public PrimitiveSDFBase {
   }
 
   void translate(const Eigen::Vector3d& translation) override {
+    throw std::runtime_error("TODO: Not implemented yet");
+  }
+
+  std::shared_ptr<SDFBase> clone() const override {
     throw std::runtime_error("TODO: Not implemented yet");
   }
 

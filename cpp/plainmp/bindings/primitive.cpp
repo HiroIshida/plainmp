@@ -41,6 +41,7 @@ void bind_primitive_submodule(py::module& m) {
   py::class_<UnionSDF, UnionSDF::Ptr, SDFBase>(m_psdf, "UnionSDF",
                                                py::module_local())
       .def(py::init<std::vector<SDFBase::Ptr>>())
+      .def("clone", &UnionSDF::clone)
       .def("translate", &UnionSDF::translate)
       .def("rotate_z", &UnionSDF::rotate_z)
       .def("evaluate_batch", &UnionSDF::evaluate_batch)
@@ -49,6 +50,7 @@ void bind_primitive_submodule(py::module& m) {
   py::class_<GroundSDF, GroundSDF::Ptr, PrimitiveSDFBase>(m_psdf, "GroundSDF",
                                                           py::module_local())
       .def(py::init<double>())
+      .def("clone", &GroundSDF::clone)
       .def("translate", &GroundSDF::translate)
       .def("rotate_z", &GroundSDF::rotate_z)
       .def("evaluate_batch", &GroundSDF::evaluate_batch)
@@ -57,6 +59,7 @@ void bind_primitive_submodule(py::module& m) {
   py::class_<BoxSDF, BoxSDF::Ptr, PrimitiveSDFBase>(m_psdf, "BoxSDF",
                                                     py::module_local())
       .def(py::init<const Eigen::Vector3d&, const Pose&>())
+      .def("clone", &BoxSDF::clone)
       .def("translate", &BoxSDF::translate)
       .def("rotate_z", &BoxSDF::rotate_z)
       .def("evaluate_batch", &BoxSDF::evaluate_batch)
@@ -65,6 +68,7 @@ void bind_primitive_submodule(py::module& m) {
   py::class_<CylinderSDF, CylinderSDF::Ptr, PrimitiveSDFBase>(
       m_psdf, "CylinderSDF", py::module_local())
       .def(py::init<double, double, const Pose&>())
+      .def("clone", &CylinderSDF::clone)
       .def("translate", &CylinderSDF::translate)
       .def("rotate_z", &CylinderSDF::rotate_z)
       .def("evaluate_batch", &CylinderSDF::evaluate_batch)
@@ -73,6 +77,7 @@ void bind_primitive_submodule(py::module& m) {
   py::class_<SphereSDF, SphereSDF::Ptr, PrimitiveSDFBase>(m_psdf, "SphereSDF",
                                                           py::module_local())
       .def(py::init<double, const Pose&>())
+      .def("clone", &SphereSDF::clone)
       .def("translate", &SphereSDF::translate)
       .def("rotate_z", &SphereSDF::rotate_z)
       .def("evaluate_batch", &SphereSDF::evaluate_batch)
@@ -82,6 +87,7 @@ void bind_primitive_submodule(py::module& m) {
   py::class_<CloudSDF, CloudSDF::Ptr, PrimitiveSDFBase>(m_psdf, "CloudSDF",
                                                         py::module_local())
       .def(py::init<std::vector<Eigen::Vector3d>&, double>())
+      .def("clone", &CloudSDF::clone)
       .def("translate", &CloudSDF::translate)
       .def("rotate_z", &CloudSDF::rotate_z)
       .def("evaluate_batch", &CloudSDF::evaluate_batch)

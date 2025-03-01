@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, TypeVar
 
 import numpy as np
 
@@ -31,7 +31,10 @@ class Pose:
         """
         ...
 
+_T = TypeVar("T")
+
 class SDFBase:
+    def clone(self: _T) -> _T: ...
     def translate(self, translation: np.ndarray) -> None:
         """Translate the SDF wrt world frame.
         Args:

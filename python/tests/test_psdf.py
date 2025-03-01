@@ -57,6 +57,35 @@ def test_pose_transform():
     np.testing.assert_allclose(p.rotation, rotmat_expected)
 
 
+def test_clone_sdf():
+    points = np.random.randn(300, 3) * 2
+
+    def is_same_sdf(sdf1, sdf2):
+        values1 = sdf1.evaluate_batch(points.T)
+        values2 = sdf2.evaluate_batch(points.T)
+        return np.allclose(values1, values2)
+
+    # single case
+    box_sdf = psdf.BoxSDF([1, 1, 1], psdf.Pose())
+    box_sdf2 = box_sdf.clone()
+    assert is_same_sdf(box_sdf, box_sdf2)
+    box_sdf2.translate(np.array([1.0, 2.0, 3.0]))
+    assert not is_same_sdf(box_sdf, box_sdf2)
+    np.testing.assert_allclose(box_sdf.pose.position, np.zeros(3))
+    np.testing.assert_allclose(box_sdf2.pose.position, np.array([1.0, 2.0, 3.0]))
+
+    # composite case
+    union_sdf = psdf.UnionSDF([box_sdf])
+    union_sdf2 = union_sdf.clone()
+    assert is_same_sdf(union_sdf, union_sdf2)
+    union_sdf2.translate(np.array([1.0, 2.0, 3.0]))
+    assert not is_same_sdf(union_sdf, union_sdf2)
+    np.testing.assert_allclose(box_sdf.pose.position, np.zeros(3))
+    union_sdf.translate(np.array([1.0, 2.0, 3.0]))
+    assert is_same_sdf(union_sdf, union_sdf2)
+    np.testing.assert_allclose(box_sdf.pose.position, np.array([1.0, 2.0, 3.0]))
+
+
 @pytest.mark.parametrize("sksdf", [BoxSDF([0.5, 0.3, 0.6]), CylinderSDF(0.7, 0.2), SphereSDF(0.5)])
 def test_consistency_with_skrobot(sksdf):
     for i in range(100):
@@ -77,7 +106,7 @@ def test_consistency_with_skrobot(sksdf):
             r = 0.0
         else:
             r = np.random.uniform(0, 0.3)
-        points = np.random.randn(10, 3)
+        points = np.random.randn(1000, 3)
         sk_outside = sksdf(points) > r
         outside = np.array([sdf.is_outside(p, r) for p in points])
         assert np.all(sk_outside == outside)
@@ -104,6 +133,11 @@ def test_consistency_with_skrobot(sksdf):
         cpp_values = sdf.evaluate_batch(points.transpose())
         np.abs(values - cpp_values)
         assert np.allclose(values, cpp_values)
+
+        # after clone
+        sdf_clone = sdf.clone()
+        cpp_values_clone = sdf_clone.evaluate_batch(points.transpose())
+        assert np.allclose(cpp_values, cpp_values_clone)
 
 
 def check_single_batch_consistency(cppsdf: psdf.SDFBase, points):
@@ -183,6 +217,25 @@ def test_union_sdf():
 
         check_single_batch_consistency(cppsdf, points)
         check_is_outside_consistency(cppsdf, points)
+
+        # after translation and rotation
+        trans = np.random.randn(3)
+        yaw = np.random.randn()
+        cppsdf.translate(trans)
+        cppsdf.rotate_z(yaw)
+
+        sdf1.translate(trans, wrt="world")
+        sdf1.rotate(yaw, "z", wrt="world")
+        sdf2.translate(trans, wrt="world")
+        sdf2.rotate(yaw, "z", wrt="world")
+        sk_dist = sksdf(points)
+        dist = cppsdf.evaluate_batch(points.T)
+        assert np.allclose(sk_dist, dist)
+
+        # after clone
+        cppsdf_clone = cppsdf.clone()
+        dist_clone = cppsdf_clone.evaluate_batch(points.T)
+        assert np.allclose(dist, dist_clone)
 
 
 def test_speed():
