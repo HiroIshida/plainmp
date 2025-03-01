@@ -3,7 +3,13 @@ from typing import Any, List
 import numpy as np
 
 class Pose:
-    def __init__(self, translation: np.ndarray, rotation: np.ndarray) -> None: ...
+    def __init__(self, translation: np.ndarray, rotation: np.ndarray) -> None:
+        """Create a new Pose.
+        Args:
+            translation: The (3,) translation vector. Defaults to [0, 0, 0].
+            rotation: The (3,) rotation vector. Defaults to identity.
+        """
+        ...
     @property
     def axis_aligned(self) -> bool: ...
     @property

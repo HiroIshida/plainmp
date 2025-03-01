@@ -18,7 +18,9 @@ namespace plainmp::bindings {
 void bind_primitive_submodule(py::module& m) {
   auto m_psdf = m.def_submodule("primitive_sdf");
   py::class_<Pose>(m_psdf, "Pose", py::module_local())
-      .def(py::init<const Eigen::Vector3d&, const Eigen::Matrix3d&>())
+      .def(py::init<const Eigen::Vector3d&, const Eigen::Matrix3d&>(),
+           py::arg("position") = Eigen::Vector3d::Zero(),
+           py::arg("rotation") = Eigen::Matrix3d::Identity())
       .def("__copy__", [](const Pose& self) { return Pose(self); })
       .def("__deepcopy__",
            [](const Pose& self, py::dict) { return Pose(self); })
