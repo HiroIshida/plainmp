@@ -73,6 +73,11 @@ class SDFBase:
         """
         ...
 
+
+class _HasPose:
+    @property
+    def pose(self) -> Pose: ...
+
 class UnionSDF(SDFBase):
     def __init__(self, sdf_list: List[SDFBase]) -> None: ...
 
@@ -83,13 +88,13 @@ class GroundSDF(PrimitiveSDFBase):
 
 class ClosedPrimitiveSDFBase(PrimitiveSDFBase): ...
 
-class BoxSDF(ClosedPrimitiveSDFBase):
+class BoxSDF(ClosedPrimitiveSDFBase, _HasPose):
     def __init__(self, size: np.ndarray, pose: Pose) -> None: ...
 
-class CylinderSDF(ClosedPrimitiveSDFBase):
+class CylinderSDF(ClosedPrimitiveSDFBase, _HasPose):
     def __init__(self, radius: float, height: float, pose: Pose) -> None: ...
 
-class SphereSDF(ClosedPrimitiveSDFBase):
+class SphereSDF(ClosedPrimitiveSDFBase, _HasPose):
     def __init__(self, radius: float, pose: Pose) -> None: ...
 
 class CloudSDF(PrimitiveSDFBase):

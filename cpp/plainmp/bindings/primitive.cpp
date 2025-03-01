@@ -64,7 +64,8 @@ void bind_primitive_submodule(py::module& m) {
       .def("rotate_z", &BoxSDF::rotate_z)
       .def("evaluate_batch", &BoxSDF::evaluate_batch)
       .def("evaluate", &BoxSDF::evaluate)
-      .def("is_outside", &BoxSDF::is_outside);
+      .def("is_outside", &BoxSDF::is_outside)
+      .def_readonly("pose", &BoxSDF::pose);
   py::class_<CylinderSDF, CylinderSDF::Ptr, PrimitiveSDFBase>(
       m_psdf, "CylinderSDF", py::module_local())
       .def(py::init<double, double, const Pose&>())
@@ -73,7 +74,8 @@ void bind_primitive_submodule(py::module& m) {
       .def("rotate_z", &CylinderSDF::rotate_z)
       .def("evaluate_batch", &CylinderSDF::evaluate_batch)
       .def("evaluate", &CylinderSDF::evaluate)
-      .def("is_outside", &CylinderSDF::is_outside);
+      .def("is_outside", &CylinderSDF::is_outside)
+      .def_readonly("pose", &CylinderSDF::pose);
   py::class_<SphereSDF, SphereSDF::Ptr, PrimitiveSDFBase>(m_psdf, "SphereSDF",
                                                           py::module_local())
       .def(py::init<double, const Pose&>())
@@ -82,7 +84,8 @@ void bind_primitive_submodule(py::module& m) {
       .def("rotate_z", &SphereSDF::rotate_z)
       .def("evaluate_batch", &SphereSDF::evaluate_batch)
       .def("evaluate", &SphereSDF::evaluate)
-      .def("is_outside", &SphereSDF::is_outside);
+      .def("is_outside", &SphereSDF::is_outside)
+      .def_readonly("pose", &SphereSDF::pose);
 
   py::class_<CloudSDF, CloudSDF::Ptr, PrimitiveSDFBase>(m_psdf, "CloudSDF",
                                                         py::module_local())
