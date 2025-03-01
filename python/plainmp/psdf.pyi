@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, TypeVar
 
 import numpy as np
 
@@ -18,10 +18,35 @@ class Pose:
     def position(self) -> np.ndarray: ...
     @property
     def rotation(self) -> np.ndarray: ...
-    def translate(self, translation: np.ndarray) -> None: ...
-    def rotate_z(self, angle: float) -> None: ...
+    def translate(self, translation: np.ndarray) -> None:
+        """Translate the pose wrt world frame.
+        Args:
+            translation: The (3,) translation vector.
+        """
+        ...
+    def rotate_z(self, angle: float) -> None:
+        """Rotate the pose wrt world frame.
+        Args:
+            angle: The angle to rotate by.
+        """
+        ...
+
+_T = TypeVar("T")
 
 class SDFBase:
+    def clone(self: _T) -> _T: ...
+    def translate(self, translation: np.ndarray) -> None:
+        """Translate the SDF wrt world frame.
+        Args:
+            translation: The (3,) translation vector.
+        """
+        ...
+    def rotate_z(self, angle: float) -> None:
+        """Rotate the SDF wrt world frame.
+        Args:
+            angle: The angle to rotate by.
+        """
+        ...
     def evaluate(self, point: np.ndarray) -> float:
         """Evaluate the SDF at the given points.
         Args:
@@ -48,8 +73,14 @@ class SDFBase:
         """
         ...
 
+class _HasPose:
+    @property
+    def pose(self) -> Pose: ...
+
 class UnionSDF(SDFBase):
     def __init__(self, sdf_list: List[SDFBase]) -> None: ...
+    def merge(self, other: UnionSDF, clone: bool = False) -> None: ...
+    def add(self, sdf: SDFBase, clone: bool = False) -> None: ...
 
 class PrimitiveSDFBase(SDFBase): ...
 
@@ -58,13 +89,13 @@ class GroundSDF(PrimitiveSDFBase):
 
 class ClosedPrimitiveSDFBase(PrimitiveSDFBase): ...
 
-class BoxSDF(ClosedPrimitiveSDFBase):
+class BoxSDF(ClosedPrimitiveSDFBase, _HasPose):
     def __init__(self, size: np.ndarray, pose: Pose) -> None: ...
 
-class CylinderSDF(ClosedPrimitiveSDFBase):
+class CylinderSDF(ClosedPrimitiveSDFBase, _HasPose):
     def __init__(self, radius: float, height: float, pose: Pose) -> None: ...
 
-class SphereSDF(ClosedPrimitiveSDFBase):
+class SphereSDF(ClosedPrimitiveSDFBase, _HasPose):
     def __init__(self, radius: float, pose: Pose) -> None: ...
 
 class CloudSDF(PrimitiveSDFBase):
