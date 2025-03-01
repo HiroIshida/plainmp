@@ -30,7 +30,7 @@ using Values = Eigen::VectorXd;
 struct Pose {
   Pose(const Eigen::Vector3d& position, const Eigen::Matrix3d& rotation)
       : position_(position), rot_(rotation), rot_inv_(rotation.inverse()) {
-    update_alignement_flags_();
+    update_alignment_flags_();
   }
 
   Points transform_points(const Points& p) const {
@@ -49,12 +49,12 @@ struct Pose {
     rot_z << c, -s, 0, s, c, 0, 0, 0, 1;
     rot_ = rot_z * rot_;
     rot_inv_ = rot_.inverse();
-    update_alignement_flags_();
+    update_alignment_flags_();
   }
 
   Pose inverse() const { return Pose(-rot_ * position_, rot_inv_); }
 
-  void update_alignement_flags_() {
+  void update_alignment_flags_() {
     axis_aligned_ = rot_.isApprox(Eigen::Matrix3d::Identity());
     if (axis_aligned_) {
       z_axis_aligned_ = true;

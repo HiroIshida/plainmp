@@ -7,7 +7,7 @@ class Pose:
         """Create a new Pose.
         Args:
             translation: The (3,) translation vector. Defaults to [0, 0, 0].
-            rotation: The (3,) rotation vector. Defaults to identity.
+            rotation: The (3, 3) rotation matrix. Defaults to identity.
         """
         ...
     @property
