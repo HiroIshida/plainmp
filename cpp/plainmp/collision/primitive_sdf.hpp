@@ -30,16 +30,7 @@ using Values = Eigen::VectorXd;
 struct Pose {
   Pose(const Eigen::Vector3d& position, const Eigen::Matrix3d& rotation)
       : position_(position), rot_(rotation), rot_inv_(rotation.inverse()) {
-    axis_aligned_ = rot_.isApprox(Eigen::Matrix3d::Identity());
-    if (axis_aligned_) {
-      z_axis_aligned_ = true;
-    } else {
-      double tol = 1e-6;
-      z_axis_aligned_ =
-          std::abs(rot_(2, 2) - 1.0) < tol && std::abs(rot_(0, 2)) < tol &&
-          std::abs(rot_(1, 2)) < tol && std::abs(rot_(2, 0)) < tol &&
-          std::abs(rot_(2, 1)) < tol;
-    }
+    update_alignement_flags_();
   }
 
   Points transform_points(const Points& p) const {
@@ -47,8 +38,34 @@ struct Pose {
   }
 
   void set_position(const Eigen::Vector3d& position) { position_ = position; }
+  void translate(const Eigen::Vector3d& translation) {
+    position_ += translation;
+  }
+
+  void rotate_z(const double angle) {
+    double c = std::cos(angle);
+    double s = std::sin(angle);
+    Eigen::Matrix3d rot_z;
+    rot_z << c, -s, 0, s, c, 0, 0, 0, 1;
+    rot_ = rot_z * rot_;
+    rot_inv_ = rot_.inverse();
+    update_alignement_flags_();
+  }
 
   Pose inverse() const { return Pose(-rot_ * position_, rot_inv_); }
+
+  void update_alignement_flags_() {
+    axis_aligned_ = rot_.isApprox(Eigen::Matrix3d::Identity());
+    if (axis_aligned_) {
+      z_axis_aligned_ = true;
+    } else {
+      double tol = 1e-6;
+      z_axis_aligned_ =
+          (std::abs(rot_(2, 2) - 1.0) < tol) && (std::abs(rot_(0, 2)) < tol) &&
+          (std::abs(rot_(1, 2)) < tol) && (std::abs(rot_(2, 0)) < tol) &&
+          (std::abs(rot_(2, 1)) < tol);
+    }
+  }
 
   Eigen::Vector3d position_;
   Eigen::Matrix3d rot_;

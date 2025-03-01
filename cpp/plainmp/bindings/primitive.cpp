@@ -19,8 +19,12 @@ void bind_primitive_submodule(py::module& m) {
   auto m_psdf = m.def_submodule("primitive_sdf");
   py::class_<Pose>(m_psdf, "Pose", py::module_local())
       .def(py::init<const Eigen::Vector3d&, const Eigen::Matrix3d&>())
+      .def("translate", &Pose::translate)
+      .def("rotate_z", &Pose::rotate_z)
       .def_readonly("axis_aligned", &Pose::axis_aligned_)
-      .def_readonly("z_axis_aligned", &Pose::z_axis_aligned_);
+      .def_readonly("z_axis_aligned", &Pose::z_axis_aligned_)
+      .def_readonly("position", &Pose::position_)
+      .def_readonly("rotation", &Pose::rot_);
   py::class_<SDFBase, SDFBase::Ptr>(
       m_psdf, "SDFBase",
       py::module_local());  // user is not supposed to instantiate this class.

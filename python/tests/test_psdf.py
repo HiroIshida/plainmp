@@ -38,6 +38,15 @@ def test_pose_axis_align():
     assert not p3.z_axis_aligned
 
 
+def test_pose_transform():
+    p = psdf.Pose(np.zeros(3), np.eye(3))
+    p.translate(np.array([1.0, 2.0, 3.0]))
+    p.rotate_z(0.3)
+    rotmat_expected = rpy_matrix(0.3, 0.0, 0.0)
+    np.testing.assert_allclose(p.position, np.array([1.0, 2.0, 3.0]))
+    np.testing.assert_allclose(p.rotation, rotmat_expected)
+
+
 @pytest.mark.parametrize("sksdf", [BoxSDF([0.5, 0.3, 0.6]), CylinderSDF(0.7, 0.2), SphereSDF(0.5)])
 def test_consistency_with_skrobot(sksdf):
     for i in range(100):
