@@ -42,6 +42,9 @@ void bind_primitive_submodule(py::module& m) {
                                                py::module_local())
       .def(py::init<std::vector<SDFBase::Ptr>>())
       .def("clone", &UnionSDF::clone)
+      .def("merge", &UnionSDF::merge, py::arg("other"),
+           py::arg("clone") = false)
+      .def("add", &UnionSDF::add, py::arg("sdf"), py::arg("clone") = false)
       .def("translate", &UnionSDF::translate)
       .def("rotate_z", &UnionSDF::rotate_z)
       .def("evaluate_batch", &UnionSDF::evaluate_batch)

@@ -112,6 +112,26 @@ struct UnionSDF : public SDFBase {
     return std::make_shared<UnionSDF>(*this);
   }
 
+  void merge(const UnionSDF& other, bool clone = false) {
+    if (clone) {
+      for (const auto& sdf : other.sdfs_) {
+        sdfs_.push_back(sdf->clone());
+      }
+    } else {
+      for (const auto& sdf : other.sdfs_) {
+        sdfs_.push_back(sdf);
+      }
+    }
+  }
+
+  void add(const SDFBase::Ptr& sdf, bool clone = false) {
+    if (clone) {
+      sdfs_.push_back(sdf->clone());
+    } else {
+      sdfs_.push_back(sdf);
+    }
+  }
+
   void rotate_z(const double angle) override {
     for (auto& sdf : sdfs_) {
       sdf->rotate_z(angle);
