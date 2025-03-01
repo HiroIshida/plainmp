@@ -18,10 +18,32 @@ class Pose:
     def position(self) -> np.ndarray: ...
     @property
     def rotation(self) -> np.ndarray: ...
-    def translate(self, translation: np.ndarray) -> None: ...
-    def rotate_z(self, angle: float) -> None: ...
+    def translate(self, translation: np.ndarray) -> None:
+        """Translate the pose wrt world frame.
+        Args:
+            translation: The (3,) translation vector.
+        """
+        ...
+    def rotate_z(self, angle: float) -> None:
+        """Rotate the pose wrt world frame.
+        Args:
+            angle: The angle to rotate by.
+        """
+        ...
 
 class SDFBase:
+    def translate(self, translation: np.ndarray) -> None:
+        """Translate the SDF wrt world frame.
+        Args:
+            translation: The (3,) translation vector.
+        """
+        ...
+    def rotate_z(self, angle: float) -> None:
+        """Rotate the SDF wrt world frame.
+        Args:
+            angle: The angle to rotate by.
+        """
+        ...
     def evaluate(self, point: np.ndarray) -> float:
         """Evaluate the SDF at the given points.
         Args:

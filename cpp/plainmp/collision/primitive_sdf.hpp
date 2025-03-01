@@ -89,6 +89,8 @@ class SDFBase {
     }
     return vals;
   }
+  virtual void rotate_z(const double angle) = 0;
+  virtual void translate(const Eigen::Vector3d& translation) = 0;
   virtual double evaluate(const Point& p) const = 0;
   virtual bool is_outside(const Point& p, double radius) const = 0;
 };
@@ -97,6 +99,18 @@ struct UnionSDF : public SDFBase {
   using Ptr = std::shared_ptr<UnionSDF>;
   SDFType get_type() const override { return SDFType::UNION; }
   UnionSDF(std::vector<SDFBase::Ptr> sdfs) : sdfs_(sdfs) {}
+
+  void rotate_z(const double angle) override {
+    for (auto& sdf : sdfs_) {
+      sdf->rotate_z(angle);
+    }
+  }
+
+  void translate(const Eigen::Vector3d& translation) override {
+    for (auto& sdf : sdfs_) {
+      sdf->translate(translation);
+    }
+  }
 
   Values evaluate_batch(const Points& p) const override {
     Values vals = sdfs_[0]->evaluate_batch(p);
@@ -127,7 +141,6 @@ struct UnionSDF : public SDFBase {
 };
 
 struct PrimitiveSDFBase : public SDFBase {
- public:
   using Ptr = std::shared_ptr<PrimitiveSDFBase>;
 
   // this filtering is quite fast as it is not virtual function
@@ -182,6 +195,14 @@ struct GroundSDF : public PrimitiveSDFBase {
     ub = Eigen::Vector3d(std::numeric_limits<double>::infinity(),
                          std::numeric_limits<double>::infinity(), 0.0);
   }
+  void rotate_z(const double angle) override {
+    throw std::runtime_error("GroundSDF does not support rotation");
+  }
+
+  void translate(const Eigen::Vector3d& translation) override {
+    throw std::runtime_error("GroundSDF does not support translation");
+  }
+
   Values evaluate_batch(const Points& p) const override {
     return p.row(2).array() + height_;
   }
@@ -194,12 +215,25 @@ struct GroundSDF : public PrimitiveSDFBase {
   double height_;
 };
 
-struct BoxSDF : public PrimitiveSDFBase {
+struct TransformableSDFBase : public PrimitiveSDFBase {
+  using Ptr = std::shared_ptr<TransformableSDFBase>;
+  TransformableSDFBase(const Pose& pose) : pose(pose) {}
+
+  void rotate_z(const double angle) override { pose.rotate_z(angle); }
+
+  void translate(const Eigen::Vector3d& translation) override {
+    pose.translate(translation);
+  }
+
+  Pose pose;
+};
+
+struct BoxSDF : public TransformableSDFBase {
   // should implement
   using Ptr = std::shared_ptr<BoxSDF>;
   SDFType get_type() const override { return SDFType::BOX; }
   BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
-      : width_(width), half_width_(0.5 * width), pose_(pose) {
+      : TransformableSDFBase(pose), width_(width), half_width_(0.5 * width) {
     Eigen::Matrix3Xd local_vertices(3, 8);
     local_vertices.col(0) =
         Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
@@ -231,10 +265,10 @@ struct BoxSDF : public PrimitiveSDFBase {
 
   double evaluate(const Point& p) const override {
     Eigen::Vector3d sdists;
-    if (pose_.axis_aligned_) {
-      sdists = (p - pose_.position_).array().abs() - half_width_.array();
+    if (pose.axis_aligned_) {
+      sdists = (p - pose.position_).array().abs() - half_width_.array();
     } else {
-      sdists = (pose_.rot_inv_ * (p - pose_.position_)).array().abs() -
+      sdists = (pose.rot_inv_ * (p - pose.position_)).array().abs() -
                half_width_.array();
     }
     Eigen::Vector3d m = sdists.array().max(0.0);
@@ -248,7 +282,7 @@ struct BoxSDF : public PrimitiveSDFBase {
     // current implementation. However, the current implementation is way
     // faster than this code.
     /* >>>>>>>
-    auto p_local = pose_.rot_.transpose() * (p - pose_.position_);
+    auto p_local = pose.rot_.transpose() * (p - pose.position_);
     Eigen::Vector3d q = p_local.cwiseAbs() - half_width_;
     if (q.maxCoeff() < -radius) {
       return false;  // Completely inside
@@ -258,49 +292,44 @@ struct BoxSDF : public PrimitiveSDFBase {
     <<<<<<< */
 
     double x_signed_dist, y_signed_dist, z_signed_dist;
-    if (pose_.axis_aligned_) {
-      x_signed_dist = abs(p(0) - pose_.position_(0)) - half_width_(0);
+    if (pose.axis_aligned_) {
+      x_signed_dist = abs(p(0) - pose.position_(0)) - half_width_(0);
       if (x_signed_dist > radius) {
         return true;
       }
-      y_signed_dist = abs(p(1) - pose_.position_(1)) - half_width_(1);
+      y_signed_dist = abs(p(1) - pose.position_(1)) - half_width_(1);
       if (y_signed_dist > radius) {
         return true;
       }
-      z_signed_dist = abs(p(2) - pose_.position_(2)) - half_width_(2);
+      z_signed_dist = abs(p(2) - pose.position_(2)) - half_width_(2);
       if (z_signed_dist > radius) {
         return true;
       }
-    } else if (pose_.z_axis_aligned_) {
-      z_signed_dist = abs(p(2) - pose_.position_(2)) - half_width_(2);
+    } else if (pose.z_axis_aligned_) {
+      z_signed_dist = abs(p(2) - pose.position_(2)) - half_width_(2);
       if (z_signed_dist > radius) {
         return true;
       }
-      auto p_from_center = p - pose_.position_;
-      x_signed_dist =
-          abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
+      auto p_from_center = p - pose.position_;
+      x_signed_dist = abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
       if (x_signed_dist > radius) {
         return true;
       }
-      y_signed_dist =
-          abs(p_from_center.dot(pose_.rot_.col(1))) - half_width_(1);
+      y_signed_dist = abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
       if (y_signed_dist > radius) {
         return true;
       }
     } else {
-      auto p_from_center = p - pose_.position_;
-      x_signed_dist =
-          abs(p_from_center.dot(pose_.rot_.col(0))) - half_width_(0);
+      auto p_from_center = p - pose.position_;
+      x_signed_dist = abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
       if (x_signed_dist > radius) {
         return true;
       }
-      y_signed_dist =
-          abs(p_from_center.dot(pose_.rot_.col(1))) - half_width_(1);
+      y_signed_dist = abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
       if (y_signed_dist > radius) {
         return true;
       }
-      z_signed_dist =
-          abs(p_from_center.dot(pose_.rot_.col(2))) - half_width_(2);
+      z_signed_dist = abs(p_from_center.dot(pose.rot_.col(2))) - half_width_(2);
       if (z_signed_dist > radius) {
         return true;
       }
@@ -338,18 +367,17 @@ struct BoxSDF : public PrimitiveSDFBase {
  private:
   Eigen::Vector3d width_;
   Eigen::Vector3d half_width_;
-  Pose pose_;
 };
 
-struct CylinderSDF : public PrimitiveSDFBase {
+struct CylinderSDF : public TransformableSDFBase {
   using Ptr = std::shared_ptr<CylinderSDF>;
   SDFType get_type() const override { return SDFType::CYLINDER; }
   CylinderSDF(double radius, double height, const Pose& pose)
-      : r_cylinder_(radius),
+      : TransformableSDFBase(pose),
+        r_cylinder_(radius),
         rsq_cylinder_(radius * radius),
         height_(height),
-        half_height_(0.5 * height),
-        pose_(pose) {
+        half_height_(0.5 * height) {
     Eigen::Matrix3Xd local_vertices(3, 8);
     local_vertices.col(0) = Eigen::Vector3d(-radius, -radius, -height * 0.5);
     local_vertices.col(1) = Eigen::Vector3d(radius, -radius, -height * 0.5);
@@ -366,15 +394,15 @@ struct CylinderSDF : public PrimitiveSDFBase {
 
   double evaluate(const Point& p) const override {
     double z_signed_dist, xdot_abs, ydot_abs;
-    if (pose_.z_axis_aligned_) {
-      z_signed_dist = abs(p(2) - pose_.position_(2)) - half_height_;
-      xdot_abs = abs(p(0) - pose_.position_(0));
-      ydot_abs = abs(p(1) - pose_.position_(1));
+    if (pose.z_axis_aligned_) {
+      z_signed_dist = abs(p(2) - pose.position_(2)) - half_height_;
+      xdot_abs = abs(p(0) - pose.position_(0));
+      ydot_abs = abs(p(1) - pose.position_(1));
     } else {
-      auto p_from_center = p - pose_.position_;
-      z_signed_dist = abs(p_from_center.dot(pose_.rot_.col(2))) - half_height_;
-      xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
-      ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
+      auto p_from_center = p - pose.position_;
+      z_signed_dist = abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
+      xdot_abs = abs(p_from_center.dot(pose.rot_.col(0)));
+      ydot_abs = abs(p_from_center.dot(pose.rot_.col(1)));
     }
     double r_signed_dist =
         sqrt(xdot_abs * xdot_abs + ydot_abs * ydot_abs) - r_cylinder_;
@@ -386,21 +414,21 @@ struct CylinderSDF : public PrimitiveSDFBase {
 
   bool is_outside(const Point& p, double radius) const override {
     double z_signed_dist, xdot_abs, ydot_abs;
-    if (pose_.z_axis_aligned_) {
-      z_signed_dist = abs(p(2) - pose_.position_(2)) - half_height_;
+    if (pose.z_axis_aligned_) {
+      z_signed_dist = abs(p(2) - pose.position_(2)) - half_height_;
       if (z_signed_dist > radius) {
         return true;
       }
-      xdot_abs = abs(p(0) - pose_.position_(0));
-      ydot_abs = abs(p(1) - pose_.position_(1));
+      xdot_abs = abs(p(0) - pose.position_(0));
+      ydot_abs = abs(p(1) - pose.position_(1));
     } else {
-      auto p_from_center = p - pose_.position_;
-      z_signed_dist = abs(p_from_center.dot(pose_.rot_.col(2))) - half_height_;
+      auto p_from_center = p - pose.position_;
+      z_signed_dist = abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
       if (z_signed_dist > radius) {
         return true;
       }
-      xdot_abs = abs(p_from_center.dot(pose_.rot_.col(0)));
-      ydot_abs = abs(p_from_center.dot(pose_.rot_.col(1)));
+      xdot_abs = abs(p_from_center.dot(pose.rot_.col(0)));
+      ydot_abs = abs(p_from_center.dot(pose.rot_.col(1)));
     }
     double dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
     if (radius < 1e-6) {
@@ -425,36 +453,36 @@ struct CylinderSDF : public PrimitiveSDFBase {
   double rsq_cylinder_;
   double height_;
   double half_height_;
-  Pose pose_;
 };
 
-struct SphereSDF : public PrimitiveSDFBase {
+struct SphereSDF : public TransformableSDFBase {
   using Ptr = std::shared_ptr<SphereSDF>;
   SDFType get_type() const override { return SDFType::SPHERE; }
   SphereSDF(double radius, const Pose& pose)
-      : r_sphere_(radius), rsq_sphere_(radius * radius), pose_(pose) {
+      : TransformableSDFBase(pose),
+        r_sphere_(radius),
+        rsq_sphere_(radius * radius) {
     lb = pose.position_ - Eigen::Vector3d(radius, radius, radius);
     ub = pose.position_ + Eigen::Vector3d(radius, radius, radius);
   }
 
   double evaluate(const Point& p) const override {
-    auto p_from_center = p - pose_.position_;
+    auto p_from_center = p - pose.position_;
     double dist = p_from_center.norm() - r_sphere_;
     return dist;
   }
 
   bool is_outside(const Point& p, double radius) const override {
     if (radius < 1e-6) {
-      return (p - pose_.position_).squaredNorm() > rsq_sphere_;
+      return (p - pose.position_).squaredNorm() > rsq_sphere_;
     }
-    return (p - pose_.position_).squaredNorm() >
+    return (p - pose.position_).squaredNorm() >
            (r_sphere_ + radius) * (r_sphere_ + radius);
   }
 
  private:
   double r_sphere_;
   double rsq_sphere_;
-  Pose pose_;
 };
 
 struct CloudSDF : public PrimitiveSDFBase {
@@ -472,6 +500,14 @@ struct CloudSDF : public PrimitiveSDFBase {
     }
     lb.array() -= radius;
     ub.array() += radius;
+  }
+
+  void rotate_z(const double angle) override {
+    throw std::runtime_error("TODO: Not implemented yet");
+  }
+
+  void translate(const Eigen::Vector3d& translation) override {
+    throw std::runtime_error("TODO: Not implemented yet");
   }
 
   inline double evaluate(const Point& p) const override {

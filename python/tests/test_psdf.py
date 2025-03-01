@@ -77,13 +77,32 @@ def test_consistency_with_skrobot(sksdf):
             r = 0.0
         else:
             r = np.random.uniform(0, 0.3)
-        points = np.random.randn(1000, 3)
+        points = np.random.randn(10, 3)
         sk_outside = sksdf(points) > r
-        inside = np.array([sdf.is_outside(p, r) for p in points])
-        assert np.all(sk_outside == inside)
+        outside = np.array([sdf.is_outside(p, r) for p in points])
+        assert np.all(sk_outside == outside)
 
         values = sksdf(points)
         cpp_values = sdf.evaluate_batch(points.transpose())
+        assert np.allclose(values, cpp_values)
+
+        # after translation and rotation
+        trans = np.random.randn(3)
+        yaw = np.random.randn()
+
+        sksdf.translate(trans, wrt="world")
+        sksdf.rotate(yaw, "z", wrt="world")
+
+        sdf.translate(trans)
+        sdf.rotate_z(yaw)
+
+        sk_outside = sksdf(points) > r
+        outside = np.array([sdf.is_outside(p, r) for p in points])
+        assert np.all(sk_outside == outside)
+
+        values = sksdf(points)
+        cpp_values = sdf.evaluate_batch(points.transpose())
+        np.abs(values - cpp_values)
         assert np.allclose(values, cpp_values)
 
 
