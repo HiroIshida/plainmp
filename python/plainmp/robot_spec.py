@@ -40,6 +40,7 @@ _loaded_urdf_models: Dict[str, URDF] = {}
 _loaded_yamls: Dict[str, Dict] = {}  # loading yaml is quite slow
 N_MAX_CACHE = 200
 _loaded_kin: "OrderedDict[str, KinematicModel]" = OrderedDict()
+_created_collision_csts: Dict[Tuple[str, bool], SphereCollisionCst] = {}
 
 
 def load_urdf_model_using_cache(file_path: Path, with_mesh: bool = False, deepcopy: bool = True):
@@ -332,8 +333,13 @@ class RobotSpec(ABC):
             self_collision: If True, self collision is considered
             attachement: Extra attachment specs to be considered
         """
-        sphere_specs = self.parse_sphere_specs()
 
+        key = (self.uuid, self_collision)
+        if len(attachements) == 0:  # caching is supported only if attachements are not given
+            if key in _created_collision_csts:
+                return _created_collision_csts[key]
+
+        sphere_specs = self.parse_sphere_specs()
         if len(attachements) > 0:  # merge the attachements
             for att in attachements:
                 parent_link = att.parent_link_name
@@ -372,6 +378,8 @@ class RobotSpec(ABC):
             self_collision_pairs,
             robot_anchor_sdf,
         )
+        if len(attachements) == 0:
+            _created_collision_csts[key] = cst
         return cst
 
     def create_config_point_const(self, q: np.ndarray) -> ConfigPointCst:
