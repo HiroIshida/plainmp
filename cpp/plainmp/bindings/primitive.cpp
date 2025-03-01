@@ -19,6 +19,9 @@ void bind_primitive_submodule(py::module& m) {
   auto m_psdf = m.def_submodule("primitive_sdf");
   py::class_<Pose>(m_psdf, "Pose", py::module_local())
       .def(py::init<const Eigen::Vector3d&, const Eigen::Matrix3d&>())
+      .def("__copy__", [](const Pose& self) { return Pose(self); })
+      .def("__deepcopy__",
+           [](const Pose& self, py::dict) { return Pose(self); })
       .def("translate", &Pose::translate)
       .def("rotate_z", &Pose::rotate_z)
       .def_readonly("axis_aligned", &Pose::axis_aligned_)

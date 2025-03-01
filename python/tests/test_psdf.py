@@ -1,3 +1,4 @@
+import copy
 import time
 
 import numpy as np
@@ -36,6 +37,15 @@ def test_pose_axis_align():
     p3 = psdf.Pose(trans, rpy_matrix(0.3, 0.3, 0.3))
     assert not p3.axis_aligned
     assert not p3.z_axis_aligned
+
+
+def test_copy_pose():
+    for copy_method in [copy.copy, copy.deepcopy]:
+        p1 = psdf.Pose(np.zeros(3), np.eye(3))
+        p2 = copy_method(p1)
+        p2.translate(np.array([1.0, 2.0, 3.0]))
+        np.testing.assert_allclose(p1.position, np.zeros(3))
+        np.testing.assert_allclose(p2.position, np.array([1.0, 2.0, 3.0]))
 
 
 def test_pose_transform():
