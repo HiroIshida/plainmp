@@ -15,6 +15,7 @@ class Problem:
     optimization-based planners.
     """
 
+    # core specification
     start: np.ndarray
     lb: np.ndarray
     ub: np.ndarray
@@ -23,9 +24,13 @@ class Problem:
     global_eq_const: Optional[EqConstraintBase]
     resolution: Union[float, np.ndarray]
     validator_type: Literal["euclidean", "box"] = "box"
-    goal_ineq_const: Optional[
-        IneqConstraintBase
-    ] = None  # experimental (not supported by all planners)
+
+    # experimental features (not supported by all planners)
+    goal_ineq_const: Optional[IneqConstraintBase] = None
+    goal_lb: Optional[
+        np.ndarray
+    ] = None  # lb for goal (useful for ensuring final state manipulatability)
+    goal_ub: Optional[np.ndarray] = None  # ub for goal
 
     def __post_init__(self):
         # In current implementation (but maybe extended in the future)

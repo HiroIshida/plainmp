@@ -85,7 +85,7 @@ class OMPLSolver:
         # so we set...
         config = IKConfig(timeout=self.config.timeout)
 
-        # create a composite constraint
+        # determine the inequality constraint
         if problem.goal_ineq_const is None and problem.global_ineq_const is None:
             ineq_const = None
         elif problem.goal_ineq_const is None:
@@ -95,14 +95,18 @@ class OMPLSolver:
         else:
             ineq_const = IneqCompositeCst([problem.goal_ineq_const, problem.global_ineq_const])
 
+        # determine bounds
+        lb = problem.lb if problem.goal_lb is None else problem.goal_lb
+        ub = problem.ub if problem.goal_ub is None else problem.goal_ub
+
         if guess is not None:
             # If guess is provided, use the last element of the trajectory as the initial guess
             q_guess = guess.numpy()[-1]
             ret = solve_ik(
                 problem.goal_const,
                 ineq_const,
-                problem.lb,
-                problem.ub,
+                lb,
+                ub,
                 q_seed=q_guess,
                 max_trial=self.config.n_max_ik_trial,
                 config=config,
@@ -112,8 +116,8 @@ class OMPLSolver:
             ret = solve_ik(
                 problem.goal_const,
                 ineq_const,
-                problem.lb,
-                problem.ub,
+                lb,
+                ub,
                 max_trial=self.config.n_max_ik_trial,
                 config=config,
             )
