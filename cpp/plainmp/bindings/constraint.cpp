@@ -15,6 +15,7 @@
 #include "plainmp/constraints/primitive_config_point.hpp"
 #include "plainmp/constraints/primitive_fixed_zaxis.hpp"
 #include "plainmp/constraints/primitive_link_pose.hpp"
+#include "plainmp/constraints/primitive_link_position_bound.hpp"
 #include "plainmp/constraints/primitive_relative_pose.hpp"
 #include "plainmp/constraints/primitive_sphere_collision.hpp"
 #include "plainmp/constraints/sequential_constraint.hpp"
@@ -62,7 +63,7 @@ void bind_constraint_submodule(py::module& m) {
       .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
                     const std::vector<std::string>&, BaseType,
                     const std::string&>())
-      .def("pdate_kintree", &FixedZAxisCst::update_kintree)
+      .def("update_kintree", &FixedZAxisCst::update_kintree)
       .def("evaluate", &FixedZAxisCst::evaluate);
   py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
       .def(py::init<const std::string&, const Eigen::Matrix3Xd&,
@@ -100,6 +101,15 @@ void bind_constraint_submodule(py::module& m) {
       .def("update_kintree", &ComInPolytopeCst::update_kintree)
       .def("is_valid", &ComInPolytopeCst::is_valid)
       .def("evaluate", &ComInPolytopeCst::evaluate);
+  py::class_<LinkPositionBoundCst, LinkPositionBoundCst::Ptr,
+             IneqConstraintBase>(cst_m, "LinkPositionBoundCst")
+      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+                    const std::vector<std::string>&, BaseType,
+                    const std::string&, size_t, const std::optional<double>&,
+                    const std::optional<double>&>())
+      .def("update_kintree", &LinkPositionBoundCst::update_kintree)
+      .def("is_valid", &LinkPositionBoundCst::is_valid)
+      .def("evaluate", &LinkPositionBoundCst::evaluate);
   py::class_<EqCompositeCst, EqCompositeCst::Ptr>(cst_m, "EqCompositeCst")
       .def(py::init<std::vector<EqConstraintBase::Ptr>>())
       .def("update_kintree", &EqCompositeCst::update_kintree)

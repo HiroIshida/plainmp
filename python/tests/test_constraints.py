@@ -192,6 +192,48 @@ def test_com_in_polytope_constraint(base_type, with_force: bool):
         check_eval_is_valid_consistency(cst, dof)
 
 
+@pytest.mark.parametrize("base_type", base_types)
+@pytest.mark.parametrize("lower_bound", [None, 0.0])
+@pytest.mark.parametrize("upper_bound", [None, 1.0])
+def test_link_position_bound_constraint(base_type: BaseType, lower_bound, upper_bound):
+    if lower_bound is None and upper_bound is None:
+        return
+    fs = FetchSpec(base_type=base_type)
+    cst = fs.create_position_bound_const("gripper_link", 2, lower_bound, upper_bound)
+    dof = base_type_to_dof(base_type)
+    if base_type != BaseType.FIXED:
+        check_jacobian(cst, dof, std=0.1)
+        check_eval_is_valid_consistency(cst, dof, std=0.1)
+    else:
+        check_jacobian(cst, dof)
+        check_eval_is_valid_consistency(cst, dof)
+
+    if base_type != BaseType.FIXED:
+        # TODO: test non-fixed base type
+        return  # skip the following test because it's bit complicated
+
+    kin = fs.get_kin()
+    q = np.random.randn(dof)
+    joint_ids = kin.get_joint_ids(fs.control_joint_names)
+    kin.set_joint_positions(joint_ids, q)
+    pose = kin.debug_get_link_pose("gripper_link")
+    height = pose[2]
+    vals, _ = cst.evaluate(q)
+
+    if lower_bound is not None and upper_bound is not None:
+        lower_value, upper_value = vals
+        assert np.abs(lower_value - (height - lower_bound)) < 1e-3
+        assert np.abs(upper_value - (upper_bound - height)) < 1e-3
+    elif lower_bound is not None:
+        lower_value = vals[0]
+        assert np.abs(lower_value - (height - lower_bound)) < 1e-3
+    elif upper_bound is not None:
+        upper_value = vals[0]
+        assert np.abs(upper_value - (upper_bound - height)) < 1e-3
+    else:
+        assert False
+
+
 def test_eq_composite_constraint():
     fs = FetchSpec()
     cst1 = fs.create_gripper_pose_const([0.7, 0.0, 0.7])

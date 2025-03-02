@@ -28,6 +28,7 @@ from plainmp.constraint import (
     ConfigPointCst,
     FixedZAxisCst,
     LinkPoseCst,
+    LinkPositionBoundCst,
     RelativePoseCst,
     SphereAttachmentSpec,
     SphereCollisionCst,
@@ -421,6 +422,13 @@ class RobotSpec(ABC):
             link_name1,
             link_name2,
             relative_position,
+        )
+
+    def create_position_bound_const(
+        self, link_name: str, axis: int, lb: Optional[float], ub: Optional[float]
+    ) -> LinkPositionBoundCst:
+        return LinkPositionBoundCst(
+            self.get_kin(), self.control_joint_names, self.base_type, link_name, axis, lb, ub
         )
 
     def create_attached_box_collision_const(
