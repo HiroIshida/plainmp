@@ -23,6 +23,9 @@ class Problem:
     global_eq_const: Optional[EqConstraintBase]
     resolution: Union[float, np.ndarray]
     validator_type: Literal["euclidean", "box"] = "box"
+    goal_ineq_const: Optional[
+        IneqConstraintBase
+    ] = None  # experimental (not supported by all planners)
 
     def __post_init__(self):
         # In current implementation (but maybe extended in the future)
