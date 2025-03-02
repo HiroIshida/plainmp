@@ -21,18 +21,21 @@ only_self_collision_links:
 
 self_collision_pairs:
   # rarm => larm
+  - [r_gripper_palm_link, l_shoulder_pan_link]
   - [r_gripper_palm_link, l_upper_arm_link]
   - [r_gripper_palm_link, l_elbow_flex_link]
   - [r_gripper_palm_link, l_forearm_link]
   - [r_gripper_palm_link, l_gripper_palm_link]
   - [r_gripper_palm_link, l_gripper_r_finger_link]
   - [r_gripper_palm_link, l_gripper_l_finger_link]
+  - [r_gripper_r_finger_link, l_shoulder_pan_link]
   - [r_gripper_r_finger_link, l_upper_arm_link]
   - [r_gripper_r_finger_link, l_elbow_flex_link]
   - [r_gripper_r_finger_link, l_forearm_link]
   - [r_gripper_r_finger_link, l_gripper_palm_link]
   - [r_gripper_r_finger_link, l_gripper_r_finger_link]
   - [r_gripper_r_finger_link, l_gripper_l_finger_link]
+  - [r_gripper_l_finger_link, l_shoulder_pan_link]
   - [r_gripper_l_finger_link, l_upper_arm_link]
   - [r_gripper_l_finger_link, l_elbow_flex_link]
   - [r_gripper_l_finger_link, l_forearm_link]
@@ -40,15 +43,26 @@ self_collision_pairs:
   - [r_gripper_l_finger_link, l_gripper_r_finger_link]
   - [r_gripper_l_finger_link, l_gripper_l_finger_link]
   # larm => rarm
+  - [l_gripper_palm_link, r_shoulder_pan_link]
   - [l_gripper_palm_link, r_upper_arm_link]
   - [l_gripper_palm_link, r_elbow_flex_link]
   - [l_gripper_palm_link, r_forearm_link]
+  - [l_gripper_r_finger_link, r_shoulder_pan_link]
   - [l_gripper_r_finger_link, r_upper_arm_link]
   - [l_gripper_r_finger_link, r_elbow_flex_link]
   - [l_gripper_r_finger_link, r_forearm_link]
+  - [l_gripper_l_finger_link, r_shoulder_pan_link]
   - [l_gripper_l_finger_link, r_upper_arm_link]
   - [l_gripper_l_finger_link, r_elbow_flex_link]
   - [l_gripper_l_finger_link, r_forearm_link]
+  # rarm => rarm
+  - [r_gripper_palm_link, r_shoulder_pan_link]
+  - [r_gripper_r_finger_link, r_shoulder_pan_link]
+  - [r_gripper_r_finger_link, r_shoulder_pan_link]
+  # larm => larm
+  - [l_gripper_palm_link, l_shoulder_pan_link]
+  - [l_gripper_r_finger_link, l_shoulder_pan_link]
+  - [l_gripper_l_finger_link, l_shoulder_pan_link]
   # vs base_link
   - [r_gripper_r_finger_link, base_link]
   - [r_gripper_l_finger_link, base_link]
