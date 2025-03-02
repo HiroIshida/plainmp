@@ -175,7 +175,8 @@ struct UnionSDF : public SDFBase {
 struct PrimitiveSDFBase : public SDFBase {
   using Ptr = std::shared_ptr<PrimitiveSDFBase>;
 
-  // this filtering is quite fast as it is not virtual function
+  // NOTE: I intentionally put this outside of "is_outside" function
+  // To avoid the overhead of virtual function call and get inlined!
   inline bool is_outside_aabb(const Point& p, double radius) const {
     return p(0) < lb(0) - radius || p(0) > ub(0) + radius ||
            p(1) < lb(1) - radius || p(1) > ub(1) + radius ||
@@ -216,17 +217,15 @@ struct PrimitiveSDFBase : public SDFBase {
 
   Eigen::Vector3d lb;
   Eigen::Vector3d ub;
+
+ protected:
+  virtual void update_aabb() = 0;
 };
 
 struct GroundSDF : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<GroundSDF>;
   SDFType get_type() const override { return SDFType::GROUND; }
-  GroundSDF(double height) : height_(height) {
-    lb = Eigen::Vector3d(-std::numeric_limits<double>::infinity(),
-                         -std::numeric_limits<double>::infinity(), 0.0);
-    ub = Eigen::Vector3d(std::numeric_limits<double>::infinity(),
-                         std::numeric_limits<double>::infinity(), 0.0);
-  }
+  GroundSDF(double height) : height_(height) { update_aabb(); }
 
   std::shared_ptr<SDFBase> clone() const override {
     return std::make_shared<GroundSDF>(height_);
@@ -248,6 +247,13 @@ struct GroundSDF : public PrimitiveSDFBase {
     return p(2) + height_ > radius;
   }
 
+  void update_aabb() override {
+    lb = Eigen::Vector3d(-std::numeric_limits<double>::infinity(),
+                         -std::numeric_limits<double>::infinity(), 0.0);
+    ub = Eigen::Vector3d(std::numeric_limits<double>::infinity(),
+                         std::numeric_limits<double>::infinity(), 0.0);
+  }
+
  private:
   double height_;
 };
@@ -256,10 +262,14 @@ struct TransformableSDFBase : public PrimitiveSDFBase {
   using Ptr = std::shared_ptr<TransformableSDFBase>;
   TransformableSDFBase(const Pose& pose) : pose(pose) {}
 
-  void rotate_z(const double angle) override { pose.rotate_z(angle); }
+  void rotate_z(const double angle) override {
+    pose.rotate_z(angle);
+    update_aabb();
+  }
 
   void translate(const Eigen::Vector3d& translation) override {
     pose.translate(translation);
+    update_aabb();
   }
 
   Pose pose;
@@ -271,31 +281,13 @@ struct BoxSDF : public TransformableSDFBase {
   SDFType get_type() const override { return SDFType::BOX; }
   BoxSDF(const Eigen::Vector3d& width, const Pose& pose)
       : TransformableSDFBase(pose), width_(width), half_width_(0.5 * width) {
-    Eigen::Matrix3Xd local_vertices(3, 8);
-    local_vertices.col(0) =
-        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
-    local_vertices.col(1) =
-        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
-    local_vertices.col(2) =
-        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
-    local_vertices.col(3) =
-        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
-    local_vertices.col(4) =
-        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
-    local_vertices.col(5) =
-        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
-    local_vertices.col(6) =
-        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
-    local_vertices.col(7) =
-        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
-    auto world_vertices = pose.transform_points(local_vertices);
-    lb = world_vertices.rowwise().minCoeff();
-    ub = world_vertices.rowwise().maxCoeff();
+    update_aabb();
   }
 
   void set_width(const Eigen::Vector3d& width) {
     width_ = width;
     half_width_ = 0.5 * width;
+    update_aabb();
   }
 
   const Eigen::Vector3d& get_width() const { return width_; }
@@ -405,6 +397,29 @@ struct BoxSDF : public TransformableSDFBase {
            radius * radius;
   }
 
+  void update_aabb() override {
+    Eigen::Matrix3Xd local_vertices(3, 8);
+    local_vertices.col(0) =
+        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
+    local_vertices.col(1) =
+        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, -width_(2) * 0.5);
+    local_vertices.col(2) =
+        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
+    local_vertices.col(3) =
+        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, -width_(2) * 0.5);
+    local_vertices.col(4) =
+        Eigen::Vector3d(-width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
+    local_vertices.col(5) =
+        Eigen::Vector3d(width_(0) * 0.5, -width_(1) * 0.5, width_(2) * 0.5);
+    local_vertices.col(6) =
+        Eigen::Vector3d(-width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
+    local_vertices.col(7) =
+        Eigen::Vector3d(width_(0) * 0.5, width_(1) * 0.5, width_(2) * 0.5);
+    auto world_vertices = pose.transform_points(local_vertices);
+    lb = world_vertices.rowwise().minCoeff();
+    ub = world_vertices.rowwise().maxCoeff();
+  }
+
  private:
   Eigen::Vector3d width_;
   Eigen::Vector3d half_width_;
@@ -419,18 +434,7 @@ struct CylinderSDF : public TransformableSDFBase {
         rsq_cylinder_(radius * radius),
         height_(height),
         half_height_(0.5 * height) {
-    Eigen::Matrix3Xd local_vertices(3, 8);
-    local_vertices.col(0) = Eigen::Vector3d(-radius, -radius, -height * 0.5);
-    local_vertices.col(1) = Eigen::Vector3d(radius, -radius, -height * 0.5);
-    local_vertices.col(2) = Eigen::Vector3d(-radius, radius, -height * 0.5);
-    local_vertices.col(3) = Eigen::Vector3d(radius, radius, -height * 0.5);
-    local_vertices.col(4) = Eigen::Vector3d(-radius, -radius, height * 0.5);
-    local_vertices.col(5) = Eigen::Vector3d(radius, -radius, height * 0.5);
-    local_vertices.col(6) = Eigen::Vector3d(-radius, radius, height * 0.5);
-    local_vertices.col(7) = Eigen::Vector3d(radius, radius, height * 0.5);
-    auto world_vertices = pose.transform_points(local_vertices);
-    lb = world_vertices.rowwise().minCoeff();
-    ub = world_vertices.rowwise().maxCoeff();
+    update_aabb();
   }
 
   std::shared_ptr<SDFBase> clone() const override {
@@ -493,6 +497,29 @@ struct CylinderSDF : public TransformableSDFBase {
     return false;
   }
 
+  void update_aabb() override {
+    Eigen::Matrix3Xd local_vertices(3, 8);
+    local_vertices.col(0) =
+        Eigen::Vector3d(-r_cylinder_, -r_cylinder_, -half_height_);
+    local_vertices.col(1) =
+        Eigen::Vector3d(r_cylinder_, -r_cylinder_, -half_height_);
+    local_vertices.col(2) =
+        Eigen::Vector3d(-r_cylinder_, r_cylinder_, -half_height_);
+    local_vertices.col(3) =
+        Eigen::Vector3d(r_cylinder_, r_cylinder_, -half_height_);
+    local_vertices.col(4) =
+        Eigen::Vector3d(-r_cylinder_, -r_cylinder_, half_height_);
+    local_vertices.col(5) =
+        Eigen::Vector3d(r_cylinder_, -r_cylinder_, half_height_);
+    local_vertices.col(6) =
+        Eigen::Vector3d(-r_cylinder_, r_cylinder_, half_height_);
+    local_vertices.col(7) =
+        Eigen::Vector3d(r_cylinder_, r_cylinder_, half_height_);
+    auto world_vertices = pose.transform_points(local_vertices);
+    lb = world_vertices.rowwise().minCoeff();
+    ub = world_vertices.rowwise().maxCoeff();
+  }
+
  private:
   double r_cylinder_;
   double rsq_cylinder_;
@@ -507,8 +534,7 @@ struct SphereSDF : public TransformableSDFBase {
       : TransformableSDFBase(pose),
         r_sphere_(radius),
         rsq_sphere_(radius * radius) {
-    lb = pose.position_ - Eigen::Vector3d(radius, radius, radius);
-    ub = pose.position_ + Eigen::Vector3d(radius, radius, radius);
+    update_aabb();
   }
 
   double evaluate(const Point& p) const override {
@@ -527,6 +553,11 @@ struct SphereSDF : public TransformableSDFBase {
 
   std::shared_ptr<SDFBase> clone() const override {
     return std::make_shared<SphereSDF>(r_sphere_, pose);
+  }
+
+  void update_aabb() override {
+    lb = pose.position_ - Eigen::Vector3d(r_sphere_, r_sphere_, r_sphere_);
+    ub = pose.position_ + Eigen::Vector3d(r_sphere_, r_sphere_, r_sphere_);
   }
 
  private:
@@ -569,6 +600,10 @@ struct CloudSDF : public PrimitiveSDFBase {
 
   inline bool is_outside(const Point& p, double radius) const override {
     return this->evaluate(p) > radius;
+  }
+
+  void update_aabb() override {
+    throw std::runtime_error("TODO: Not implemented yet");
   }
 
  private:

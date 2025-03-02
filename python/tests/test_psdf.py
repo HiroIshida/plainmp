@@ -86,6 +86,22 @@ def test_clone_sdf():
     np.testing.assert_allclose(box_sdf.pose.position, np.array([1.0, 2.0, 3.0]))
 
 
+def test_sdf_aabb_after_transform():
+    box_sdf = psdf.BoxSDF([1, 1, 1], psdf.Pose())
+    box_sdf.translate(np.array([1.0, 2.0, 3.0]))
+    lb_expected = np.array([-0.5, -0.5, -0.5]) + np.array([1.0, 2.0, 3.0])
+    ub_expected = np.array([0.5, 0.5, 0.5]) + np.array([1.0, 2.0, 3.0])
+    np.testing.assert_allclose(box_sdf.lb, lb_expected)
+    np.testing.assert_allclose(box_sdf.ub, ub_expected)
+
+    box_sdf = psdf.BoxSDF([1, 1, 1], psdf.Pose())
+    box_sdf.rotate_z(np.pi * 0.25)
+    lb_expected = np.array([-0.5 * np.sqrt(2), -0.5 * np.sqrt(2), -0.5])
+    ub_expected = np.array([0.5 * np.sqrt(2), 0.5 * np.sqrt(2), 0.5])
+    np.testing.assert_allclose(box_sdf.lb, lb_expected)
+    np.testing.assert_allclose(box_sdf.ub, ub_expected)
+
+
 @pytest.mark.parametrize("sksdf", [BoxSDF([0.5, 0.3, 0.6]), CylinderSDF(0.7, 0.2), SphereSDF(0.5)])
 def test_consistency_with_skrobot(sksdf):
     for i in range(100):
