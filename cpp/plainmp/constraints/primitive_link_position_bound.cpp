@@ -14,13 +14,14 @@ namespace plainmp::constraint {
 
 namespace kin = plainmp::kinematics;
 
-LinkPositionBoundCst::LinkPositionBoundCst(std::shared_ptr<kin::KinematicModel<double>> kin,
-                                           const std::vector<std::string>& control_joint_names,
-                                           kin::BaseType base_type,
-                                           const std::string& link_name,
-                                           size_t axis,
-                                           const std::optional<double>& lb,
-                                           const std::optional<double>& ub)
+LinkPositionBoundCst::LinkPositionBoundCst(
+    std::shared_ptr<kin::KinematicModel<double>> kin,
+    const std::vector<std::string>& control_joint_names,
+    kin::BaseType base_type,
+    const std::string& link_name,
+    size_t axis,
+    const std::optional<double>& lb,
+    const std::optional<double>& ub)
     : IneqConstraintBase(kin, control_joint_names, base_type),
       axis_(axis),
       lower_bound_(lb),
@@ -29,7 +30,8 @@ LinkPositionBoundCst::LinkPositionBoundCst(std::shared_ptr<kin::KinematicModel<d
     throw std::runtime_error("Axis index must be 0 (x), 1 (y), or 2 (z).");
   }
   if (!lower_bound_.has_value() && !upper_bound_.has_value()) {
-    throw std::runtime_error("At least one of lower or upper bound must be provided.");
+    throw std::runtime_error(
+        "At least one of lower or upper bound must be provided.");
   }
   auto link_ids = kin_->get_link_ids({link_name});
   if (link_ids.empty()) {
@@ -38,7 +40,8 @@ LinkPositionBoundCst::LinkPositionBoundCst(std::shared_ptr<kin::KinematicModel<d
   link_id_ = link_ids[0];
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPositionBoundCst::evaluate_dirty() {
+std::pair<Eigen::VectorXd, Eigen::MatrixXd>
+LinkPositionBoundCst::evaluate_dirty() {
   const auto& pose = kin_->get_link_pose(link_id_);
   const auto& pos = pose.trans();
 
