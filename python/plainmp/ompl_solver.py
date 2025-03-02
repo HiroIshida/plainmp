@@ -6,6 +6,7 @@ from typing import Optional, TypeVar
 
 import numpy as np
 
+from plainmp.constraint import IneqCompositeCst
 from plainmp.ik import IKConfig, IKResult, solve_ik
 from plainmp.problem import Problem
 from plainmp.trajectory import Trajectory
@@ -84,12 +85,22 @@ class OMPLSolver:
         # so we set...
         config = IKConfig(timeout=self.config.timeout)
 
+        # create a composite constraint
+        if problem.goal_ineq_const is None and problem.global_ineq_const is None:
+            ineq_const = None
+        elif problem.goal_ineq_const is None:
+            ineq_const = problem.global_ineq_const
+        elif problem.global_ineq_const is None:
+            ineq_const = problem.goal_ineq_const
+        else:
+            ineq_const = IneqCompositeCst([problem.goal_ineq_const, problem.global_ineq_const])
+
         if guess is not None:
             # If guess is provided, use the last element of the trajectory as the initial guess
             q_guess = guess.numpy()[-1]
             ret = solve_ik(
                 problem.goal_const,
-                problem.global_ineq_const,
+                ineq_const,
                 problem.lb,
                 problem.ub,
                 q_seed=q_guess,
@@ -100,7 +111,7 @@ class OMPLSolver:
         else:
             ret = solve_ik(
                 problem.goal_const,
-                problem.global_ineq_const,
+                ineq_const,
                 problem.lb,
                 problem.ub,
                 max_trial=self.config.n_max_ik_trial,
