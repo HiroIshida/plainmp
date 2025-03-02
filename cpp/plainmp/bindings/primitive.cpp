@@ -58,7 +58,9 @@ void bind_primitive_submodule(py::module& m) {
       .def("rotate_z", &GroundSDF::rotate_z)
       .def("evaluate_batch", &GroundSDF::evaluate_batch)
       .def("evaluate", &GroundSDF::evaluate)
-      .def("is_outside", &GroundSDF::is_outside);
+      .def("is_outside", &GroundSDF::is_outside)
+      .def_readonly("lb", &GroundSDF::lb)
+      .def_readonly("ub", &GroundSDF::ub);
   py::class_<BoxSDF, BoxSDF::Ptr, PrimitiveSDFBase>(m_psdf, "BoxSDF",
                                                     py::module_local())
       .def(py::init<const Eigen::Vector3d&, const Pose&>())
@@ -68,6 +70,8 @@ void bind_primitive_submodule(py::module& m) {
       .def("evaluate_batch", &BoxSDF::evaluate_batch)
       .def("evaluate", &BoxSDF::evaluate)
       .def("is_outside", &BoxSDF::is_outside)
+      .def_readonly("lb", &BoxSDF::lb)
+      .def_readonly("ub", &BoxSDF::ub)
       .def_readonly("pose", &BoxSDF::pose);
   py::class_<CylinderSDF, CylinderSDF::Ptr, PrimitiveSDFBase>(
       m_psdf, "CylinderSDF", py::module_local())
@@ -78,6 +82,8 @@ void bind_primitive_submodule(py::module& m) {
       .def("evaluate_batch", &CylinderSDF::evaluate_batch)
       .def("evaluate", &CylinderSDF::evaluate)
       .def("is_outside", &CylinderSDF::is_outside)
+      .def_readonly("lb", &CylinderSDF::lb)
+      .def_readonly("ub", &CylinderSDF::ub)
       .def_readonly("pose", &CylinderSDF::pose);
   py::class_<SphereSDF, SphereSDF::Ptr, PrimitiveSDFBase>(m_psdf, "SphereSDF",
                                                           py::module_local())
@@ -88,6 +94,8 @@ void bind_primitive_submodule(py::module& m) {
       .def("evaluate_batch", &SphereSDF::evaluate_batch)
       .def("evaluate", &SphereSDF::evaluate)
       .def("is_outside", &SphereSDF::is_outside)
+      .def_readonly("lb", &SphereSDF::lb)
+      .def_readonly("ub", &SphereSDF::ub)
       .def_readonly("pose", &SphereSDF::pose);
 
   py::class_<CloudSDF, CloudSDF::Ptr, PrimitiveSDFBase>(m_psdf, "CloudSDF",
@@ -98,7 +106,9 @@ void bind_primitive_submodule(py::module& m) {
       .def("rotate_z", &CloudSDF::rotate_z)
       .def("evaluate_batch", &CloudSDF::evaluate_batch)
       .def("evaluate", &CloudSDF::evaluate)
-      .def("is_outside", &CloudSDF::is_outside);
+      .def("is_outside", &CloudSDF::is_outside)
+      .def_readonly("lb", &CloudSDF::lb)
+      .def_readonly("ub", &CloudSDF::ub);
 }
 
 }  // namespace plainmp::bindings
