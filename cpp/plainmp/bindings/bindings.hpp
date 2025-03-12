@@ -20,5 +20,6 @@ void bind_primitive_submodule(py::module& m);
 void bind_constraint_submodule(py::module& m);
 void bind_kinematics_submodule(py::module& m);
 void bind_ompl_wrapper_submodule(py::module& m);
+void bind_experimental_submodule(py::module& m);
 
 }  // namespace plainmp::bindings
