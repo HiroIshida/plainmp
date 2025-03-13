@@ -62,6 +62,23 @@ class MultiGoalRRT {
     return ret;
   }
 
+  Eigen::MatrixXd get_solution(const Eigen::VectorXd& goal) {
+    // assume that goal is reachable
+    const auto [i_nearest, dist] = find_nearest(goal);
+    std::vector<Eigen::VectorXd> path = {goal};
+    size_t i = i_nearest;
+    while (i != 0) {
+      path.push_back(states_.col(i));
+      i = parents_[i];
+    }
+    path.push_back(states_.col(0));  // start node
+    Eigen::MatrixXd ret(states_.rows(), path.size());
+    for (size_t i = 0; i < path.size(); ++i) {
+      ret.col(i) = path[path.size() - i - 1];
+    }
+    return ret;
+  }
+
   Eigen::MatrixXd get_debug_states() const {
     return states_.leftCols(n_node_).transpose();  // python numpy in mind
   }
