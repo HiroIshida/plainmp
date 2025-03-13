@@ -10,6 +10,7 @@ void bind_experimental_submodule(py::module& m) {
                     const Eigen::VectorXd&,
                     const plainmp::constraint::IneqConstraintBase::Ptr&,
                     size_t>())
+      .def("get_solution", &experimental::MultiGoalRRT::get_solution)
       .def("is_reachable", &experimental::MultiGoalRRT::is_reachable)
       .def("is_reachable_batch",
            &experimental::MultiGoalRRT::is_reachable_batch)
