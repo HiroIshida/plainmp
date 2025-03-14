@@ -34,6 +34,11 @@ void bind_ompl_wrapper_submodule(py::module& m) {
       .def_readwrite("resolution", &ValidatorConfig::resolution)
       .def_readwrite("box_width", &ValidatorConfig::box_width);
 
+  py::enum_<PlannerBase::RefineType>(ompl_m, "RefineType")
+      .value("SHORTCUT", PlannerBase::RefineType::SHORTCUT)
+      .value("BSPLINE", PlannerBase::RefineType::BSPLINE)
+      .export_values();
+
   py::class_<OMPLPlanner>(ompl_m, "OMPLPlanner", py::module_local())
       .def(py::init<std::vector<double>&, std::vector<double>&,
                     constraint::IneqConstraintBase::Ptr, size_t,
@@ -41,8 +46,7 @@ void bind_ompl_wrapper_submodule(py::module& m) {
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("get_ns_internal", &OMPLPlanner::get_ns_internal)
       .def("solve", &OMPLPlanner::solve, py::arg("start"), py::arg("goal"),
-           py::arg("shortcut"), py::arg("bspline"),
-           py::arg("timeout") = py::none(),
+           py::arg("refine_seq"), py::arg("timeout") = py::none(),
            py::arg("goal_sampler") = py::none(),
            py::arg("max_goal_sample_count") = py::none());
 
@@ -53,7 +57,7 @@ void bind_ompl_wrapper_submodule(py::module& m) {
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("get_ns_internal", &OMPLPlanner::get_ns_internal)
       .def("solve", &ERTConnectPlanner::solve, py::arg("start"),
-           py::arg("goal"), py::arg("shortcut"), py::arg("bspline"),
+           py::arg("goal"), py::arg("refine_seq"),
            py::arg("timeout") = py::none(),
            py::arg("goal_sampler") = py::none(),
            py::arg("max_goal_sample_count") = py::none())

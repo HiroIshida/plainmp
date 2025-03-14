@@ -2,7 +2,7 @@ import signal
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, TypeVar
+from typing import Optional, Sequence, TypeVar
 
 import numpy as np
 
@@ -14,6 +14,7 @@ from plainmp.trajectory import Trajectory
 from ._plainmp.ompl import (  # noqa: F401
     ERTConnectPlanner,
     OMPLPlanner,
+    RefineType,
     ValidatorConfig,
     ValidatorType,
     set_log_level_none,
@@ -40,14 +41,28 @@ class OMPLSolverConfig:
     n_max_ik_trial: int = 100
     algorithm: Algorithm = Algorithm.RRTConnect
     algorithm_range: Optional[float] = 2.0
-    shortcut: bool = False  # post-processing shortcut
-    bspline: bool = False  # post-processing bspline
+    refine_seq: Sequence[RefineType] = tuple()
+    shortcut: bool = False
+    bspline: bool = False
     ertconnect_eps: float = 5.0  # used only when ertconnect is selected
     timeout: Optional[float] = None
     use_goal_sampler: bool = (
         False  # use goal sampler in unidirectional planner. Use only when the goal is not a point
     )
     max_goal_sampler_count: int = 100
+
+    def __post_init__(self):
+        if len(self.refine_seq) > 0:
+            return
+        # backward compatibility
+        refine_seq = []
+        if self.bspline:
+            print("OMPLSolverConfig: bspline is deprecated. Use refine_seq instead !!!")
+            refine_seq.append(RefineType.BSPLINE)
+        if self.shortcut:
+            print("OMPLSolverConfig: shortcut is deprecated. Use refine_seq instead !!!")
+            refine_seq.append(RefineType.SHORTCUT)
+        self.refine_seq = refine_seq
 
 
 class TerminateState(Enum):
@@ -200,8 +215,7 @@ class OMPLSolver:
         result = planner.solve(
             problem.start,
             q_goal,
-            self.config.shortcut,
-            self.config.bspline,
+            self.config.refine_seq,
             timeout_remain,
             goal_sampler,
             self.config.max_goal_sampler_count,
