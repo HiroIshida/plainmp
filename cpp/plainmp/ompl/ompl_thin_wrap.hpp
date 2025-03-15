@@ -125,6 +125,7 @@ struct CollisionAwareSpaceInformation {
 };
 
 struct PlannerBase {
+  enum class RefineType { SHORTCUT, BSPLINE };
   PlannerBase(const std::vector<double>& lb,
               const std::vector<double>& ub,
               constraint::IneqConstraintBase::Ptr ineq_cst,
@@ -139,8 +140,7 @@ struct PlannerBase {
   std::optional<Eigen::MatrixXd> solve(
       const std::vector<double>& start,
       const std::optional<std::vector<double>>& goal,
-      bool shoftcut,
-      bool bspline,
+      std::vector<RefineType> refine_seq,
       std::optional<double> timeout,
       const std::optional<GoalSamplerFn>& goal_sampler,
       std::optional<size_t> max_goal_sample_count = std::nullopt) {
@@ -187,13 +187,16 @@ struct PlannerBase {
       return {};
     }
     auto p = setup_->getSolutionPath().as<og::PathGeometric>();
-    og::PathSimplifier simplifier(csi_->si_);
 
-    if (shoftcut) {
-      simplifier.shortcutPath(*p);
-    }
-    if (bspline) {
-      simplifier.smoothBSpline(*p);
+    og::PathSimplifier simplifier(csi_->si_);
+    for (auto refine : refine_seq) {
+      if (refine == RefineType::SHORTCUT) {
+        simplifier.shortcutPath(*p);
+      } else if (refine == RefineType::BSPLINE) {
+        simplifier.smoothBSpline(*p);
+      } else {
+        throw std::runtime_error("unknown refine type");
+      }
     }
     auto end_time = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
