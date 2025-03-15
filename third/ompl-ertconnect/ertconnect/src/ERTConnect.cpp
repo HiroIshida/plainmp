@@ -210,6 +210,7 @@ bool ompl::geometric::ERTConnect::getValidSegment(const Motion *imotion, Motion 
             b[i] = *(ss->getValueAddressAtLocation(imotion->state, locations[i])) - *(ss->getValueAddressAtLocation(experience_->segment[imotion->phase_end], locations[i]));
             *(ss->getValueAddressAtLocation(xstate, locations[i])) = *(ss->getValueAddressAtLocation(experience_->segment[tmotion->phase_end], locations[i])) + b[i];
         }
+        ss->enforceBounds(xstate);
 
         /* sample and validate target state */
         sampler_->sampleUniformNear(tmotion->state, xstate, noise); /* already enforcing bounds */
