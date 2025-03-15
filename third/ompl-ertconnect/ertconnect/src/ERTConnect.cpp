@@ -236,7 +236,7 @@ bool ompl::geometric::ERTConnect::getValidSegment(const Motion *imotion, Motion 
         for (size_t j = 0; j < dimensionality; ++j)
             *(ss->getValueAddressAtLocation(xstate, locations[j])) = *(ss->getValueAddressAtLocation(experience_->segment[imotion->phase_end + i * direction], locations[j])) + t * l[j] + b[j];
 
-        if (!si_->checkMotion(tmotion->segment[i - 1], xstate))
+        if (!si_->getStateSpace()->satisfiesBounds(xstate) || !si_->checkMotion(tmotion->segment[i - 1], xstate))
         {
             si_->freeState(xstate);
             return false;
