@@ -43,6 +43,7 @@ def test_ompl_solver(goal_is_pose: bool, algo: Algorithm, use_goal_sampler: bool
 
         for q in ret.traj.numpy():
             assert cst.is_valid(q)
+            assert np.all(lb <= q) and np.all(q <= ub)
 
         # using the previous planning result, re-plan
         conf = OMPLSolverConfig(n_max_ik_trial=1)
@@ -50,6 +51,7 @@ def test_ompl_solver(goal_is_pose: bool, algo: Algorithm, use_goal_sampler: bool
         ret_replan = solver.solve(problem, guess=ret.traj)
         for q in ret_replan.traj.numpy():
             assert cst.is_valid(q)
+            assert np.all(lb <= q) and np.all(q <= ub)
         assert ret_replan.n_call < ret.n_call  # re-planning should be faster
         print(f"n_call: {ret.n_call} -> {ret_replan.n_call}")
 
