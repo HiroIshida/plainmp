@@ -54,13 +54,11 @@ class OMPLSolverConfig:
     def __post_init__(self):
         if len(self.refine_seq) > 0:
             return
-        # backward compatibility
+        # keep this for backward compatibility. This is deprecated.
         refine_seq = []
         if self.bspline:
-            print("OMPLSolverConfig: bspline is deprecated. Use refine_seq instead !!!")
             refine_seq.append(RefineType.BSPLINE)
         if self.shortcut:
-            print("OMPLSolverConfig: shortcut is deprecated. Use refine_seq instead !!!")
             refine_seq.append(RefineType.SHORTCUT)
         self.refine_seq = refine_seq
 
