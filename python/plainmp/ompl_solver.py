@@ -18,6 +18,7 @@ from ._plainmp.ompl import (  # noqa: F401
     ValidatorConfig,
     ValidatorType,
     set_log_level_none,
+    set_random_seed,
 )
 
 
