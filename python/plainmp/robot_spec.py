@@ -96,7 +96,7 @@ class RobotSpec(ABC):
             self.conf_dict = _loaded_yamls[str(conf_file)]
         self.base_type = base_type
         if use_fixed_uuid:
-            self.uuid = self.__class__.__name__
+            self.uuid = self.__class__.__name__ + str(base_type)
         else:
             self.uuid = str(uuid.uuid4())
 
