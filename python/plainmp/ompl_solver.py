@@ -166,6 +166,18 @@ class OMPLSolver:
                 signal.setitimer(signal.ITIMER_REAL, self.config.timeout)
             try:
                 ik_ret = self.solve_ik(problem, guess)
+
+                # check for post-reaching manipulability
+                if ik_ret.success:
+                    for post_goal_eq in problem.post_ik_goal_consts:
+                        post_ret = solve_ik(
+                            post_goal_eq, None, problem.lb, problem.ub, q_seed=ik_ret.q, max_trial=1
+                        )
+                        if not post_ret.success:
+                            print("failed to satisfy post-ik goal constraint")
+                            return OMPLSolverResult(
+                                None, None, -1, TerminateState.FAIL_SATISFACTION
+                            )
             except TimeoutError:
                 return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
             finally:
@@ -174,6 +186,7 @@ class OMPLSolver:
 
             if not ik_ret.success:
                 return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
+
             q_goal = ik_ret.q
             goal_sampler = None
 
