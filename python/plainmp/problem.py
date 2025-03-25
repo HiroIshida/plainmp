@@ -31,7 +31,8 @@ class Problem:
         np.ndarray
     ] = None  # lb for goal (useful for ensuring final state manipulatability)
     goal_ub: Optional[np.ndarray] = None  # ub for goal
-    post_ik_goal_consts: List[EqConstraintBase] = field(default_factory=list)
+    post_ik_goal_eq_consts: List[EqConstraintBase] = field(default_factory=list)
+    post_ik_goal_ineq_const: Optional[IneqConstraintBase] = None
 
     def __post_init__(self):
         # In current implementation (but maybe extended in the future)

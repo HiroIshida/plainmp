@@ -169,12 +169,16 @@ class OMPLSolver:
 
                 # check for post-reaching manipulability
                 if ik_ret.success:
-                    for post_goal_eq in problem.post_ik_goal_consts:
+                    for post_goal_eq in problem.post_ik_goal_eq_consts:
                         post_ret = solve_ik(
-                            post_goal_eq, None, problem.lb, problem.ub, q_seed=ik_ret.q, max_trial=1
+                            post_goal_eq,
+                            problem.post_ik_goal_ineq_const,
+                            problem.lb,
+                            problem.ub,
+                            q_seed=ik_ret.q,
+                            max_trial=1,
                         )
                         if not post_ret.success:
-                            print("failed to satisfy post-ik goal constraint")
                             return OMPLSolverResult(
                                 None, None, -1, TerminateState.FAIL_SATISFACTION
                             )
