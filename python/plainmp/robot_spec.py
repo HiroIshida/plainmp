@@ -327,7 +327,10 @@ class RobotSpec(ABC):
         return FixedZAxisCst(self.get_kin(), self.control_joint_names, self.base_type, link_name)
 
     def create_collision_const(
-        self, self_collision: bool = True, attachements: Sequence[SphereAttachmentSpec] = tuple()
+        self,
+        self_collision: bool = True,
+        attachements: Sequence[SphereAttachmentSpec] = tuple(),
+        use_cache: bool = True,
     ) -> SphereCollisionCst:
         """Create a collision constraint from the conf file
         Args:
@@ -337,7 +340,7 @@ class RobotSpec(ABC):
 
         key = (self.uuid, self_collision)
         if len(attachements) == 0:  # caching is supported only if attachements are not given
-            if key in _created_collision_csts:
+            if use_cache and key in _created_collision_csts:
                 return _created_collision_csts[key]
 
         sphere_specs = self.parse_sphere_specs()
@@ -379,7 +382,7 @@ class RobotSpec(ABC):
             self_collision_pairs,
             robot_anchor_sdf,
         )
-        if len(attachements) == 0:
+        if use_cache and len(attachements) == 0:
             _created_collision_csts[key] = cst
         return cst
 
