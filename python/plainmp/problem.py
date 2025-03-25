@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Literal, Optional, Tuple, Union
 
 import numpy as np
@@ -31,6 +31,7 @@ class Problem:
         np.ndarray
     ] = None  # lb for goal (useful for ensuring final state manipulatability)
     goal_ub: Optional[np.ndarray] = None  # ub for goal
+    post_ik_goal_consts: List[EqConstraintBase] = field(default_factory=list)
 
     def __post_init__(self):
         # In current implementation (but maybe extended in the future)
