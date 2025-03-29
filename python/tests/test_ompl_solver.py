@@ -87,7 +87,7 @@ def test_ompl_solver(
             print(f"n_call: {ret.n_call} -> {ret_replan.n_call}")
 
 
-def test_timeout():
+def create_infeasible_problem() -> Problem:
     fetch = FetchSpec()
     cst = fetch.create_collision_const()
     obstacle = Box([0.1, 0.1, 0.1], with_sdf=True)
@@ -99,10 +99,30 @@ def test_timeout():
     goal_cst = fetch.create_gripper_pose_const(np.array([0.7, 0.0, 0.9, 0.0, 0.0, 0.0]))
     msbox = np.array([0.05, 0.05, 0.05, 0.1, 0.1, 0.1, 0.2, 0.2])
     problem = Problem(start, lb, ub, goal_cst, cst, None, msbox)
-    conf = OMPLSolverConfig(timeout=3.0, n_max_ik_trial=10000000000, n_max_call=10000000000)
+    return problem
+
+
+def test_timeout():
+    problem = create_infeasible_problem()
+    conf = OMPLSolverConfig(timeout=2.0, n_max_ik_trial=10000000000, n_max_call=10000000000)
     solver = OMPLSolver(conf)
     ts = time.time()
     ret = solver.solve(problem)
     elapsed = time.time() - ts
-    assert 2.9 < elapsed < 3.1
+    assert 1.9 < elapsed < 2.1
     assert ret.traj is None
+
+
+def test_timeout_many():
+    # NOTE: ompl solver internally calls ik solver. Because, we need to mange timeout for
+    # both ompl and ik solver, with a pour timeout management, timeout exception race condition
+    # may happen (and actually happens until commit 5aadac6).
+    problem = create_infeasible_problem()
+    conf = OMPLSolverConfig(timeout=0.01, n_max_ik_trial=10000000000, n_max_call=10000000000)
+    solver = OMPLSolver(conf)
+    for _ in range(300):
+        solver.solve(problem)
+
+
+if __name__ == "__main__":
+    test_timeout()
