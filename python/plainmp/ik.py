@@ -1,4 +1,3 @@
-import signal
 import time
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Tuple
@@ -115,7 +114,4 @@ def solve_ik(
             q_seed = np.random.uniform(lb, ub)
     except TimeoutError:
         return IKResult(np.empty([0]), time.time() - ts, False, i + 1)
-    finally:
-        if config.timeout is not None:
-            signal.setitimer(signal.ITIMER_REAL, 0)
     return IKResult(np.empty([0]), time.time() - ts, False, max_trial)
