@@ -1,3 +1,4 @@
+import signal
 import time
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Tuple
@@ -28,7 +29,7 @@ class IKConfig:
     disp: bool = False
     n_max_eval: int = 200
     acceptable_error: float = 1e-6
-    timeout: float = 10.0
+    timeout: Optional[float] = 10.0
 
 
 @dataclass
@@ -50,19 +51,17 @@ def solve_ik(
     max_trial: int = 100,
 ) -> IKResult:
     ts = time.time()
+
     if config is None:
         config = IKConfig()
-
-    ts = time.time()  # adhoc
 
     def objective_fun(q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         vals, jac = eq_const.evaluate(q)
         f = vals.dot(vals)
         grad = 2 * vals.dot(jac)
-        if config.timeout is not None:
-            elapsed = time.time() - ts
-            if elapsed > config.timeout:
-                raise TimeoutError
+        elapsed_time = time.time() - ts
+        if config.timeout is not None and elapsed_time > config.timeout:
+            raise TimeoutError("IK solver timeout")
         return f, grad
 
     f, jac = scipinize(objective_fun)
@@ -91,26 +90,32 @@ def solve_ik(
         "maxiter": config.n_max_eval - 1,  # somehome scipy iterate +1 more time
     }
 
-    for i in range(max_trial):
-        res = minimize(
-            f,
-            q_seed,
-            method="SLSQP",
-            jac=jac,
-            bounds=bounds,
-            constraints=constraints,
-            options=slsqp_option,
-        )
+    try:
+        for i in range(max_trial):
+            res = minimize(
+                f,
+                q_seed,
+                method="SLSQP",
+                jac=jac,
+                bounds=bounds,
+                constraints=constraints,
+                options=slsqp_option,
+            )
 
-        # the following is to ignore local minima
-        solved = True
-        if eq_const is not None:
-            if res.fun > config.acceptable_error:
-                solved = False
-        if ineq_const is not None:
-            if not ineq_const.is_valid(res.x):
-                solved = False
-        if solved:
-            return IKResult(res.x, time.time() - ts, res.success, i + 1)
-        q_seed = np.random.uniform(lb, ub)
+            # the following is to ignore local minima
+            solved = True
+            if eq_const is not None:
+                if res.fun > config.acceptable_error:
+                    solved = False
+            if ineq_const is not None:
+                if not ineq_const.is_valid(res.x):
+                    solved = False
+            if solved:
+                return IKResult(res.x, time.time() - ts, res.success, i + 1)
+            q_seed = np.random.uniform(lb, ub)
+    except TimeoutError:
+        return IKResult(np.empty([0]), time.time() - ts, False, i + 1)
+    finally:
+        if config.timeout is not None:
+            signal.setitimer(signal.ITIMER_REAL, 0)
     return IKResult(np.empty([0]), time.time() - ts, False, max_trial)
