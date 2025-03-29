@@ -1,4 +1,3 @@
-import signal
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -157,21 +156,7 @@ class OMPLSolver:
                 return self.solve_ik(problem).q
 
         else:
-            if self.config.timeout is not None:
-
-                def handler(sig, frame):
-                    raise TimeoutError
-
-                signal.signal(signal.SIGALRM, handler)
-                signal.setitimer(signal.ITIMER_REAL, self.config.timeout)
-            try:
-                ik_ret = self.solve_ik(problem, guess)
-            except TimeoutError:
-                return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
-            finally:
-                if self.config.timeout is not None:
-                    signal.setitimer(signal.ITIMER_REAL, 0)
-
+            ik_ret = self.solve_ik(problem, guess)
             if not ik_ret.success:
                 return OMPLSolverResult(None, None, -1, TerminateState.FAIL_SATISFACTION)
             q_goal = ik_ret.q
@@ -211,6 +196,7 @@ class OMPLSolver:
         timeout_remain = (
             None if (self.config.timeout is None) else self.config.timeout - (time.time() - ts)
         )
+        assert timeout_remain is None or timeout_remain > 0
         result = planner.solve(
             problem.start,
             q_goal,
