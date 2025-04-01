@@ -44,7 +44,11 @@ class OMPLSolverConfig:
     refine_seq: Sequence[RefineType] = tuple()
     shortcut: bool = False
     bspline: bool = False
-    ertconnect_eps: float = 5.0  # used only when ertconnect is selected
+    # these three parameters are used only when ERTConnect is selected
+    # NOTE: the default values are the same as the default values in the paper
+    ertconnect_omega_min: float = 0.05
+    ertconnect_omega_max: float = 0.1
+    ertconnect_eps: float = 5.0
     timeout: Optional[float] = None
     use_goal_sampler: bool = (
         False  # use goal sampler in unidirectional planner. Use only when the goal is not a point
@@ -183,6 +187,11 @@ class OMPLSolver:
                 vconfig,
             )
             planner.set_heuristic(guess.numpy())
+            planner.set_parameters(
+                self.config.ertconnect_omega_min,
+                self.config.ertconnect_omega_max,
+                self.config.ertconnect_eps,
+            )
         else:
             planner = OMPLPlanner(
                 problem.lb,
