@@ -183,6 +183,7 @@ class OMPLSolver:
                 vconfig,
             )
             planner.set_heuristic(guess.numpy())
+            planner.set_parameters(None, None, self.config.ertconnect_eps)
         else:
             planner = OMPLPlanner(
                 problem.lb,
