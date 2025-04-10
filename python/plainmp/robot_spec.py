@@ -1,4 +1,5 @@
 import copy
+import subprocess
 import uuid
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -99,6 +100,11 @@ class RobotSpec(ABC):
             self.uuid = self.__class__.__name__ + str(base_type)
         else:
             self.uuid = str(uuid.uuid4())
+
+    def urdf_path_override(self) -> Optional[Path]:
+        # Override this method to specify a custom URDF path.
+        # This is useful for testing or when the URDF is not in the default location.
+        return None
 
     def get_kin(self) -> KinematicModel:
         # The kinematic chain is shared among the same robot spec.
@@ -212,7 +218,19 @@ class RobotSpec(ABC):
 
     @property
     def urdf_path(self) -> Path:
-        return Path(self.conf_dict["urdf_path"]).expanduser()
+        path = self.urdf_path_override()  # if you want to override the conf path
+        if path is None:
+            path = Path(self.conf_dict["urdf_path"]).expanduser()  # from conf file
+        if path.suffix == ".xacro":
+            xacro_installed = subprocess.run("which xacro", shell=True, check=False)
+            if xacro_installed.returncode != 0:
+                raise RuntimeError("xacro is not found.")
+            urdf_path = path.with_suffix(".urdf")
+            if not urdf_path.exists():
+                subprocess.run(f"xacro {path} -o {urdf_path}", shell=True, check=True)
+            return urdf_path
+        else:
+            return path
 
     @property
     def control_joint_names(self) -> List[str]:
