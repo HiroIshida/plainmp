@@ -1,5 +1,6 @@
 import copy
 import subprocess
+import time
 import uuid
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -525,6 +526,27 @@ class RobotSpec(ABC):
             return np.hstack([pos, wxyz2xyzw(quat_wxyz)])
         else:
             return pos
+
+    def debug_visualize_collision_spheres(self, skmodel: RobotModel) -> None:
+        from skrobot.viewers import PyrenderViewer
+
+        cst = self.create_collision_const(self_collision=False)
+        lb, ub = self.angle_bounds()
+        q = self.extract_skrobot_model_q(skmodel)
+        cst.update_kintree(q, True)
+        self.set_skrobot_model_state(skmodel, q)
+        self.reflect_skrobot_model_to_kin(skmodel)
+
+        v = PyrenderViewer()
+        v.add(skmodel)
+        for center, r in cst.get_all_spheres():
+            sk_sphere = Sphere(r, pos=center, color=[0, 255, 0, 100])
+            v.add(sk_sphere)
+        v.show()
+        print("==> Press [q] to close window")
+        while not v.has_exit:
+            time.sleep(0.1)
+            v.redraw()
 
 
 class FetchSpec(RobotSpec):
