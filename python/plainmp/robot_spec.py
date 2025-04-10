@@ -344,6 +344,32 @@ class RobotSpec(ABC):
     def create_fixed_zaxis_const(self, link_name: str) -> FixedZAxisCst:
         return FixedZAxisCst(self.get_kin(), self.control_joint_names, self.base_type, link_name)
 
+    def get_self_collision_pairs(self) -> List[List[str]]:
+        pairs = []
+        if "self_collision_pairs" in self.conf_dict:  # for backward compatibility
+            pairs.extend(self.conf_dict["self_collision_pairs"])
+
+        if "self_collision_group_pairs" in self.conf_dict:
+            for group_pair in self.conf_dict["self_collision_group_pairs"]:
+                group1 = group_pair["group1"]
+                group2 = group_pair["group2"]
+                for link1 in group1:
+                    for link2 in group2:
+                        pairs.append([link1, link2])
+
+        # NOTE: We intentionally do not remove duplicate collision pairs automatically.
+        # Automatically reordering (e.g., sorting) the pairs could alter the user-specified
+        # check order, which is critical for optimal performance due to significant variations
+        # in collision check speed. Therefore, we require users to manually define
+        # the desired order and raise an error if duplicates are detected.
+        pair_set = set()
+        for pair in pairs:
+            key = tuple(sorted(pair))
+            if key in pair_set:
+                raise ValueError(f"Duplicated self collision pair: {key}")
+            pair_set.add(key)
+        return pairs
+
     def create_collision_const(
         self,
         self_collision: bool = True,
@@ -380,9 +406,7 @@ class RobotSpec(ABC):
         self_collision_pairs = []
         robot_anchor_sdf = None
         if self_collision:
-            # Add self_collision_pairs only if exist in the conf file
-            if "self_collision_pairs" in self.conf_dict:
-                self_collision_pairs = self.conf_dict["self_collision_pairs"]
+            self_collision_pairs = self.get_self_collision_pairs()
 
             # Add self_body_collision_primitives only if exist
             if len(self.self_body_collision_primitives()) > 0:
