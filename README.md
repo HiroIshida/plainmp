@@ -1,4 +1,4 @@
-# plainmp  [![build & test](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml) [![format](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14271046.svg)](https://doi.org/10.5281/zenodo.14271046)
+# plainmp  [![build & test](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/build_and_test.yaml) [![format](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml/badge.svg)](https://github.com/HiroIshida/plainmp/actions/workflows/check_format.yaml) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14271046.svg)](https://doi.org/10.5281/zenodo.14271046) [![PyPI - Version](https://img.shields.io/pypi/v/plainmp)](https://pypi.org/project/plainmp)
 
 ![result](https://github.com/user-attachments/assets/fde49de1-f583-4f1d-933b-5853cea6bccc)
 
@@ -49,11 +49,9 @@ python3 example/bench/fetch_plan.py  # fetch table
 
 ## installation and usage
 ```bash
-sudo apt-get install libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev  # for scikit-robot
-sudo apt install libeigen3-dev libboost-all-dev libompl-dev # plainmp dependencies
+sudo apt install libeigen3-dev libboost-all-dev libompl-dev libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev
 pip install scikit-build
-git submodule update --init
-pip install -e . -v
+pip install plainmp  # or build from source after git submodules update --init
 ```
 Then try examples in [example directory](./example) with `--visualize` option. Note that you may need to install the following for visualization:
 ```bash
