@@ -13,8 +13,8 @@ else:
 
 setup(
     name="plainmp",
-    version="0.2.2",
-    description="experimental",
+    version="0.2.3",
+    description="Very fast motion planning for articulated robot, through a bit of premature-optimization (C++ core with Python bindings) *less than 1ms for moderate problems",
     author="Hirokazu Ishida",
     install_requires=["numpy", "scipy", "scikit-robot>=0.0.44", "pyyaml", "robot_descriptions", "osqp<1.0.0"],
     packages=packages,
