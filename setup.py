@@ -19,7 +19,7 @@ setup(
     install_requires=["numpy", "scipy", "scikit-robot>=0.0.44", "pyyaml", "robot_descriptions", "osqp<1.0.0"],
     packages=packages,
     package_dir={"": "python"},
-    package_data={"plainmp": ["*.pyi", "conf/*.yaml"]},
+    package_data={"plainmp": ["*.pyi", "conf/*.yaml", "conf/pr2_common/*.yaml"]},
     license="MPL2.0 for C++ core and BSD3 for Python bindings",
     license_files=["cpp/LICENSE-MPL2", "LICENSE-BSD3"],
     cmake_install_dir="python/plainmp/",

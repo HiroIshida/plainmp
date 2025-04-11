@@ -39,7 +39,8 @@ jobs:
         run: |
           sudo apt-get install libeigen3-dev libboost-all-dev libompl-dev
           pip install scikit-build
-          MAKEFLAGS="-j$(nproc)" pip install -e . -v
+          python setup.py sdist  # install sdist version to detect packaging-related issues
+          MAKEFLAGS="-j$(nproc)" pip install dist/*.tar.gz
 
       - name: Test
         run: |
