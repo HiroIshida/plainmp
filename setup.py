@@ -20,5 +20,7 @@ setup(
     packages=packages,
     package_dir={"": "python"},
     package_data={"plainmp": ["*.pyi", "conf/*.yaml"]},
+    license="MPL2.0 for C++ core and BSD3 for Python bindings",
+    license_files=["cpp/LICENSE-MPL2", "LICENSE-BSD3"],
     cmake_install_dir="python/plainmp/",
 )
