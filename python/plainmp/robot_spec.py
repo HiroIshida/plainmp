@@ -49,7 +49,7 @@ _created_collision_csts: Dict[Tuple[str, bool], SphereCollisionCst] = {}
 def load_urdf_model_using_cache(file_path: Path, with_mesh: bool = False, deepcopy: bool = True):
     file_path = file_path.expanduser()
     assert file_path.exists()
-    key = str(file_path)
+    key = f"{file_path}_{with_mesh}"
     if key not in _loaded_urdf_models:
         if with_mesh:
             model = RobotModelFromURDF(urdf_file=str(file_path))
