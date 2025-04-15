@@ -62,6 +62,7 @@ pip uninstall -y pyrender && pip install git+https://github.com/mmatl/pyrender.g
 - Segmentation faults and other C++ runtime errors may occur when multiple OMPL versions are present - typically when installed via both from Ubuntu and ROS. To temporarily resolve this, disable ROS workspace sourcing in your shell or remove either OMPL installation.
 
 ## How to add a new robot model
+**\* Feel free to open an issue and include your (public) URDF file/link! I might be able to create a custom sphere model for that.**
 - (step 1) Prepare a URDF file. Note that [robot_description](https://github.com/robot-descriptions/robot_descriptions.py) package might be useful.
 - (step 2) Implement a new class inheriting `RobotSpec` class in [python/plainmp/robot_spec.py](./python/plainmp/robot_spec.py).
 - (step 3) Write yaml file defining urdf location/collision information/control joints/end effector in (see [example yaml files](./python/plainmp/conf/)).
