@@ -61,7 +61,8 @@ class SphereCollisionCst : public IneqConstraintBase {
       kin::BaseType base_type,
       const std::vector<SphereAttachmentSpec>& sphere_specs,
       const std::vector<std::pair<std::string, std::string>>& selcol_pairs,
-      std::optional<plainmp::collision::SDFBase::Ptr> fixed_sdf);
+      std::optional<plainmp::collision::SDFBase::Ptr> fixed_sdf,
+      bool reorder_spheres = true);
 
   void post_update_kintree() override {
     for (auto& group : sphere_groups_) {
