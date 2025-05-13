@@ -120,7 +120,8 @@ SphereCollisionCst::SphereCollisionCst(
     kin::BaseType base_type,
     const std::vector<SphereAttachmentSpec>& sphere_specs,
     const std::vector<std::pair<std::string, std::string>>& selcol_group_pairs,
-    std::optional<plainmp::collision::SDFBase::Ptr> fixed_sdf)
+    std::optional<plainmp::collision::SDFBase::Ptr> fixed_sdf,
+    bool reorder_spheres)
     : IneqConstraintBase(kin, control_joint_names, base_type),
       fixed_sdf_(fixed_sdf == std::nullopt ? nullptr : *fixed_sdf) {
   for (size_t i = 0; i < sphere_specs.size(); i++) {
@@ -151,8 +152,10 @@ SphereCollisionCst::SphereCollisionCst(
     // 2024/12/16: This optimization is likely improve the performance of
     // collision checking and probably never make it worse. However, currently,
     // the performance improvement is not significant or visible.
-    for (auto& group : sphere_groups_) {
-      group.max_distance_reorder();
+    if (reorder_spheres) {
+      for (auto& group : sphere_groups_) {
+        group.max_distance_reorder();
+      }
     }
   }
 

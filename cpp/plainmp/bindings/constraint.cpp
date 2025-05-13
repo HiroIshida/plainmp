@@ -79,7 +79,7 @@ void bind_constraint_submodule(py::module& m) {
                     const std::vector<std::string>&, BaseType,
                     const std::vector<SphereAttachmentSpec>&,
                     const std::vector<std::pair<std::string, std::string>>&,
-                    std::optional<SDFBase::Ptr>>())
+                    std::optional<SDFBase::Ptr>, bool>())
       .def("set_sdf", &SphereCollisionCst::set_sdf)
       .def("get_sdf", &SphereCollisionCst::get_sdf)
       .def("update_kintree", &SphereCollisionCst::update_kintree)

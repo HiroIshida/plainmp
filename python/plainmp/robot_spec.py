@@ -376,6 +376,7 @@ class RobotSpec(ABC):
         self_collision: bool = True,
         attachements: Sequence[SphereAttachmentSpec] = tuple(),
         use_cache: bool = True,
+        reorder_spheres: bool = True,
     ) -> SphereCollisionCst:
         """Create a collision constraint from the conf file
         Args:
@@ -414,8 +415,6 @@ class RobotSpec(ABC):
                 sdfs = [primitive_to_plainmp_sdf(p) for p in self.self_body_collision_primitives()]
                 robot_anchor_sdf = UnionSDF(sdfs)
 
-        with open(self.urdf_path, "r") as f:
-            f.read()
         kin = self.get_kin()
         cst = SphereCollisionCst(
             kin,
@@ -424,6 +423,7 @@ class RobotSpec(ABC):
             sphere_specs,
             self_collision_pairs,
             robot_anchor_sdf,
+            reorder_spheres,
         )
         if use_cache and len(attachements) == 0:
             _created_collision_csts[key] = cst
@@ -478,7 +478,12 @@ class RobotSpec(ABC):
         )
 
     def create_attached_box_collision_const(
-        self, box: Box, parent_link_name: str, relative_position: np.ndarray, n_grid: int = 6
+        self,
+        box: Box,
+        parent_link_name: str,
+        relative_position: np.ndarray,
+        n_grid: int = 6,
+        reorder_spheres: bool = True,
     ) -> SphereCollisionCst:
         # Deprecated. Use create_collision_const with attachements instead.
         extent = box._extents
@@ -504,6 +509,7 @@ class RobotSpec(ABC):
             [spec],
             [],
             None,
+            reorder_spheres,
         )
         return cst
 
