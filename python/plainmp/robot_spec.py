@@ -71,10 +71,15 @@ class RotType(Enum):
 
 class RobotSpec(ABC):
     def __init__(
-        self, conf_file: Path, base_type: BaseType = BaseType.FIXED, use_fixed_uuid: bool = False
+        self,
+        conf_file: Path,
+        base_type: BaseType = BaseType.FIXED,
+        use_fixed_spec_id: bool = False,
+        spec_id: Optional[str] = None,
     ):
         """Robot specification class.
-        param use_fixed_uuid: Controls the generation of the instance's identifier.
+        param use_fixed_spec_id: Controls the generation of the instance's identifier.
+        This parameter is used only when spec_id is None.
         If True, the class name is used as a fixed identifier, allowing resources (e.g., the kinematic model)
         to be shared across multiple instances of the same robot specification.
         If False, a unique identifier is generated using uuid.uuid4(), ensuring that each instance is independent.
@@ -97,10 +102,14 @@ class RobotSpec(ABC):
         else:
             self.conf_dict = _loaded_yamls[str(conf_file)]
         self.base_type = base_type
-        if use_fixed_uuid:
-            self.uuid = self.__class__.__name__ + str(base_type)
+
+        if spec_id is not None:
+            self._spec_id = spec_id
         else:
-            self.uuid = str(uuid.uuid4())
+            if use_fixed_spec_id:
+                self._spec_id = self.__class__.__name__ + str(base_type)
+            else:
+                self._spec_id = str(uuid.uuid4())
 
     def urdf_path_override(self) -> Optional[Path]:
         # Override this method to specify a custom URDF path.
@@ -111,7 +120,7 @@ class RobotSpec(ABC):
         # The kinematic chain is shared among the same robot spec.
         # This sharing mechanism is important to instantiate an composite
         # constraint, albeit its usage complexity.
-        self_id = self.uuid
+        self_id = self._spec_id
         if self_id not in _loaded_kin:
             with open(self.urdf_path, "r") as f:
                 urdf_str = f.read()
@@ -384,7 +393,7 @@ class RobotSpec(ABC):
             attachement: Extra attachment specs to be considered
         """
 
-        key = (self.uuid, self_collision)
+        key = (self._spec_id, self_collision)
         if len(attachements) == 0:  # caching is supported only if attachements are not given
             if use_cache and key in _created_collision_csts:
                 return _created_collision_csts[key]
@@ -556,9 +565,9 @@ class RobotSpec(ABC):
 
 
 class FetchSpec(RobotSpec):
-    def __init__(self, base_type: BaseType = BaseType.FIXED, use_fixed_uuid: bool = False):
+    def __init__(self, base_type: BaseType = BaseType.FIXED, use_fixed_spec_id: bool = False):
         p = Path(__file__).parent / "conf" / "fetch.yaml"
-        super().__init__(p, base_type=base_type, use_fixed_uuid=use_fixed_uuid)
+        super().__init__(p, base_type=base_type, use_fixed_spec_id=use_fixed_spec_id)
         if not self.urdf_path.exists():
             from skrobot.models.fetch import Fetch  # noqa
 
@@ -579,9 +588,9 @@ class FetchSpec(RobotSpec):
 
 
 class PR2SpecBase(RobotSpec):
-    def __init__(self, base_type: BaseType = BaseType.FIXED, use_fixed_uuid: bool = False):
+    def __init__(self, base_type: BaseType = BaseType.FIXED, use_fixed_spec_id: bool = False):
         p = Path(__file__).parent / "conf" / self.get_yaml_file_name()
-        super().__init__(p, base_type=base_type, use_fixed_uuid=use_fixed_uuid)
+        super().__init__(p, base_type=base_type, use_fixed_spec_id=use_fixed_spec_id)
         if not self.urdf_path.exists():
             from skrobot.models.pr2 import PR2  # noqa
 
@@ -601,8 +610,8 @@ class PR2SpecBase(RobotSpec):
 
 
 class PR2BaseOnlySpec(PR2SpecBase):
-    def __init__(self, use_fixed_uuid: bool = False):
-        super().__init__(base_type=BaseType.PLANAR, use_fixed_uuid=use_fixed_uuid)
+    def __init__(self, use_fixed_spec_id: bool = False):
+        super().__init__(base_type=BaseType.PLANAR, use_fixed_spec_id=use_fixed_spec_id)
 
     def get_yaml_file_name(self) -> str:
         return "pr2_base_only.yaml"
@@ -640,9 +649,9 @@ class PR2DualarmSpec(PR2SpecBase):
 
 
 class PandaSpec(RobotSpec):
-    def __init__(self, use_fixed_uuid: bool = False):
+    def __init__(self, use_fixed_spec_id: bool = False):
         p = Path(__file__).parent / "conf" / "panda.yaml"
-        super().__init__(p, base_type=BaseType.FIXED, use_fixed_uuid=use_fixed_uuid)
+        super().__init__(p, base_type=BaseType.FIXED, use_fixed_spec_id=use_fixed_spec_id)
         if not self.urdf_path.exists():
             from skrobot.models.panda import Panda  # noqa
 
@@ -652,9 +661,9 @@ class PandaSpec(RobotSpec):
 class JaxonSpec(RobotSpec):
     gripper_collision: bool
 
-    def __init__(self, gripper_collision: bool = True, use_fixed_uuid: bool = False):
+    def __init__(self, gripper_collision: bool = True, use_fixed_spec_id: bool = False):
         p = Path(__file__).parent / "conf" / "jaxon.yaml"
-        super().__init__(p, base_type=BaseType.FLOATING, use_fixed_uuid=use_fixed_uuid)
+        super().__init__(p, base_type=BaseType.FLOATING, use_fixed_spec_id=use_fixed_spec_id)
         self.gripper_collision = gripper_collision
 
         if not self.urdf_path.exists():
