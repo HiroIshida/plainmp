@@ -104,7 +104,7 @@ class RobotSpec(ABC):
         self.base_type = base_type
 
         if spec_id is not None:
-            self._spec_id = spec_id
+            self._spec_id = self.__class__.__name__ + str(spec_id)
         else:
             if use_fixed_spec_id:
                 self._spec_id = self.__class__.__name__ + str(base_type)
@@ -565,9 +565,16 @@ class RobotSpec(ABC):
 
 
 class FetchSpec(RobotSpec):
-    def __init__(self, base_type: BaseType = BaseType.FIXED, use_fixed_spec_id: bool = False):
+    def __init__(
+        self,
+        base_type: BaseType = BaseType.FIXED,
+        use_fixed_spec_id: bool = False,
+        spec_id: Optional[str] = None,
+    ):
         p = Path(__file__).parent / "conf" / "fetch.yaml"
-        super().__init__(p, base_type=base_type, use_fixed_spec_id=use_fixed_spec_id)
+        super().__init__(
+            p, base_type=base_type, use_fixed_spec_id=use_fixed_spec_id, spec_id=spec_id
+        )
         if not self.urdf_path.exists():
             from skrobot.models.fetch import Fetch  # noqa
 
@@ -588,9 +595,16 @@ class FetchSpec(RobotSpec):
 
 
 class PR2SpecBase(RobotSpec):
-    def __init__(self, base_type: BaseType = BaseType.FIXED, use_fixed_spec_id: bool = False):
+    def __init__(
+        self,
+        base_type: BaseType = BaseType.FIXED,
+        use_fixed_spec_id: bool = False,
+        spec_id: Optional[str] = None,
+    ):
         p = Path(__file__).parent / "conf" / self.get_yaml_file_name()
-        super().__init__(p, base_type=base_type, use_fixed_spec_id=use_fixed_spec_id)
+        super().__init__(
+            p, base_type=base_type, use_fixed_spec_id=use_fixed_spec_id, spec_id=spec_id
+        )
         if not self.urdf_path.exists():
             from skrobot.models.pr2 import PR2  # noqa
 
@@ -610,8 +624,10 @@ class PR2SpecBase(RobotSpec):
 
 
 class PR2BaseOnlySpec(PR2SpecBase):
-    def __init__(self, use_fixed_spec_id: bool = False):
-        super().__init__(base_type=BaseType.PLANAR, use_fixed_spec_id=use_fixed_spec_id)
+    def __init__(self, use_fixed_spec_id: bool = False, spec_id: Optional[str] = None):
+        super().__init__(
+            base_type=BaseType.PLANAR, use_fixed_spec_id=use_fixed_spec_id, spec_id=spec_id
+        )
 
     def get_yaml_file_name(self) -> str:
         return "pr2_base_only.yaml"
@@ -649,9 +665,11 @@ class PR2DualarmSpec(PR2SpecBase):
 
 
 class PandaSpec(RobotSpec):
-    def __init__(self, use_fixed_spec_id: bool = False):
+    def __init__(self, use_fixed_spec_id: bool = False, spec_id: Optional[str] = None):
         p = Path(__file__).parent / "conf" / "panda.yaml"
-        super().__init__(p, base_type=BaseType.FIXED, use_fixed_spec_id=use_fixed_spec_id)
+        super().__init__(
+            p, base_type=BaseType.FIXED, use_fixed_spec_id=use_fixed_spec_id, spec_id=spec_id
+        )
         if not self.urdf_path.exists():
             from skrobot.models.panda import Panda  # noqa
 
@@ -661,9 +679,16 @@ class PandaSpec(RobotSpec):
 class JaxonSpec(RobotSpec):
     gripper_collision: bool
 
-    def __init__(self, gripper_collision: bool = True, use_fixed_spec_id: bool = False):
+    def __init__(
+        self,
+        gripper_collision: bool = True,
+        use_fixed_spec_id: bool = False,
+        spec_id: Optional[str] = None,
+    ):
         p = Path(__file__).parent / "conf" / "jaxon.yaml"
-        super().__init__(p, base_type=BaseType.FLOATING, use_fixed_spec_id=use_fixed_spec_id)
+        super().__init__(
+            p, base_type=BaseType.FLOATING, use_fixed_spec_id=use_fixed_spec_id, spec_id=spec_id
+        )
         self.gripper_collision = gripper_collision
 
         if not self.urdf_path.exists():
