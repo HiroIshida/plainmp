@@ -34,10 +34,12 @@ void bind_ompl_wrapper_submodule(py::module& m) {
       .def_readwrite("resolution", &ValidatorConfig::resolution)
       .def_readwrite("box_width", &ValidatorConfig::box_width);
 
-  py::enum_<PlannerBase::RefineType>(ompl_m, "RefineType")
-      .value("SHORTCUT", PlannerBase::RefineType::SHORTCUT)
-      .value("BSPLINE", PlannerBase::RefineType::BSPLINE)
+  py::enum_<RefineType>(ompl_m, "RefineType")
+      .value("SHORTCUT", RefineType::SHORTCUT)
+      .value("BSPLINE", RefineType::BSPLINE)
       .export_values();
+
+  ompl_m.def("simplify", &simplify);
 
   py::class_<OMPLPlanner>(ompl_m, "OMPLPlanner", py::module_local())
       .def(py::init<std::vector<double>&, std::vector<double>&,

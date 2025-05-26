@@ -31,9 +31,10 @@ namespace plainmp::ompl_wrapper {
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-og::PathGeometric points_to_pathgeometric(
-    const std::vector<std::vector<double>>& points,
-    ob::SpaceInformationPtr si) {
+using Points = std::vector<std::vector<double>>;
+
+og::PathGeometric points_to_pathgeometric(const Points& points,
+                                          ob::SpaceInformationPtr si) {
   auto pg = og::PathGeometric(si);
   for (const auto& point : points) {
     ob::State* s = si->getStateSpace()->allocState();
@@ -124,8 +125,47 @@ struct CollisionAwareSpaceInformation {
   const size_t max_is_valid_call_;
 };
 
+enum class RefineType { SHORTCUT, BSPLINE };
+
+Eigen::MatrixXd simplify(const Points& points,
+                         std::vector<RefineType> refine_seq,
+                         const std::vector<double>& lb,
+                         const std::vector<double>& ub,
+                         constraint::IneqConstraintBase::Ptr ineq_cst,
+                         size_t max_is_valid_call,
+                         const ValidatorConfig& vconfig) {
+  auto csi = std::make_unique<CollisionAwareSpaceInformation>(
+      lb, ub, ineq_cst, max_is_valid_call, vconfig);
+  auto setup = std::make_unique<og::SimpleSetup>(csi->si_);
+  setup->setStateValidityChecker(
+      [&](const ob::State* s) { return csi->is_valid(s); });
+
+  auto p = points_to_pathgeometric(points, csi->si_);
+  auto simplifier = og::PathSimplifier(csi->si_);
+  for (auto refine : refine_seq) {
+    if (refine == RefineType::SHORTCUT) {
+      simplifier.shortcutPath(p);
+    } else if (refine == RefineType::BSPLINE) {
+      simplifier.smoothBSpline(p);
+    } else {
+      throw std::runtime_error("unknown refine type");
+    }
+  }
+
+  auto& states = p.getStates();
+  const size_t dim = points[0].size();
+
+  // use Eigen::MatrixXd to rerun numpy array in python
+  Eigen::MatrixXd trajectory(dim, states.size());
+  std::vector<double> tmp_vec(dim);
+  for (size_t i = 0; i < states.size(); ++i) {
+    auto rs = states[i]->as<ob::RealVectorStateSpace::StateType>();
+    trajectory.col(i) = Eigen::Map<Eigen::VectorXd>(rs->values, dim);
+  }
+  return trajectory.transpose();
+}
+
 struct PlannerBase {
-  enum class RefineType { SHORTCUT, BSPLINE };
   PlannerBase(const std::vector<double>& lb,
               const std::vector<double>& ub,
               constraint::IneqConstraintBase::Ptr ineq_cst,
@@ -251,7 +291,7 @@ struct ERTConnectPlanner : public PlannerBase {
     setup_->setPlanner(ert_connect);
   }
 
-  void set_heuristic(const std::vector<std::vector<double>>& points) {
+  void set_heuristic(const Points& points) {
     auto geo_path = points_to_pathgeometric(points, this->csi_->si_);
     const auto heuristic = geo_path.getStates();
     const auto ert_connect = setup_->getPlanner()->as<og::ERTConnect>();
