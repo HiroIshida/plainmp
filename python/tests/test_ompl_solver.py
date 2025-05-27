@@ -5,7 +5,13 @@ import numpy as np
 import pytest
 from skrobot.model.primitives import Box
 
-from plainmp.ompl_solver import Algorithm, OMPLSolver, OMPLSolverConfig, RefineType
+from plainmp.ompl_solver import (
+    Algorithm,
+    OMPLSolver,
+    OMPLSolverConfig,
+    RefineType,
+    simplify_path,
+)
 from plainmp.problem import Problem
 from plainmp.psdf import UnionSDF
 from plainmp.robot_spec import FetchSpec
@@ -28,10 +34,7 @@ test_conditions.append((True, Algorithm.KPIECE1, tuple(), True))
 test_conditions.append((True, Algorithm.RRT, tuple(), True))
 
 
-@pytest.mark.parametrize("goal_is_pose,algo,refine_seq,use_goal_sampler", test_conditions)
-def test_ompl_solver(
-    goal_is_pose: bool, algo: Algorithm, refine_seq: Sequence[RefineType], use_goal_sampler: bool
-):
+def create_test_problem(goal_is_pose: bool):
     fetch = FetchSpec()
     cst = fetch.create_collision_const()
 
@@ -48,6 +51,14 @@ def test_ompl_solver(
         goal_cst = np.array([0.386, 0.20565, 1.41370, 0.30791, -1.82230, 0.24521, 0.41718, 6.01064])
     msbox = np.array([0.05, 0.05, 0.05, 0.1, 0.1, 0.1, 0.2, 0.2])
     problem = Problem(start, lb, ub, goal_cst, cst, None, msbox)
+    return problem
+
+
+@pytest.mark.parametrize("goal_is_pose,algo,refine_seq,use_goal_sampler", test_conditions)
+def test_ompl_solver(
+    goal_is_pose: bool, algo: Algorithm, refine_seq: Sequence[RefineType], use_goal_sampler: bool
+):
+    problem = create_test_problem(goal_is_pose)
     config = OMPLSolverConfig(
         algorithm=algo, use_goal_sampler=use_goal_sampler, refine_seq=refine_seq
     )
@@ -58,28 +69,28 @@ def test_ompl_solver(
         assert ret.traj is not None
 
         for q in ret.traj.numpy():
-            assert np.all(lb <= q) and np.all(q <= ub)
+            assert np.all(problem.lb <= q) and np.all(q <= problem.ub)
             if RefineType.BSPLINE in refine_seq:
                 # NOTE: bspline may make the trajectory slightly invalid
                 # so we use a relaxed threshold
-                value = cst.evaluate(q)[0]
+                value = problem.global_ineq_const.evaluate(q)[0]
                 assert (value > -1e3).all()
             else:
-                assert cst.is_valid(q)
+                assert problem.global_ineq_const.is_valid(q)
 
         # using the previous planning result, re-plan
         conf = OMPLSolverConfig(n_max_ik_trial=1)
         solver = OMPLSolver(conf)
         ret_replan = solver.solve(problem, guess=ret.traj)
         for q in ret_replan.traj.numpy():
-            assert np.all(lb <= q) and np.all(q <= ub)
+            assert np.all(problem.lb <= q) and np.all(q <= problem.ub)
             if RefineType.BSPLINE in refine_seq:
                 # NOTE: bspline may make the trajectory slightly invalid
                 # so we use a relaxed threshold
-                value = cst.evaluate(q)[0]
+                value = problem.global_ineq_const.evaluate(q)[0]
                 assert (value > -1e3).all()
             else:
-                assert cst.is_valid(q)
+                assert problem.global_ineq_const.is_valid(q)
 
         if len(refine_seq) == 0:
             # NOTE: this test does not work with refine_seq
@@ -122,6 +133,28 @@ def test_timeout_many():
     solver = OMPLSolver(conf)
     for _ in range(300):
         solver.solve(problem)
+
+
+def test_simplifier():
+    problem = create_test_problem(goal_is_pose=True)
+    config = OMPLSolverConfig()
+    solver = OMPLSolver(config)
+
+    for _ in range(10):
+        ret = solver.solve(problem)
+        assert ret.traj is not None
+
+        original_length = ret.traj.get_length()
+        ret = simplify_path(
+            ret.traj,
+            problem.lb,
+            problem.ub,
+            problem.global_ineq_const,
+            problem.resolution,
+            problem.validator_type,
+        )
+        post_simplified_length = ret.get_length()
+        assert post_simplified_length < original_length
 
 
 if __name__ == "__main__":

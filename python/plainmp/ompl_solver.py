@@ -1,7 +1,7 @@
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Sequence, TypeVar
+from typing import Literal, Optional, Sequence, TypeVar, Union
 
 import numpy as np
 
@@ -18,6 +18,7 @@ from ._plainmp.ompl import (  # noqa: F401
     ValidatorType,
     set_log_level_none,
     set_random_seed,
+    simplify,
 )
 
 
@@ -226,3 +227,28 @@ class OMPLSolver:
                 TerminateState.SUCCESS,
                 ns_internal,
             )
+
+
+def simplify_path(
+    traj: Trajectory,
+    lb: np.ndarray,
+    ub: np.ndarray,
+    ineq_cst: IneqCompositeCst,
+    resolution: Union[float, np.ndarray],  # see problem.Problem for definition
+    validator_type: Literal["euclidean", "box"] = "box",  # see problem.Problem for definition
+    n_max_call: int = 1000000,
+    refine_seq: Sequence[RefineType] = (RefineType.SHORTCUT, RefineType.BSPLINE),
+) -> Trajectory:
+
+    vconfig = ValidatorConfig()
+    if validator_type == "box":
+        vconfig.type = ValidatorType.BOX
+        vconfig.box_width = resolution
+    elif validator_type == "euclidean":
+        vconfig.type = ValidatorType.EUCLIDEAN
+        vconfig.resolution = resolution
+    else:
+        raise ValueError(f"Unknown validator type: {validator_type}")
+
+    ret = simplify(traj.numpy(), refine_seq, lb, ub, ineq_cst, n_max_call, vconfig)
+    return Trajectory(list(ret))
