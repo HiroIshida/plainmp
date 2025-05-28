@@ -67,7 +67,7 @@ if __name__ == "__main__":
     att = SphereAttachmentSpec("panda_hand", points_wrt_gripper.transpose(), radii, False)
 
     # motion planning
-    ineq_cst = spec.create_collision_const(attachements=[att])
+    ineq_cst = spec.create_collision_const(attachments=[att])
     sdf = UnionSDF([primitive_to_plainmp_sdf(shelf), GroundSDF(0.0)])
     ineq_cst.set_sdf(sdf)
     problem = Problem(q_start, lb, ub, q_goal, ineq_cst, None, 0.03, "euclidean")
