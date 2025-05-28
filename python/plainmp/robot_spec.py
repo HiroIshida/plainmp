@@ -383,24 +383,24 @@ class RobotSpec(ABC):
     def create_collision_const(
         self,
         self_collision: bool = True,
-        attachements: Sequence[SphereAttachmentSpec] = tuple(),
+        attachments: Sequence[SphereAttachmentSpec] = tuple(),
         use_cache: bool = True,
         reorder_spheres: bool = True,
     ) -> SphereCollisionCst:
         """Create a collision constraint from the conf file
         Args:
             self_collision: If True, self collision is considered
-            attachement: Extra attachment specs to be considered
+            attachment: Extra attachment specs to be considered
         """
 
         key = (self._spec_id, self_collision)
-        if len(attachements) == 0:  # caching is supported only if attachements are not given
+        if len(attachments) == 0:  # caching is supported only if attachments are not given
             if use_cache and key in _created_collision_csts:
                 return _created_collision_csts[key]
 
         sphere_specs = self.parse_sphere_specs()
-        if len(attachements) > 0:  # merge the attachements
-            for att in attachements:
+        if len(attachments) > 0:  # merge the attachments
+            for att in attachments:
                 parent_link = att.parent_link_name
                 merged = False
                 for spec in sphere_specs:
@@ -434,7 +434,7 @@ class RobotSpec(ABC):
             robot_anchor_sdf,
             reorder_spheres,
         )
-        if use_cache and len(attachements) == 0:
+        if use_cache and len(attachments) == 0:
             _created_collision_csts[key] = cst
         return cst
 
@@ -494,7 +494,7 @@ class RobotSpec(ABC):
         n_grid: int = 6,
         reorder_spheres: bool = True,
     ) -> SphereCollisionCst:
-        # Deprecated. Use create_collision_const with attachements instead.
+        # Deprecated. Use create_collision_const with attachments instead.
         extent = box._extents
         grid = np.meshgrid(
             np.linspace(-0.5 * extent[0], 0.5 * extent[0], n_grid),
