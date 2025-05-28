@@ -24,7 +24,7 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
    * If step_ratio = 0.15, then
    * n_test = floor(1/0.15) + 2 = 8
    * TABLE_SEQUENCE[7] = [0, 7, 4, 2, 6, 5, 3, 1, 0, 0, 0, ...]
-   * This first index is already checked in the algrithm side (travel_rate = 0)
+   * This first index is already checked in the algorithm side (travel_rate = 0)
    * second index is checked directly by isValid(s2) (travel_rate = 1)
    * In the for loop, the travel_rate is computed in the following order
    * i=2: travel_rate = 0.15 * 4 = 0.6

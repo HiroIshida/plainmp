@@ -96,7 +96,7 @@ class ManiRRTConnectSolver:
                 return True
             return problem.global_ineq_const.is_valid(q)
 
-        assert problem.validator_type == "box", "currenlty only box validator is supported"
+        assert problem.validator_type == "box", "currently only box validator is supported"
         rrtconnect = ManifoldRRTConnect(
             problem.start,
             q_goal,  # type: ignore

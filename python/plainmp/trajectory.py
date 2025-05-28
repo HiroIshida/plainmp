@@ -15,7 +15,7 @@ class EuclideanMetric:
 
 
 class Trajectory:
-    """Resamplable Trajectory classs
+    """Resamplable Trajectory class
 
     NOTE: If metric is non-eucledian, get_length, sample_point, resample
     are not accurate. They are just approximations. Because geodesic distance is
