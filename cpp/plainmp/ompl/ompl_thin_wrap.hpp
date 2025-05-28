@@ -223,7 +223,7 @@ struct PlannerBase {
     }
     if (result == ob::PlannerStatus::APPROXIMATE_SOLUTION) {
       OMPL_INFORM(
-          "reporeted to be solved. But reject it because it'S approx solution");
+          "reported to be solved. But reject it because it'S approx solution");
       return {};
     }
     auto p = setup_->getSolutionPath().as<og::PathGeometric>();

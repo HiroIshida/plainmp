@@ -127,6 +127,7 @@ std::pair<Eigen::VectorXd, SMatrix> SequentialCst::evaluate(
 }
 
 std::string SequentialCst::to_string() const {
+  // clang-format off
   std::stringstream ss;
   ss << "Sequential constraint:" << std::endl;
   ss << "total dim: " << cst_dim() << std::endl;
@@ -144,6 +145,7 @@ std::string SequentialCst::to_string() const {
     ss << "  - motion step box constraint"
        << "  : " << q_dim_ * 2 * (T_ - 1) << std::endl;
   }
+  // clang-format on
   return ss.str();
 }
 

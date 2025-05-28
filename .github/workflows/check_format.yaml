@@ -22,13 +22,23 @@ jobs:
               python-version: 3.8
         - name: pip install formatters
           run: |
-              pip3 install black==22.6.0 isort flake8 autoflake
+              pip3 install black==22.6.0 isort flake8 autoflake codespell
 
         - name: install clang-format
           run: |
               sudo apt-get update
-              sudo apt-get install clang-format
+              sudo apt-get install clang-format-14
+              clang-format --version
 
         - name: check
           run: |
             bash format.sh
+
+        - name: Fail if format.sh modified files
+          run: |
+            if ! git diff --quiet; then
+              echo "::error::Files are not properly formatted. Please run ./format.sh locally and commit the changes."
+              echo "--- git diff (summary) ---"
+              git --no-pager diff
+              exit 1
+            fi
