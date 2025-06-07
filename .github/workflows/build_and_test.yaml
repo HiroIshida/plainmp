@@ -18,8 +18,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.8", "3.10", "3.12"]
+        use-venv: [false, true]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -28,6 +30,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Create & activate venv
+        if: ${{ matrix.use-venv }}
+        shell: bash
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          .venv/bin/pip install -U pip
+          echo PATH=$PATH >> $GITHUB_ENV
 
       - name: Update Submodules
         run: git submodule update --init --recursive
