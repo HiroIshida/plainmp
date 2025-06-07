@@ -1,6 +1,6 @@
 import copy
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, Optional, Tuple, Union
 
 import numpy as np
@@ -124,7 +124,9 @@ class SQPBasedSolverConfig:
         2.0  # NOTE: in some large problem like humanoid planning, this value should be zero
     )
     step_box: Optional[np.ndarray] = None
-    _osqpsqp_config: OsqpSqpConfig = OsqpSqpConfig()  # don't directly access this
+    _osqpsqp_config: OsqpSqpConfig = field(
+        default_factory=OsqpSqpConfig
+    )  # don't directly access this
     timeout: Optional[float] = None
     return_osqp_result: bool = False  # helpful for debugging but memory footprint is large
     step_size_init: float = 1.0
