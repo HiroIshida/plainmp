@@ -1,5 +1,5 @@
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
@@ -19,7 +19,7 @@ from plainmp.trajectory import Trajectory
 class ManiRRTConfig:
     n_max_call: int
     n_max_satisfaction_trial: int = 100
-    ik_conf: Optional[IKConfig] = IKConfig()
+    ik_conf: Optional[IKConfig] = field(default_factory=IKConfig)
     n_subgoal: int = 4  # used only when init_traj is specified
     timeout: Optional[float] = None
 
