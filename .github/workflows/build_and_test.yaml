@@ -41,15 +41,16 @@ jobs:
       - name: Install This Package
         run: |
           sudo apt-get install libeigen3-dev libboost-all-dev libompl-dev
-          pip install scikit-build
-          python setup.py sdist  # install sdist version to detect packaging-related issues
+          python3 -m pip install --upgrade pip
+          python3 -m pip install build
+          python3 -m build . --sdist  # install sdist version to detect packaging-related issues
           MAKEFLAGS="-j$(nproc)" pip install dist/*.tar.gz
 
       - name: Test
         run: |
           pip install pytest
           for i in {1..3}; do
-            if pytest python; then
+            if pytest tests; then
               exit 0
             fi
             echo "Test failed... retrying ($i)"

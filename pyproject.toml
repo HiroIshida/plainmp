@@ -1,0 +1,24 @@
+[build-system]
+requires = ["scikit-build-core", "ninja", "wheel"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "plainmp"
+version = "0.3.0"
+description = "Very fast motion planning for articulated robot, through a bit of premature-optimization (C++ core with Python bindings) *less than 1ms for moderate problems"
+authors = [{name = "Hirokazu Ishida"}]
+license = {text = "MPL2.0 for C++ core and BSD3 for Python bindings"}
+dependencies = [
+    "numpy",
+    "scipy", 
+    "scikit-robot>=0.0.44",
+    "pyyaml",
+    "robot_descriptions",
+    "osqp<1.0.0"
+]
+
+[tool.scikit-build]
+# see: https://scikit-build-core.readthedocs.io/en/latest/configuration/index.html#customizing-the-built-wheel
+wheel.install-dir = "plainmp"
+# Why do we need this? The documentation says that anything except listed in .gitignore will be included...
+sdist.include = ["pybind11"]
