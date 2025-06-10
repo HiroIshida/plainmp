@@ -1,0 +1,44 @@
+name: check_pypi_install
+
+on:
+  schedule:
+    - cron: '35 8 * * *'  # 17:35 JST (UTC+9) = 08:35 UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  test-pypi-install:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.10", "3.12"]
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libeigen3-dev libboost-all-dev libompl-dev libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev
+
+      - name: Install plainmp from PyPI
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install plainmp
+
+      - name: Checkout Code (for examples and tests)
+        uses: actions/checkout@v3
+
+      - name: Test
+        run: |
+          pip install pytest
+          for i in {1..3}; do
+            if pytest tests; then
+              exit 0
+            fi
+            echo "Test failed... retrying ($i)"
+          done
+          echo "All test attempts failed"
+          exit 1
+        timeout-minutes: 5
