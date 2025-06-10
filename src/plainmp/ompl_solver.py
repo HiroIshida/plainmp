@@ -91,6 +91,31 @@ OMPLSolverT = TypeVar("OMPLSolverT", bound="OMPLSolver")
 
 
 class OMPLSolver:
+    """Motion planning solver using OMPL (Open Motion Planning Library).
+
+    This solver provides sampling-based motion planning algorithms for robot path planning.
+    It supports various algorithms like RRTConnect, RRT*, and custom variants with
+    collision checking and path optimization.
+
+    Parameters
+    ----------
+    config : OMPLSolverConfig, optional
+        Configuration parameters for the solver. If None, default settings are used.
+
+    Examples
+    --------
+    >>> from plainmp.ompl_solver import OMPLSolver, OMPLSolverConfig
+    >>> from plainmp.problem import Problem
+    >>>
+    >>> config = OMPLSolverConfig(algorithm=Algorithm.RRTConnect, n_max_call=1000000)
+    >>> solver = OMPLSolver(config)
+    >>> problem = Problem(q_start, lb, ub, q_goal, collision_cst, None, resolution)
+    >>> result = solver.solve(problem)
+    >>> if result.success:
+    ...     print(f"Path found in {result.time_elapsed:.3f} seconds")
+    ...     trajectory = result.traj
+    """
+
     config: OMPLSolverConfig
 
     def __init__(self, config: Optional[OMPLSolverConfig] = None):
@@ -144,6 +169,34 @@ class OMPLSolver:
             return ret  # type: ignore
 
     def solve(self, problem: Problem, guess: Optional[Trajectory] = None) -> OMPLSolverResult:
+        """Solve a motion planning problem.
+
+        This method solves the given motion planning problem using the configured
+        sampling-based algorithm. It handles goal configuration generation via IK
+        if needed, collision checking, and path simplification if specified in the config.
+
+        Parameters
+        ----------
+        problem : Problem
+            Motion planning problem containing start/goal, bounds, and constraints.
+        guess : Trajectory, optional
+            Initial trajectory guess for warm-starting the planner (uses ERTConnect).
+
+        Returns
+        -------
+        OMPLSolverResult
+            Result containing the planned trajectory, timing information, and success status.
+
+        Examples
+        --------
+        >>> solver = OMPLSolver()
+        >>> problem = Problem(q_start, lb, ub, q_goal, collision_cst, None, resolution)
+        >>> result = solver.solve(problem)
+        >>> if result.success:
+        ...     for q in result.traj.resample(50):
+        ...         # Execute or visualize each waypoint
+        ...         pass
+        """
 
         ts = time.time()
         assert problem.global_eq_const is None, "not supported by OMPL"
@@ -239,6 +292,43 @@ def simplify_path(
     n_max_call: int = 1000000,
     refine_seq: Sequence[RefineType] = (RefineType.SHORTCUT, RefineType.BSPLINE),
 ) -> Trajectory:
+    """Simplify and optimize a robot trajectory.
+
+    This function post-processes a planned trajectory to reduce path length,
+    smooth the motion, and improve overall quality while maintaining feasibility.
+
+    Parameters
+    ----------
+    traj : Trajectory
+        Input trajectory to simplify.
+    lb : np.ndarray
+        Lower bounds for joint angles.
+    ub : np.ndarray
+        Upper bounds for joint angles.
+    ineq_cst : IneqCompositeCst
+        Inequality constraints for feasibility checking.
+    resolution : Union[float, np.ndarray]
+        Motion validation resolution (see Problem class for details).
+    validator_type : {"euclidean", "box"}, default="box"
+        Type of motion validator.
+    n_max_call : int, default=1000000
+        Maximum number of optimization iterations.
+    refine_seq : Sequence[RefineType], default=(SHORTCUT, BSPLINE)
+        Sequence of refinement operations to apply.
+
+    Returns
+    -------
+    Trajectory
+        Simplified and optimized trajectory.
+
+    Examples
+    --------
+    >>> # Simplify a planned trajectory
+    >>> simplified = simplify_path(
+    ...     result.traj, lb, ub, collision_cst, resolution,
+    ...     refine_seq=[RefineType.SHORTCUT, RefineType.BSPLINE]
+    ... )
+    """
 
     vconfig = ValidatorConfig()
     if validator_type == "box":

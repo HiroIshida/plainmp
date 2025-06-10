@@ -245,17 +245,13 @@ class ManifoldRRTConnect:
         The maximum values of the configuration space bounds.
     motion_step_box : np.ndarray
         The size of the motion step box for the RRT algorithm.
-    f_project : Callable[[np.ndarray], Optional[np.ndarray]]
+    f_project : Callable[[np.ndarray, bool], Optional[np.ndarray]]
         A function that projects a given configuration onto the manifold.
         return None if projection failed
     f_is_valid : Callable[[np.ndarray], bool]
         A function that checks if a given configuration is valid.
-    config : Config, optional
-        The configuration object for the RRT algorithm, by default Config().
-
-    Examples
-    --------
-    Define a sample configuration space and motion model:
+    config : ManifoldRRTConfig, optional
+        The configuration object for the RRT algorithm, by default ManifoldRRTConfig()
     """
 
     rrt_start: ManifoldRRT

@@ -70,6 +70,26 @@ class RotType(Enum):
 
 
 class RobotSpec(ABC):
+    """Base class for robot specifications.
+
+    This class provides a unified interface for robot kinematics, constraints,
+    and configuration management. It handles URDF loading, kinematic model creation,
+    and constraint generation for motion planning and inverse kinematics.
+
+    Parameters
+    ----------
+    conf_file : Path
+        Path to the robot configuration YAML file.
+    base_type : BaseType, default=BaseType.FIXED
+        Type of robot base (FIXED, PLANAR, or FLOATING).
+    use_fixed_spec_id : bool, default=False
+        Controls the generation of the instance's identifier.
+        If True, the class name is used as a fixed identifier, allowing resources
+        to be shared across multiple instances. If False, a unique identifier is generated.
+    spec_id : str, optional
+        Custom identifier for this robot specification instance.
+    """
+
     def __init__(
         self,
         conf_file: Path,
@@ -77,13 +97,6 @@ class RobotSpec(ABC):
         use_fixed_spec_id: bool = False,
         spec_id: Optional[str] = None,
     ):
-        """Robot specification class.
-        param use_fixed_spec_id: Controls the generation of the instance's identifier.
-        This parameter is used only when spec_id is None.
-        If True, the class name is used as a fixed identifier, allowing resources (e.g., the kinematic model)
-        to be shared across multiple instances of the same robot specification.
-        If False, a unique identifier is generated using uuid.uuid4(), ensuring that each instance is independent.
-        """
         if str(conf_file) not in _loaded_yamls:
             with open(conf_file, "r") as f:
                 self.conf_dict = yaml.safe_load(f)
@@ -285,6 +298,22 @@ class RobotSpec(ABC):
         return self_collision_primitives
 
     def angle_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Get joint angle bounds for the robot.
+
+        Returns the lower and upper bounds for all controlled joints.
+        Infinite bounds are clipped to [-2π, 2π] for numerical stability.
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            Lower bounds and upper bounds for joint angles.
+
+        Examples
+        --------
+        >>> spec = FetchSpec()
+        >>> lb, ub = spec.angle_bounds()
+        >>> print(f"Joint bounds: [{lb[0]:.2f}, {ub[0]:.2f}] rad")
+        """
         kin = self.get_kin()
         joint_ids = kin.get_joint_ids(self.control_joint_names)
         limits = kin.get_joint_position_limits(joint_ids)
@@ -387,10 +416,33 @@ class RobotSpec(ABC):
         use_cache: bool = True,
         reorder_spheres: bool = True,
     ) -> SphereCollisionCst:
-        """Create a collision constraint from the conf file
-        Args:
-            self_collision: If True, self collision is considered
-            attachment: Extra attachment specs to be considered
+        """Create a collision constraint for motion planning and IK.
+
+        This method creates a sphere-based collision constraint using the collision
+        spheres defined in the robot configuration file. It supports both self-collision
+        checking and environment collision checking.
+
+        Parameters
+        ----------
+        self_collision : bool, default=True
+            Whether to include self-collision constraints.
+        attachments : Sequence[SphereAttachmentSpec], default=()
+            Additional sphere attachments (e.g., for carried objects).
+        use_cache : bool, default=True
+            Whether to load cached collision constraints for performance.
+        reorder_spheres : bool, default=True
+            Whether to reorder spheres for optimal collision checking performance.
+
+        Returns
+        -------
+        SphereCollisionCst
+            Collision constraint object that can be used with solvers.
+
+        Examples
+        --------
+        >>> spec = FetchSpec()
+        >>> collision_cst = spec.create_collision_const(self_collision=True)
+        >>> collision_cst.set_sdf(table_sdf)  # Add environment obstacles
         """
 
         key = (self._spec_id, self_collision)
@@ -456,11 +508,30 @@ class RobotSpec(ABC):
         return self.create_pose_const(link_names, pose_list)
 
     def create_pose_const(self, link_names: List[str], link_poses: List[np.ndarray]) -> LinkPoseCst:
-        """This constraint allows you to specify target poses for multiple links in a kinematic chain.
+        """Create pose constraints for specified robot links.
+
+        This constraint allows you to specify target poses for multiple links in a kinematic chain.
         Each pose can be specified in one of three formats:
         - 3D position only (x, y, z)
         - 6D pose with position and RPY angles (x, y, z, roll, pitch, yaw)
         - 7D pose with position and quaternion (x, y, z, qx, qy, qz, qw)
+
+        Parameters
+        ----------
+        link_names : List[str]
+            Names of the robot links to constrain.
+        link_poses : List[np.ndarray]
+            Target poses for each link. Format depends on array length (3, 6, or 7 elements).
+
+        Returns
+        -------
+        LinkPoseCst
+            Pose constraint object for use in IK or motion planning.
+
+        Examples
+        --------
+        >>> spec = FetchSpec()
+        >>> pose_cst = spec.create_pose_const(["gripper_link"], [[0.7, 0.2, 0.95, 0, 0, 0]])
         """
         assert len(link_names) == len(link_poses)
         return LinkPoseCst(
@@ -565,6 +636,28 @@ class RobotSpec(ABC):
 
 
 class FetchSpec(RobotSpec):
+    """Robot specification for the Fetch mobile manipulator.
+
+    Provides pre-configured settings and convenience methods for the Fetch robot,
+    including gripper pose constraints and workspace bounds.
+
+    Parameters
+    ----------
+    base_type : BaseType, default=BaseType.FIXED
+        Type of robot base. Fetch typically uses FIXED base for manipulation tasks.
+    use_fixed_spec_id : bool, default=False
+        Whether to use a fixed identifier for resource sharing.
+    spec_id : str, optional
+        Custom identifier for this robot specification instance.
+
+    Examples
+    --------
+    >>> fs = FetchSpec()
+    >>> gripper_cst = fs.create_gripper_pose_const([0.7, 0.2, 0.95, 0, 0, 0])
+    >>> collision_cst = fs.create_collision_const()
+    >>> lb, ub = fs.angle_bounds()
+    """
+
     def __init__(
         self,
         base_type: BaseType = BaseType.FIXED,
