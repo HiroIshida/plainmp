@@ -15,12 +15,43 @@ class EuclideanMetric:
 
 
 class Trajectory:
-    """Resamplable Trajectory class
+    """Resamplable trajectory for robot motion.
 
-    NOTE: If metric is non-eucledian, get_length, sample_point, resample
-    are not accurate. They are just approximations. Because geodesic distance is
-    not linearly additive. To obtain accurate results, you should first prepare
-    trajectory with many waypoints, and then resample it with metric.
+    This class represents a robot trajectory as a sequence of waypoints with
+    support for resampling, length computation, and trajectory manipulation.
+    It supports custom distance metrics for different robot types.
+
+    Parameters
+    ----------
+    points : List[np.ndarray]
+        Sequence of waypoints (joint configurations).
+    metric : Callable[[np.ndarray, np.ndarray], float], default=EuclideanMetric()
+        Distance metric for trajectory calculations.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from plainmp.trajectory import Trajectory
+    >>>
+    >>> # Create trajectory from waypoints
+    >>> waypoints = [np.array([0, 0, 0]), np.array([1, 1, 1]), np.array([2, 2, 2])]
+    >>> traj = Trajectory(waypoints)
+    >>>
+    >>> # Resample to 10 waypoints
+    >>> resampled = traj.resample(10)
+    >>>
+    >>> # Get trajectory length
+    >>> length = traj.get_length()
+    >>>
+    >>> # Sample point at specific distance
+    >>> mid_point = traj.sample_point(length / 2)
+
+    Notes
+    -----
+    If using a non-Euclidean metric, get_length(), sample_point(), and resample()
+    are approximations because geodesic distances are not linearly additive.
+    For accurate results with non-Euclidean metrics, prepare trajectories with
+    many waypoints before resampling.
     """
 
     _points: List[np.ndarray]
@@ -115,6 +146,23 @@ class Trajectory:
         raise InvalidSamplePointError()
 
     def resample(self, n_waypoint: int) -> "Trajectory":
+        """Resample trajectory to specified number of waypoints.
+
+        Parameters
+        ----------
+        n_waypoint : int
+            Number of waypoints in the resampled trajectory.
+
+        Returns
+        -------
+        Trajectory
+            New trajectory with evenly spaced waypoints.
+
+        Examples
+        --------
+        >>> traj = Trajectory([q1, q2, q3])
+        >>> smooth_traj = traj.resample(50)  # 50 evenly spaced waypoints
+        """
         # NOTE: see NOTE in class docstring if metric is non-euclidean
         L = self.get_length()
         point_new_list = []

@@ -49,6 +49,43 @@ def solve_ik(
     config: Optional[IKConfig] = None,
     max_trial: int = 100,
 ) -> IKResult:
+    """Solve inverse kinematics problem using nonlinear optimization.
+
+    This function solves IK problems by formulating them as constrained optimization
+    problems and using sequential least squares programming (SLSQP) solver.
+
+    Parameters
+    ----------
+    eq_const : EqConstraintBase
+        Equality constraint representing the desired pose/configuration.
+    ineq_const : IneqConstraintBase, optional
+        Inequality constraints (e.g., collision avoidance constraints).
+    lb : np.ndarray
+        Lower bounds for joint angles.
+    ub : np.ndarray
+        Upper bounds for joint angles.
+    q_seed : np.ndarray, optional
+        Initial guess for joint angles. If None, random values within bounds are used.
+    config : IKConfig, optional
+        Configuration parameters for the IK solver.
+    max_trial : int, default=100
+        Maximum number of random restarts to attempt if solution fails.
+
+    Returns
+    -------
+    IKResult
+        Result containing solution joint angles, elapsed time, success status, and trial count.
+
+    Examples
+    --------
+    >>> fs = FetchSpec()
+    >>> eq_cst = fs.create_gripper_pose_const([0.7, 0.2, 0.95, 0, 0, 0])
+    >>> ineq_cst = fs.create_collision_const()
+    >>> lb, ub = fs.angle_bounds()
+    >>> result = solve_ik(eq_cst, ineq_cst, lb, ub)
+    >>> if result.success:
+    ...     print(f"Solution found: {result.q}")
+    """
     ts = time.time()
 
     if config is None:
