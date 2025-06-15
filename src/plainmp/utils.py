@@ -23,6 +23,26 @@ def box_to_grid_poitns(box: Box, N_points: Union[int, Sequence[int]]) -> np.ndar
 
 
 def primitive_to_plainmp_sdf(shape: Union[Sphere, Box, Cylinder]) -> psdf.SDFBase:
+    """Convert skrobot primitive shapes to plainmp SDF objects.
+
+    Parameters
+    ----------
+    shape : Union[Sphere, Box, Cylinder]
+        Skrobot primitive shape to convert.
+
+    Returns
+    -------
+    psdf.SDFBase
+        Corresponding plainmp SDF object for collision checking.
+
+    Examples
+    --------
+    >>> from skrobot.model.primitives import Box
+    >>> table = Box([1.0, 2.0, 0.05])
+    >>> table.translate([1.0, 0.0, 0.8])
+    >>> table_sdf = primitive_to_plainmp_sdf(table)
+    >>> collision_cst.set_sdf(table_sdf)
+    """
     if isinstance(shape, Sphere):
         pose = psdf.Pose(shape.worldpos(), shape.worldrot())
         sdf = psdf.SphereSDF(shape.radius, pose)
@@ -43,6 +63,28 @@ def set_robot_state(
     angles: np.ndarray,
     base_type: BaseType = BaseType.FIXED,
 ) -> None:
+    """Set robot configuration from joint angles and base pose.
+
+    Parameters
+    ----------
+    robot_model : RobotModel
+        Skrobot robot model to update.
+    joint_names : List[str]
+        Names of the joints to set.
+    angles : np.ndarray
+        Joint angles and base coordinates. For FIXED base, only joint angles.
+        For PLANAR base, joint angles + [x, y, yaw]. For FLOATING base,
+        joint angles + [x, y, z, roll, pitch, yaw].
+    base_type : BaseType, default=BaseType.FIXED
+        Type of robot base.
+
+    Examples
+    --------
+    >>> robot = FetchSpec().get_robot_model()
+    >>> joint_names = ["shoulder_pan_joint", "shoulder_lift_joint", ...]
+    >>> q = np.array([0.0, 1.32, 1.40, -0.20, 1.72, 0.0, 1.66, 0.0])
+    >>> set_robot_state(robot, joint_names, q, BaseType.FIXED)
+    """
     if base_type == BaseType.FIXED:
         assert len(joint_names) == len(angles)
         av_joint = angles

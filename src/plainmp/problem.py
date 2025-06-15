@@ -8,10 +8,68 @@ from plainmp.constraint import EqConstraintBase, IneqConstraintBase
 
 @dataclass
 class Problem:
-    """
-    The resolution here is the euclidean distance in C-space.
-    Currently we assume that if you set validator_type to "euclidean", the resolution is a float.
-    NOTE: currently validator_type = "euclidean" is only be used for SBMP, an not supported by
+    """Motion planning problem specification.
+
+    This class encapsulates all the information needed to define a motion planning
+    problem, including start/goal configurations, bounds, constraints, and resolution
+    settings for collision checking.
+
+    Parameters
+    ----------
+    start : np.ndarray
+        Initial configuration (joint angles).
+    lb : np.ndarray
+        Lower bounds for joint angles.
+    ub : np.ndarray
+        Upper bounds for joint angles.
+    goal_const : Union[EqConstraintBase, np.ndarray]
+        Goal specification - either target joint angles or equality constraint.
+    global_ineq_const : IneqConstraintBase, optional
+        Global inequality constraints (e.g., collision avoidance).
+    global_eq_const : EqConstraintBase, optional
+        Global equality constraints.
+    resolution : Union[float, np.ndarray]
+        Motion validation resolution. If validator_type is "euclidean", use float.
+        If "box", use array with per-joint resolution.
+    validator_type : {"euclidean", "box"}, default="box"
+        Type of motion validator for collision checking.
+    goal_ineq_const : IneqConstraintBase, optional
+        Goal-specific inequality constraints.
+    goal_lb : np.ndarray, optional
+        Goal-specific lower bounds.
+    goal_ub : np.ndarray, optional
+        Goal-specific upper bounds.
+
+    Examples
+    --------
+    >>> # Point-to-point planning
+    >>> problem = Problem(
+    ...     start=q_start,
+    ...     lb=joint_lb, ub=joint_ub,
+    ...     goal_const=q_goal,
+    ...     global_ineq_const=collision_constraint,
+    ...     global_eq_const=None,
+    ...     resolution=np.ones(7) * 0.05
+    ... )
+    >>>
+    >>> # Planning to pose constraint
+    >>> pose_constraint = robot_spec.create_gripper_pose_const([0.7, 0.2, 0.95, 0, 0, 0])
+    >>> problem = Problem(
+    ...     start=q_start,
+    ...     lb=joint_lb, ub=joint_ub,
+    ...     goal_const=pose_constraint,
+    ...     global_ineq_const=collision_constraint,
+    ...     global_eq_const=None,
+    ...     resolution=np.ones(7) * 0.05
+    ... )
+
+    Notes
+    -----
+    The resolution parameter controls motion validation during planning:
+    - "euclidean": Uses Euclidean distance in configuration space (float resolution)
+    - "box": Uses per-joint resolution for more precise control (array resolution)
+
+    Currently, "euclidean" validator is only supported by SBMP planners, not
     optimization-based planners.
     """
 
