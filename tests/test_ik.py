@@ -1,6 +1,6 @@
 import pytest
 
-from plainmp.ik import solve_ik
+from plainmp.ik import solve_ik, solve_ik_srinv_experimental
 from plainmp.robot_spec import FetchSpec
 
 
@@ -27,3 +27,20 @@ test_cases = [[False, False], [False, True], [True, False], [True, True]]
 @pytest.mark.parametrize("with_rot, with_self_collision", test_cases)
 def test_ik(with_rot, with_self_collision):
     _test_ik(with_rot, with_self_collision)
+
+
+def _test_ik_srinv(with_rot: bool):
+    fs = FetchSpec()
+    if with_rot:
+        link_pose_cst = fs.create_gripper_pose_const([0.7, +0.2, 0.8, 0.0, 0, 0.0])  # xyzrpy
+    else:
+        link_pose_cst = fs.create_gripper_pose_const([0.7, +0.2, 0.8])
+
+    lb, ub = fs.angle_bounds()
+    ret = solve_ik_srinv_experimental(link_pose_cst, lb, ub)
+    assert ret.success
+
+
+@pytest.mark.parametrize("with_rot", [False, True])
+def test_ik_srinv(with_rot):
+    _test_ik_srinv(with_rot)
