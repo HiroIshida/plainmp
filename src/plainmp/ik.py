@@ -5,7 +5,7 @@ from typing import Callable, Dict, Optional, Tuple
 import numpy as np
 from scipy.optimize import Bounds, minimize
 
-from plainmp.constraint import EqConstraintBase, IneqConstraintBase
+from plainmp.constraint import EqConstraintBase, IneqConstraintBase, LinkPoseCst
 
 
 def scipinize(fun: Callable) -> Tuple[Callable, Callable]:
@@ -52,7 +52,9 @@ def solve_ik(
     """Solve inverse kinematics problem using nonlinear optimization.
 
     This function solves IK problems by formulating them as constrained optimization
-    problems and using sequential least squares programming (SLSQP) solver.
+    problems and using sequential least squares programming (SLSQP) solver. With the
+    generalization of equality and inequality constraints, it can handle various IK scenarios,
+    including collision avoidance.
 
     Parameters
     ----------
@@ -151,4 +153,88 @@ def solve_ik(
             q_seed = np.random.uniform(lb, ub)
     except TimeoutError:
         return IKResult(np.empty([0]), time.time() - ts, False, i + 1)
+    return IKResult(np.empty([0]), time.time() - ts, False, max_trial)
+
+
+def solve_ik_srinv(
+    link_pose_cst: LinkPoseCst,
+    lb: np.ndarray,
+    ub: np.ndarray,
+    *,
+    q_seed: Optional[np.ndarray] = None,
+    config: Optional[IKConfig] = None,
+    max_trial: int = 100,
+) -> IKResult:
+    """Solve inverse kinematics using SR-inverse (damped least squares) method.
+
+    Unlike `solve_ik`, this function cannot handle inequality constraints
+    such as collision avoidance. Also, currently the objective equality
+    constraint is limited to link pose constraints.
+
+    Parameters
+    ----------
+    link_pose_cst : LinkPoseCst
+        Link pose constraint specifying target poses for robot links.
+    lb : np.ndarray
+        Lower bounds for joint angles.
+    ub : np.ndarray
+        Upper bounds for joint angles.
+    q_seed : np.ndarray, optional
+        Initial guess for joint angles. If None, random values within bounds are used.
+    config : IKConfig, optional
+        Configuration parameters for the IK solver.
+    max_trial : int, default=100
+        Maximum number of random restarts to attempt if solution fails.
+
+    Returns
+    -------
+    IKResult
+        Result containing solution joint angles, elapsed time, success status, and trial count.
+    """
+    ts = time.time()
+
+    if config is None:
+        config = IKConfig()
+        # SQP includes line search, but we do not use it here
+        # so we can reduce the number of evaluations
+        config.n_max_eval = 50
+
+    if q_seed is None:
+        q_seed = np.random.uniform(lb, ub)
+
+    for trial in range(max_trial):
+        q = q_seed.copy()
+
+        for iteration in range(config.n_max_eval):
+            elapsed_time = time.time() - ts
+            if config.timeout is not None and elapsed_time > config.timeout:
+                return IKResult(np.empty([0]), elapsed_time, False, trial + 1)
+
+            vals, jac = link_pose_cst.evaluate(q)
+
+            error = np.linalg.norm(vals)
+            if error < config.acceptable_error:
+                return IKResult(q, time.time() - ts, True, trial + 1)
+
+            damping = 1e-6 + error * 1e-3  # Adaptive damping
+            A = jac @ jac.T + damping * np.eye(jac.shape[0])
+            try:
+                dq = jac.T @ np.linalg.solve(A, vals)
+            except np.linalg.LinAlgError:
+                damping = 1e-3
+                A = jac @ jac.T + damping * np.eye(jac.shape[0])
+                dq = jac.T @ np.linalg.solve(A, vals)
+
+            step_size = 0.5
+            q_new = q - step_size * dq
+            q_new = np.clip(q_new, lb, ub)
+
+            if np.linalg.norm(q_new - q) < config.ftol:
+                q = q_new
+                break
+
+            q = q_new
+
+        q_seed = np.random.uniform(lb, ub)
+
     return IKResult(np.empty([0]), time.time() - ts, False, max_trial)
