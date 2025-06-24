@@ -52,7 +52,9 @@ def solve_ik(
     """Solve inverse kinematics problem using nonlinear optimization.
 
     This function solves IK problems by formulating them as constrained optimization
-    problems and using sequential least squares programming (SLSQP) solver.
+    problems and using sequential least squares programming (SLSQP) solver. With the
+    generalization of equality and inequality constraints, it can handle various IK scenarios,
+    including collision avoidance.
 
     Parameters
     ----------
@@ -154,7 +156,7 @@ def solve_ik(
     return IKResult(np.empty([0]), time.time() - ts, False, max_trial)
 
 
-def solve_ik_srinv_experimental(
+def solve_ik_srinv(
     link_pose_cst: LinkPoseCst,
     lb: np.ndarray,
     ub: np.ndarray,
@@ -165,7 +167,9 @@ def solve_ik_srinv_experimental(
 ) -> IKResult:
     """Solve inverse kinematics using SR-inverse (damped least squares) method.
 
-    This function uses the singular-robust inverse (SR-inverse) to solve IK problems.
+    Unlike `solve_ik`, this function cannot handle inequality constraints
+    such as collision avoidance. Also, currently the objective equality
+    constraint is limited to link pose constraints.
 
     Parameters
     ----------
@@ -212,7 +216,6 @@ def solve_ik_srinv_experimental(
             if error < config.acceptable_error:
                 return IKResult(q, time.time() - ts, True, trial + 1)
 
-            # Compute SR-inverse (damped least squares)
             damping = 1e-6 + error * 1e-3  # Adaptive damping
             A = jac @ jac.T + damping * np.eye(jac.shape[0])
             try:
@@ -222,21 +225,16 @@ def solve_ik_srinv_experimental(
                 A = jac @ jac.T + damping * np.eye(jac.shape[0])
                 dq = jac.T @ np.linalg.solve(A, vals)
 
-            # Update joint angles with step size control
             step_size = 0.5
             q_new = q - step_size * dq
-
-            # Apply joint limits
             q_new = np.clip(q_new, lb, ub)
 
-            # Check for convergence in joint space
             if np.linalg.norm(q_new - q) < config.ftol:
                 q = q_new
                 break
 
             q = q_new
 
-        # Try with new random seed if failed
         q_seed = np.random.uniform(lb, ub)
 
     return IKResult(np.empty([0]), time.time() - ts, False, max_trial)

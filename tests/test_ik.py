@@ -1,6 +1,6 @@
 import pytest
 
-from plainmp.ik import solve_ik, solve_ik_srinv_experimental
+from plainmp.ik import solve_ik, solve_ik_srinv
 from plainmp.robot_spec import FetchSpec
 
 
@@ -37,7 +37,7 @@ def _test_ik_srinv(with_rot: bool):
         link_pose_cst = fs.create_gripper_pose_const([0.7, +0.2, 0.8])
 
     lb, ub = fs.angle_bounds()
-    ret = solve_ik_srinv_experimental(link_pose_cst, lb, ub)
+    ret = solve_ik_srinv(link_pose_cst, lb, ub)
     assert ret.success
 
 
