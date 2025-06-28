@@ -49,7 +49,8 @@ void bind_constraint_submodule(py::module& m) {
                     const std::vector<Eigen::VectorXd>&>())
       .def("update_kintree", &LinkPoseCst::update_kintree)
       .def("evaluate", &LinkPoseCst::evaluate)
-      .def("cst_dim", &LinkPoseCst::cst_dim);
+      .def("cst_dim", &LinkPoseCst::cst_dim)
+      .def("get_desired_poses", &LinkPoseCst::get_desired_poses);
   py::class_<RelativePoseCst, RelativePoseCst::Ptr, EqConstraintBase>(
       cst_m, "RelativePoseCst")
       .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
