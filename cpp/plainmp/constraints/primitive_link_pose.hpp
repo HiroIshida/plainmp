@@ -25,6 +25,11 @@ class LinkPoseCst : public EqConstraintBase {
   size_t cst_dim() const;
   std::string get_name() const override { return "LinkPoseCst"; }
 
+  const std::vector<Eigen::VectorXd>& get_target_poses() const {
+    return poses_;
+  }
+  std::vector<Eigen::VectorXd> get_desired_poses() const;
+
  private:
   std::vector<size_t> link_ids_;
   std::vector<Eigen::VectorXd> poses_;

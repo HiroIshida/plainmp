@@ -67,4 +67,8 @@ size_t LinkPoseCst::cst_dim() const {
   return dim;
 }
 
+std::vector<Eigen::VectorXd> LinkPoseCst::get_desired_poses() const {
+  return poses_;
+}
+
 }  // namespace plainmp::constraint

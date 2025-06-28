@@ -102,6 +102,7 @@ def test_link_pose_constraint(base_type: BaseType, with_rpy: bool):
 
     fs = FetchSpec(base_type=base_type)
     cst = fs.create_gripper_pose_const(pose)
+    np.testing.assert_equal(pose, cst.get_desired_poses()[0])
     dof = base_type_to_dof(base_type)
     if base_type != BaseType.FIXED:
         check_jacobian(cst, dof, std=0.1)
