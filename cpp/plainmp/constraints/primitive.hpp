@@ -83,8 +83,8 @@ class ConstraintBase {
   virtual bool is_equality() const = 0;
   virtual ~ConstraintBase() = default;
 
-  std::shared_ptr<kin::_KinematicModel> get_kin() const {
-    return std::static_pointer_cast<kin::_KinematicModel>(kin_);
+  std::shared_ptr<kin::utils::_KinematicModel> get_kin() const {
+    return std::static_pointer_cast<kin::utils::_KinematicModel>(kin_);
   }
 
  public:

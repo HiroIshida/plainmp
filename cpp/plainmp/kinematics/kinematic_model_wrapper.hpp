@@ -15,7 +15,7 @@
 #include <string>
 #include "plainmp/kinematics/kinematics.hpp"
 
-namespace plainmp::kinematics {
+namespace plainmp::kinematics::utils {
 
 using Transform = KinematicModel<double>::Transform;
 using Vector7d = Eigen::Matrix<double, 7, 1>;
@@ -38,4 +38,4 @@ class _KinematicModel : public KinematicModel<double> {
   Vector7d debug_get_link_pose(const std::string& link_name);
 };
 
-}  // namespace plainmp::kinematics
+}  // namespace plainmp::kinematics::utils

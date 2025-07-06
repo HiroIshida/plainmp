@@ -27,22 +27,22 @@ void bind_kinematics_submodule(py::module& m) {
       m_kin, "KinematicModel_cpp", py::module_local());
 
   // child "binding" class
-  py::class_<_KinematicModel, std::shared_ptr<_KinematicModel>,
+  py::class_<utils::_KinematicModel, std::shared_ptr<utils::_KinematicModel>,
              KinematicModel<double>>(m_kin, "KinematicModel",
                                      py::module_local())
       .def(py::init<std::string&>())
-      .def("add_new_link", &_KinematicModel::add_new_link_py)
-      .def("debug_get_link_pose", &_KinematicModel::debug_get_link_pose)
-      .def("set_joint_positions", &_KinematicModel::set_joint_angles,
+      .def("add_new_link", &utils::_KinematicModel::add_new_link_py)
+      .def("debug_get_link_pose", &utils::_KinematicModel::debug_get_link_pose)
+      .def("set_joint_positions", &utils::_KinematicModel::set_joint_angles,
            py::arg("joint_ids"), py::arg("positions"),
            py::arg("accurate") = true)
-      .def("get_joint_positions", &_KinematicModel::get_joint_angles)
-      .def("set_base_pose", &_KinematicModel::set_base_pose)
-      .def("get_base_pose", &_KinematicModel::get_base_pose)
+      .def("get_joint_positions", &utils::_KinematicModel::get_joint_angles)
+      .def("set_base_pose", &utils::_KinematicModel::set_base_pose)
+      .def("get_base_pose", &utils::_KinematicModel::get_base_pose)
       .def("get_joint_position_limits",
-           &_KinematicModel::get_joint_position_limits)
-      .def("get_link_ids", &_KinematicModel::get_link_ids)
-      .def("get_joint_ids", &_KinematicModel::get_joint_ids);
+           &utils::_KinematicModel::get_joint_position_limits)
+      .def("get_link_ids", &utils::_KinematicModel::get_link_ids)
+      .def("get_joint_ids", &utils::_KinematicModel::get_joint_ids);
 
   py::enum_<BaseType>(m_kin, "BaseType")
       .value("FIXED", BaseType::FIXED)

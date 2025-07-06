@@ -10,7 +10,7 @@
 
 #include "plainmp/kinematics/kinematic_model_wrapper.hpp"
 
-namespace plainmp::kinematics {
+namespace plainmp::kinematics::utils {
 
 Vector7d pose_to_vector(const Transform& pose) {
   Vector7d vec;
@@ -54,4 +54,4 @@ Vector7d _KinematicModel::debug_get_link_pose(const std::string& link_name) {
   return pose_to_vector(pose);
 }
 
-}  // namespace plainmp::kinematics
+}  // namespace plainmp::kinematics::utils
