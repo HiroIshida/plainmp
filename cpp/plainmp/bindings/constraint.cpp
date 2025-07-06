@@ -30,7 +30,8 @@ void bind_constraint_submodule(py::module& m) {
   auto cst_m = m.def_submodule("constraint");
   py::class_<ConstraintBase, ConstraintBase::Ptr>(cst_m, "ConstraintBase")
       .def("update_kintree", &ConstraintBase::update_kintree)
-      .def("evaluate", &ConstraintBase::evaluate);
+      .def("evaluate", &ConstraintBase::evaluate)
+      .def("get_kin", &ConstraintBase::get_kin);
   py::class_<EqConstraintBase, EqConstraintBase::Ptr, ConstraintBase>(
       cst_m, "EqConstraintBase");
   py::class_<IneqConstraintBase, IneqConstraintBase::Ptr, ConstraintBase>(
