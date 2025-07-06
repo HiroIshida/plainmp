@@ -31,6 +31,7 @@ class ConstraintBase {
                  const std::vector<std::string>& control_joint_names,
                  kin::BaseType base_type)
       : kin_(kin),
+        control_joint_names_(control_joint_names),
         control_joint_ids_(kin->get_joint_ids(control_joint_names)),
         base_type_(base_type) {}
 
@@ -87,12 +88,13 @@ class ConstraintBase {
     return std::static_pointer_cast<kin::utils::_KinematicModel>(kin_);
   }
 
- public:
-  // want to make these protected, but will be used in CompositeConstraintBase
-  // making this friend is also an option, but it's too complicated
-  std::shared_ptr<kin::KinematicModel<double>> kin_;
+  std::vector<std::string> get_control_joint_names() const {
+    return control_joint_names_;
+  }
 
- protected:
+ public:
+  std::shared_ptr<kin::KinematicModel<double>> kin_;
+  std::vector<std::string> control_joint_names_;
   std::vector<size_t> control_joint_ids_;
   kin::BaseType base_type_;
 };

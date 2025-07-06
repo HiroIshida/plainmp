@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 from scipy.sparse import csc_matrix
@@ -30,6 +30,7 @@ class ConstraintBase:
             kinematic model wrapper
         """
         ...
+    def get_control_joint_names(self) -> List[str]: ...
 
 class EqConstraintBase(ConstraintBase): ...
 
