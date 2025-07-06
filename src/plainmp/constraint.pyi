@@ -24,6 +24,12 @@ class ConstraintBase:
             jacobian: constraint jacobian (m, n)
         """
         ...
+    def get_kin(self) -> KinematicModel:
+        """Get the kinematic model wrapper
+        Returns:
+            kinematic model wrapper
+        """
+        ...
 
 class EqConstraintBase(ConstraintBase): ...
 

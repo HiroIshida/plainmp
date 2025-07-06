@@ -16,6 +16,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include "plainmp/kinematics/kinematic_model_wrapper.hpp"
 #include "plainmp/kinematics/kinematics.hpp"
 
 namespace plainmp::constraint {
@@ -81,6 +82,10 @@ class ConstraintBase {
   virtual std::string get_name() const = 0;
   virtual bool is_equality() const = 0;
   virtual ~ConstraintBase() = default;
+
+  std::shared_ptr<kin::_KinematicModel> get_kin() const {
+    return std::static_pointer_cast<kin::_KinematicModel>(kin_);
+  }
 
  public:
   // want to make these protected, but will be used in CompositeConstraintBase
