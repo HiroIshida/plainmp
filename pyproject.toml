@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "plainmp"
-version = "0.3.2"
+version = "0.3.3"
 description = "Very fast motion planning for articulated robot, through a bit of premature-optimization (C++ core with Python bindings) *less than 1ms for moderate problems"
 authors = [{name = "Hirokazu Ishida"}]
 license = {text = "MPL2.0 for C++ core and BSD3 for Python bindings"}
