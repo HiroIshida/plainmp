@@ -16,9 +16,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest]
         python-version: ["3.8", "3.10", "3.12"]
     steps:
       - name: Checkout Code
@@ -32,19 +33,36 @@ jobs:
       - name: Update Submodules
         run: git submodule update --init --recursive
 
-      - name: Install scikit-robot
+      - name: Install scikit-robot (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev
           pip install scikit-robot
 
-      - name: Install This Package
+      - name: Install scikit-robot (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install spatialindex suite-sparse openblas lapack
+          pip install scikit-robot
+
+      - name: Install This Package (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install libeigen3-dev libboost-all-dev libompl-dev
           python3 -m pip install --upgrade pip
           python3 -m pip install build
           python3 -m build . --sdist  # install sdist version to detect packaging-related issues
           MAKEFLAGS="-j$(nproc)" pip install dist/*.tar.gz
+
+      - name: Install This Package (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install eigen boost ompl
+          python3 -m pip install --upgrade pip
+          python3 -m pip install build
+          python3 -m build . --sdist  # install sdist version to detect packaging-related issues
+          MAKEFLAGS="-j$(sysctl -n hw.ncpu)" pip install dist/*.tar.gz
 
       - name: Test
         run: |
