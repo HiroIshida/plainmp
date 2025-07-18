@@ -15,6 +15,7 @@ include_directories("third/urdf_parser/include")
 
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(ompl REQUIRED)
+
 include_directories(${OMPL_INCLUDE_DIRS})
 add_subdirectory("third/ompl-ertconnect")
 include_directories("third/ompl-ertconnect")
@@ -47,5 +48,14 @@ include_directories(cpp)
 add_subdirectory(pybind11)
 pybind11_add_module(_plainmp ${SRC_FILES})
 add_dependencies(_plainmp generate_sequence_table)
-target_link_libraries(_plainmp PRIVATE urdfdom_model ompl ertconnect ${Boost_LIBRARIES})
+
+if (TARGET ompl::ompl)
+    set(_ompl_target ompl::ompl)
+else()
+    set(_ompl_target ompl)  # old versions of OMPL
+endif()
+target_link_libraries(_plainmp PRIVATE urdfdom_model ${_ompl_target} ertconnect ${Boost_LIBRARIES})
+if(ompl_VERSION VERSION_LESS "1.7.0")
+    target_compile_definitions(_plainmp PRIVATE OMPL_OLD_VERSION)
+endif()
 install(TARGETS _plainmp DESTINATION .)

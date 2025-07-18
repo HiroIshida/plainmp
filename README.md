@@ -47,11 +47,18 @@ python3 example/bench/panda_plan.py --difficult  # panda ceiled dual bars
 python3 example/bench/fetch_plan.py  # fetch table
 ```
 
-## installation and usage
+## installation and usage (Ubuntu/macOS)
+On Ubuntu:
 ```bash
 sudo apt install libeigen3-dev libboost-all-dev libompl-dev libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev
 pip install plainmp  # or build from source after git submodules update --init
 ```
+On macOS:
+```bash
+brew install eigen boost ompl spatialindex suite-sparse openblas lapack
+pip install plainmp  # or build from source after git submodules update --init
+```
+
 Then try examples in [example directory](./example) with `--visualize` option. Note that you may need to install the following for visualization:
 ```bash
 pip uninstall -y pyrender && pip install git+https://github.com/mmatl/pyrender.git --no-cache-dir

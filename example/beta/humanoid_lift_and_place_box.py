@@ -97,7 +97,11 @@ if __name__ == "__main__":
 
     problem = Problem(ik_ret1.q, lb, ub, ik_ret2.q, ineq_cst, eq_global_cst, np.array([0.1] * 37))
     solver = ManiRRTConnectSolver(ManiRRTConfig(10000))
-    psolver = ParallelSolver(solver, 8)
+    try:
+        psolver = ParallelSolver(solver, 8)
+    except NotImplementedError:  # on macOS or Windows
+        psolver = solver
+
     ret = psolver.solve(problem)
     print(f"elapsed time to solve constrained motion planning: {ret.time_elapsed} [s]")
 

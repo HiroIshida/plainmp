@@ -62,7 +62,10 @@ if __name__ == "__main__":
 
     problem = Problem(ik_ret.q, lb, ub, ik_ret2.q, ineq_cst, stance_cst, np.ones(37) * 0.1)
     solver = ManiRRTConnectSolver(ManiRRTConfig(10000))
-    psolver = ParallelSolver(solver, 4)
+    try:
+        psolver = ParallelSolver(solver, 4)
+    except NotImplementedError:  # macos or windows
+        psolver = solver
     ret = psolver.solve(problem)
     assert ret.traj is not None
     print(f"elapsed time to solve constrained motion planning: {ret.time_elapsed} [s]")

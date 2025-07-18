@@ -18,9 +18,6 @@
 
 namespace plainmp::kinematics {
 
-template class KinematicModel<double>;
-template class KinematicModel<float>;
-
 auto urdf_vector3_to_eigen_vector3(const urdf::Vector3& v) {
   return Eigen::Vector3d(v.x, v.y, v.z);
 }
@@ -376,5 +373,8 @@ std::string load_urdf(const std::string& urdf_path) {
   xml_file.close();
   return xml_string;
 }
+
+template class KinematicModel<double>;
+template class KinematicModel<float>;
 
 };  // namespace plainmp::kinematics
