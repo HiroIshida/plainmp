@@ -85,9 +85,6 @@ void compute_approx_sin_cos(Scalar x, Scalar& s, Scalar& c) {
       (1 - xx * coeff2 + xxxx * coeff4 - xxxxxx * coeff6 + xxxxxxxx * coeff8);
 }
 
-template class KinematicModel<double>;
-template class KinematicModel<float>;
-
 template <typename Scalar>
 void KinematicModel<Scalar>::set_joint_angles(
     const std::vector<size_t>& joint_ids,
@@ -474,5 +471,8 @@ KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t>& joint_ids,
   jac_average /= mass_total;
   return jac_average;
 }
+
+template class KinematicModel<double>;
+template class KinematicModel<float>;
 
 };  // namespace plainmp::kinematics
