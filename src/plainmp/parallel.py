@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import platform
 from datetime import datetime
 from typing import Optional
 
@@ -12,6 +13,10 @@ from plainmp.trajectory import Trajectory
 
 class ParallelSolver:
     def __init__(self, solver, n_process: int = 4):
+        if platform.system() in ["Darwin", "Windows"]:
+            raise NotImplementedError(
+                "ParallelSolver is not supported on macOS or Windows due to limitations in multiprocessing."
+            )
         self.internal_solver = solver
         self.n_process = n_process
 
