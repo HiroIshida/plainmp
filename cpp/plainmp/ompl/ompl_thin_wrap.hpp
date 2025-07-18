@@ -144,7 +144,11 @@ Eigen::MatrixXd simplify(const Points& points,
   auto simplifier = og::PathSimplifier(csi->si_);
   for (auto refine : refine_seq) {
     if (refine == RefineType::SHORTCUT) {
+#ifdef OMPL_OLD_VERSION
       simplifier.shortcutPath(p);
+#else
+      simplifier.partialShortcutPath(p);
+#endif
     } else if (refine == RefineType::BSPLINE) {
       simplifier.smoothBSpline(p);
     } else {
@@ -231,7 +235,11 @@ struct PlannerBase {
     og::PathSimplifier simplifier(csi_->si_);
     for (auto refine : refine_seq) {
       if (refine == RefineType::SHORTCUT) {
+#ifdef OMPL_OLD_VERSION
         simplifier.shortcutPath(*p);
+#else
+        simplifier.partialShortcutPath(*p);
+#endif
       } else if (refine == RefineType::BSPLINE) {
         simplifier.smoothBSpline(*p);
       } else {
