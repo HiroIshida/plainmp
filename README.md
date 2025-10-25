@@ -17,7 +17,6 @@ Note that plainmp currently heavily relies on approximations of robot body by sp
 
 The TODO list is
 - Speed up IK by reimplementing current Python/C++ mix into pure C++
-- Auto-generate collision spheres from URDF instead of manual sphere definitions
 
 Related/depeding projects:
 - plainmp is a rewrite of my previous projects [scikit-motionplan](https://github.com/HiroIshida/scikit-motionplan) and [tinyfk](https://github.com/HiroIshida/tinyfk) to achieve 100x speedup
@@ -71,9 +70,7 @@ pip uninstall -y pyrender && pip install git+https://github.com/mmatl/pyrender.g
 **\* Feel free to open an issue and include your (public) URDF file/link! I might be able to create a custom sphere model for that.**
 - (step 1) Prepare a URDF file. Note that [robot_description](https://github.com/robot-descriptions/robot_descriptions.py) package might be useful.
 - (step 2) Implement a new class inheriting `RobotSpec` class in [src/plainmp/robot_spec.py](./src/plainmp/robot_spec.py).
-- (step 3) Write yaml file defining urdf location/collision information/control joints/end effector in (see [example yaml files](./src/plainmp/conf/)).
-- NOTE: In step 3, you need to manually define the collision spheres for the robot (This is actually tedious and takes an hour or so). For this purpose, a visualizer script like [this](./example/misc/panda_visualize_coll_spheres.py) might be helpful to check the collision spheres defined in the yaml file. The output of the this visualizer looks like figure below.
-<img src="https://github.com/user-attachments/assets/e7f36c3a-5fc8-45ee-8583-f1c5f38bf561" width="400" />
+- (step 3) Write yaml file defining urdf location/collision information/control joints/end effector in (see [example yaml files](./src/plainmp/conf/)). For determining the sphere locations, tools like [bheijden/bubblify](https://github.com/bheijden/bubblify) or [CoMMALab/form](https://github.com/CoMMALab/foam) will be useful.
 
 ## Note on motion validator of motion planning
 We provides two types of motion validator type `box` and `euclidean`.
