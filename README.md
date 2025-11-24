@@ -71,6 +71,10 @@ pip uninstall -y pyrender && pip install git+https://github.com/mmatl/pyrender.g
 - (step 1) Prepare a URDF file. Note that [robot_description](https://github.com/robot-descriptions/robot_descriptions.py) package might be useful.
 - (step 2) Implement a new class inheriting `RobotSpec` class in [src/plainmp/robot_spec.py](./src/plainmp/robot_spec.py).
 - (step 3) Write yaml file defining urdf location/collision information/control joints/end effector in (see [example yaml files](./src/plainmp/conf/)). For determining the sphere locations, tools like [bheijden/bubblify](https://github.com/bheijden/bubblify) or [CoMMALab/form](https://github.com/CoMMALab/foam) will be useful.
+Note that we provides convenience script to convert bubblify output yaml file to plainmp format:
+```bash
+python3 -m plainmp.script.bubblify_to_plainmp --path <path_to_bubblify_output_yaml>
+```
 
 ## Note on motion validator of motion planning
 We provides two types of motion validator type `box` and `euclidean`.
