@@ -1,0 +1,37 @@
+urdf_path: this_is_a_placeholder  # must be replaced programmatically in python code
+
+control_joint_names:
+  - openarm_left_joint1
+  - openarm_left_joint2
+  - openarm_left_joint3
+  - openarm_left_joint4
+  - openarm_left_joint5
+  - openarm_left_joint6
+  - openarm_left_joint7
+
+only_self_collision_links:
+  - openarm_body_link0
+  - openarm_right_link0
+  - openarm_right_link1
+  - openarm_right_link2
+  - openarm_right_link3
+  - openarm_right_link4
+  - openarm_right_link5
+  - openarm_right_link6
+  - openarm_right_link7
+  - openarm_right_hand
+  - openarm_right_right_finger
+  - openarm_right_left_finger
+
+self_collision_group_pairs:
+  # larm => rarm
+  - group1: [openarm_left_link4, openarm_left_link5, openarm_left_link6, openarm_left_link7, openarm_left_hand, openarm_left_right_finger, openarm_left_left_finger]
+    group2: [openarm_right_link0, openarm_right_link1, openarm_right_link2, openarm_right_link3, openarm_right_link4, openarm_right_link5, openarm_right_link6, openarm_right_link7, openarm_right_hand, openarm_right_right_finger, openarm_right_left_finger]
+  # arms => base_link
+  - group1: [openarm_left_link4, openarm_left_link5, openarm_left_link6, openarm_left_link7, openarm_left_hand, openarm_left_right_finger, openarm_left_left_finger]
+    group2: [openarm_body_link0]
+
+include:
+  - ./collision_spheres.yaml
+
+

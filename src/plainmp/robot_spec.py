@@ -242,6 +242,7 @@ class RobotSpec(ABC):
     @property
     def urdf_path(self) -> Path:
         path = self.urdf_path_override()  # if you want to override the conf path
+
         if path is None:
             path = Path(self.conf_dict["urdf_path"]).expanduser()  # from conf file
         if path.suffix == ".xacro":
@@ -767,6 +768,74 @@ class PandaSpec(RobotSpec):
             from skrobot.models.panda import Panda  # noqa
 
             Panda()
+
+
+class OpenArmV10SpecBase(RobotSpec):
+    def __init__(
+        self,
+        base_type: BaseType = BaseType.FIXED,
+        use_fixed_spec_id: bool = False,
+        spec_id: Optional[str] = None,
+    ):
+        p = Path(__file__).parent / "conf" / "openarm_v10" / self.get_yaml_file_name()
+        super().__init__(
+            p, base_type=base_type, use_fixed_spec_id=use_fixed_spec_id, spec_id=spec_id
+        )
+
+    def urdf_path_override(self) -> Path:
+        this_dir = Path(__file__).parent
+        assets_dir = this_dir / "assets"
+        return assets_dir / "openarm_v10.urdf"
+
+    @abstractmethod
+    def get_yaml_file_name(self) -> str:
+        pass
+
+    def _convert_ros_style_to_openarm_style(self, co: Coordinates) -> Coordinates:
+        # NOTE: openarm's tcp is different from the ROS-standard definition
+        # we takes co (ROS-standard) and convert it to openarm tcp
+        co = co.copy_worldcoords()
+        co.rotate(-np.pi * 0.5, "y")
+        co.rotate(np.pi, "x")
+        return co
+
+
+class OpenArmV10RarmSpec(OpenArmV10SpecBase):
+    def get_yaml_file_name(self) -> str:
+        return "openarm_v10_rarm.yaml"
+
+    def create_tcp_pose_const(self, co: Coordinates) -> LinkPoseCst:
+        co = self._convert_ros_style_to_openarm_style(co)
+        target = np.hstack([co.worldpos(), wxyz2xyzw(matrix2quaternion(co.worldrot()))])
+        return self.create_pose_const(["openarm_right_hand_tcp"], [target])
+
+
+class OpenArmV10LarmSpec(OpenArmV10SpecBase):
+    def get_yaml_file_name(self) -> str:
+        return "openarm_v10_larm.yaml"
+
+    def create_tcp_pose_const(self, co: Coordinates) -> LinkPoseCst:
+        co = self._convert_ros_style_to_openarm_style(co)
+        target = np.hstack([co.worldpos(), wxyz2xyzw(matrix2quaternion(co.worldrot()))])
+        return self.create_pose_const(["openarm_left_hand_tcp"], [target])
+
+
+class OpenArmV10DualSpec(OpenArmV10SpecBase):
+    def get_yaml_file_name(self) -> str:
+        return "openarm_v10_dual.yaml"
+
+    def create_tcp_pose_const(self, co_right: Coordinates, co_left: Coordinates) -> LinkPoseCst:
+        co_right = self._convert_ros_style_to_openarm_style(co_right)
+        co_left = self._convert_ros_style_to_openarm_style(co_left)
+        target_right = np.hstack(
+            [co_right.worldpos(), wxyz2xyzw(matrix2quaternion(co_right.worldrot()))]
+        )
+        target_left = np.hstack(
+            [co_left.worldpos(), wxyz2xyzw(matrix2quaternion(co_left.worldrot()))]
+        )
+        return self.create_pose_const(
+            ["openarm_right_hand_tcp", "openarm_left_hand_tcp"], [target_right, target_left]
+        )
 
 
 class JaxonSpec(RobotSpec):

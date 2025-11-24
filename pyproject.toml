@@ -9,6 +9,7 @@ description = "Very fast motion planning for articulated robot, through a bit of
 authors = [{name = "Hirokazu Ishida"}]
 license = {text = "MPL2.0 for C++ core and BSD3 for Python bindings"}
 dependencies = [
+    "rospkg",
     "numpy",
     "scipy", 
     "scikit-robot>=0.0.44",
