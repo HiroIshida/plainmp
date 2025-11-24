@@ -105,4 +105,7 @@ jobs:
           run_example "example/attach_box_ik_and_plan.py" || exit 1
           run_example "example/beta/humanoid_planning.py" || exit 1
           run_example "example/beta/humanoid_lift_and_place_box.py" || exit 1
+          run_example "example/openarm/openarm_rarm.py" || exit 1
+          run_example "example/openarm/openarm_larm.py" || exit 1
+          run_example "example/openarm/openarm_dualarm.py" || exit 1
         timeout-minutes: 10

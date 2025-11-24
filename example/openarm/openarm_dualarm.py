@@ -59,19 +59,20 @@ if __name__ == "__main__":
     ineq_cst.set_sdf(primitive_to_plainmp_sdf(obstacle))
 
     lb, ub = s.angle_bounds()
+    ts = time.time()
     result = solve_ik_2pi_adjust(cst, ineq_cst, lb, ub, max_trial=100, config=None)
     assert result.success
-    print(f"collision aware ik solved in {result.elapsed_time} sec")
+    print(f"✅collision aware ik solved in {time.time() - ts} sec")
 
     # solve motion plan
     resolution = np.ones(14) * 0.05
     problem = Problem(np.zeros(14), lb, ub, result.q, ineq_cst, None, resolution)
     solver = OMPLSolver(OMPLSolverConfig(shortcut=True))
     result = solver.solve(problem)
-    print(f"motion plan solved in {result.time_elapsed} sec")
+    print(f"✅motion plan solved in {result.time_elapsed} sec")
 
     if args.visualize:
-        print("loading robot model to visualize...")
+        print("=> loading robot model to visualize...")
         model = s.get_robot_model(with_mesh=True)
         v = PyrenderViewer()
         v.add(Axis.from_coords(target_right))
@@ -82,8 +83,8 @@ if __name__ == "__main__":
 
         input("Press Enter to start animation...")
 
-        for q in result.traj.resample(20):
+        for q in result.traj.resample(40):
             s.set_skrobot_model_state(model, q)
-            time.sleep(0.5)
             v.redraw()
+            time.sleep(0.5)
         time.sleep(1000)
