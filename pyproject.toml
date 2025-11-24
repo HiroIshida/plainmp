@@ -14,7 +14,8 @@ dependencies = [
     "scikit-robot>=0.0.44",
     "pyyaml",
     "robot_descriptions",
-    "osqp<1.0.0"
+    "osqp<1.0.0",
+    "tyro"
 ]
 
 [tool.scikit-build]
