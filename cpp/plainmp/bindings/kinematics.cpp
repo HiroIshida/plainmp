@@ -22,6 +22,11 @@ void bind_kinematics_submodule(py::module& m) {
       .def_readonly("name", &urdf::Link::name)
       .def_readonly("id", &urdf::Link::id);
 
+  py::enum_<BaseType>(m_kin, "BaseType")
+      .value("FIXED", BaseType::FIXED)
+      .value("FLOATING", BaseType::FLOATING)
+      .value("PLANAR", BaseType::PLANAR);
+
   // parent class
   py::class_<KinematicModel<double>, std::shared_ptr<KinematicModel<double>>>(
       m_kin, "KinematicModel_cpp", py::module_local());
@@ -41,13 +46,10 @@ void bind_kinematics_submodule(py::module& m) {
       .def("get_base_pose", &utils::_KinematicModel::get_base_pose)
       .def("get_joint_position_limits",
            &utils::_KinematicModel::get_joint_position_limits)
+      .def("get_gravity_term", &utils::_KinematicModel::get_gravity_term,
+           py::arg("joint_ids"), py::arg("base_type") = BaseType::FIXED)
       .def("get_link_ids", &utils::_KinematicModel::get_link_ids)
       .def("get_joint_ids", &utils::_KinematicModel::get_joint_ids);
-
-  py::enum_<BaseType>(m_kin, "BaseType")
-      .value("FIXED", BaseType::FIXED)
-      .value("FLOATING", BaseType::FLOATING)
-      .value("PLANAR", BaseType::PLANAR);
 }
 
 }  // namespace plainmp::bindings

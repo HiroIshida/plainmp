@@ -151,6 +151,9 @@ class KinematicModel {
   MatrixDynamic get_com_jacobian(const std::vector<size_t>& joint_ids,
                                  BaseType base_type = BaseType::FIXED);
 
+  Vector get_gravity_term(const std::vector<size_t>& joint_ids,
+                          BaseType base_type = BaseType::FIXED);
+
   size_t add_new_link(size_t parent_id,
                       const std::array<Scalar, 3>& position,
                       const std::array<Scalar, 3>& rpy,
