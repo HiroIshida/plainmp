@@ -36,6 +36,13 @@ class KinematicModel:
     def get_gravity_term(
         self, joint_ids: List[int], base_type: BaseType = BaseType.FIXED
     ) -> np.ndarray: ...
+    def get_gravity_term2(
+        self,
+        joint_ids: List[int],
+        positions: np.ndarray,
+        base_type: BaseType = BaseType.FIXED,
+        accurate: bool = True,
+    ) -> np.ndarray: ...
     def set_base_pose(self, pose_vec: np.ndarray) -> None:
         """Set the base pose of the robot
         Args:

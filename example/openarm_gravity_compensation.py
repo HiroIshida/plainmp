@@ -14,20 +14,6 @@ if __name__ == "__main__":
 
     n_bench = 10000
 
-    # panda
     q = np.array([1.54, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     for _ in tqdm.tqdm(range(n_bench)):
-        kin.set_joint_positions(joint_ids, q)
-        tau = kin.get_gravity_term(joint_ids)
-    print(tau)
-
-    # skrobot
-    model = spec.get_robot_model()
-    joint_ids = np.array([model.joint_names.index(jn) for jn in joint_names])
-    av = model.angle_vector()
-    av[joint_ids] = q
-    for _ in tqdm.tqdm(range(n_bench)):
-        model.angle_vector(av)
-        tau_all = model.inverse_dynamics(gravity=np.array([0, 0, -9.81]))
-        tau = tau_all[joint_ids]
-    print(tau)
+        tau = kin.get_gravity_term2(joint_ids, q)

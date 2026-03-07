@@ -38,6 +38,15 @@ size_t _KinematicModel::add_new_link_py(const std::string& link_name,
                                       consider_rotation, link_name);
 }
 
+_KinematicModel::Vector _KinematicModel::get_gravity_term2(
+    const std::vector<size_t>& joint_ids,
+    const Vector& joint_angles,
+    BaseType base_type,
+    bool accurate) {
+  KinematicModel::set_joint_angles(joint_ids, joint_angles, accurate);
+  return KinematicModel::get_gravity_term(joint_ids, base_type);
+}
+
 Vector7d _KinematicModel::get_base_pose() {
   auto pose = KinematicModel::get_base_pose();
   return pose_to_vector(pose);

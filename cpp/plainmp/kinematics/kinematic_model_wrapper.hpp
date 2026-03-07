@@ -26,12 +26,17 @@ Transform vector_to_pose(const Vector7d& pose_vec);
 class _KinematicModel : public KinematicModel<double> {
   // a utility class for easy binding
  public:
+  using Vector = KinematicModel<double>::Vector;
   using KinematicModel::KinematicModel;
   size_t add_new_link_py(const std::string& link_name,
                          const std::string& parent_name,
                          const std::array<double, 3>& position,
                          const std::array<double, 3>& rpy,
                          bool consider_rotation);
+  Vector get_gravity_term2(const std::vector<size_t>& joint_ids,
+                           const Vector& joint_angles,
+                           BaseType base_type = BaseType::FIXED,
+                           bool accurate = true);
 
   Vector7d get_base_pose();
   void set_base_pose(const Vector7d& pose_vec);
