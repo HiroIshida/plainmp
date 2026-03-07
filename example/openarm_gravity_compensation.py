@@ -1,12 +1,11 @@
 import numpy as np
-import time
+import tqdm
+from skrobot.viewers import PyrenderViewer
 
 from plainmp.robot_spec import OpenArmV10RarmSpec
-from skrobot.viewers import PyrenderViewer
-import tqdm
 
 if __name__ == "__main__":
-    v  =PyrenderViewer()
+    v = PyrenderViewer()
     spec = OpenArmV10RarmSpec()
     kin = spec.get_kin()
 
@@ -22,7 +21,7 @@ if __name__ == "__main__":
         tau = kin.get_gravity_term(joint_ids)
     print(tau)
 
-    # skrobot 
+    # skrobot
     model = spec.get_robot_model()
     joint_ids = np.array([model.joint_names.index(jn) for jn in joint_names])
     av = model.angle_vector()
