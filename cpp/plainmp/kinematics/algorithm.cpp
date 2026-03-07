@@ -472,6 +472,50 @@ KinematicModel<Scalar>::get_com_jacobian(const std::vector<size_t>& joint_ids,
   return jac_average;
 }
 
+template <typename Scalar>
+typename KinematicModel<Scalar>::Vector
+KinematicModel<Scalar>::get_gravity_term(const std::vector<size_t>& joint_ids,
+                                         BaseType base_type) {
+  const size_t dim_dof = joint_ids.size() +
+                         (base_type == BaseType::FLOATING) * 6 +
+                         (base_type == BaseType::PLANAR) * 3;
+  Vector gravity_term = Vector::Zero(dim_dof);
+  const Vector3 gravity_accel(0.0, 0.0, -9.80665);
+
+  for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
+    const size_t link_id = com_link_ids_[iter];
+    const auto& tf_rlink_to_link = get_link_pose(link_id);
+    const Vector3 com_pos =
+        tf_rlink_to_link.trans() +
+        tf_rlink_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
+
+    const Vector3 force = link_masses_[iter] * gravity_accel;
+
+    for (size_t i = 0; i < joint_ids.size(); i++) {
+      const size_t jid = joint_ids[i];
+      if (!rptable_.isRelevant(link_id, jid)) {
+        continue;
+      }
+
+      const auto jtype = joint_types_[jid];
+      const auto clink_id = joint_child_link_ids_[jid];
+      const auto& tf_rlink_to_clink = get_link_pose(clink_id);
+
+      const Vector3 world_axis = tf_rlink_to_clink.quat() * joint_axes_[jid];
+
+      if (jtype == urdf::Joint::PRISMATIC) {
+        gravity_term[i] += force.dot(world_axis);
+      } else {
+        const Vector3 joint_pos = tf_rlink_to_clink.trans();
+        const Vector3 r = com_pos - joint_pos;
+        gravity_term[i] += (r.cross(force)).dot(world_axis);
+      }
+    }
+  }
+
+  return gravity_term;
+}
+
 template class KinematicModel<double>;
 template class KinematicModel<float>;
 
