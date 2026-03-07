@@ -48,6 +48,9 @@ void bind_kinematics_submodule(py::module& m) {
            &utils::_KinematicModel::get_joint_position_limits)
       .def("get_gravity_term", &utils::_KinematicModel::get_gravity_term,
            py::arg("joint_ids"), py::arg("base_type") = BaseType::FIXED)
+      .def("get_gravity_term2", &utils::_KinematicModel::get_gravity_term2,
+           py::arg("joint_ids"), py::arg("positions"),
+           py::arg("base_type") = BaseType::FIXED, py::arg("accurate") = true)
       .def("get_link_ids", &utils::_KinematicModel::get_link_ids)
       .def("get_joint_ids", &utils::_KinematicModel::get_joint_ids);
 }
