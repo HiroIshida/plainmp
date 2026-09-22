@@ -79,6 +79,7 @@ void bind_constraint_submodule(py::module& m) {
                     std::optional<SDFBase::Ptr>, bool>())
       .def("set_sdf", &SphereCollisionCst::set_sdf)
       .def("get_sdf", &SphereCollisionCst::get_sdf)
+      .def("reset_clearance_cache", &SphereCollisionCst::reset_clearance_cache)
       .def("is_valid", &SphereCollisionCst::is_valid)
       .def("get_group_spheres", &SphereCollisionCst::get_group_spheres)
       .def("get_all_spheres", &SphereCollisionCst::get_all_spheres);

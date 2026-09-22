@@ -189,6 +189,9 @@ bool SphereCollisionCst::is_valid_dirty() {
 }
 
 bool SphereCollisionCst::check_ext_collision() {
+  if (cloud_sdf_count_ > 0) {
+    return check_ext_collision_with_cloud_cache();
+  }
   for (auto& group : sphere_groups_) {
     if (group.only_self_collision) {
       continue;
@@ -217,6 +220,102 @@ bool SphereCollisionCst::check_ext_collision() {
     }
   }
   return true;
+}
+
+bool SphereCollisionCst::check_ext_collision_with_cloud_cache() {
+  // The distance to a static cloud is 1-Lipschitz. A sphere's clearance d stays
+  // positive when its center moves less than d. Shrink the reuse region slightly
+  // so floating-point contact cases take the ordinary distance query.
+  constexpr double guard = 1e-9;
+  for (size_t g = 0; g < sphere_groups_.size(); ++g) {
+    auto& group = sphere_groups_[g];
+    if (group.only_self_collision) {
+      continue;
+    }
+    group.create_group_sphere_position_cache(kin_);
+    const auto& center = group.group_sphere_position_cache;
+    for (size_t o = 0; o < all_sdfs_cache_.size(); ++o) {
+      const auto& sdf = *all_sdfs_cache_[o];
+      // Keep cheap AABB checks before cache lookups. Cache only KD-tree queries;
+      // analytic primitive predicates are too cheap to benefit from this cache.
+      if (sdf.is_outside_aabb(center, group.group_radius)) {
+        continue;
+      }
+      const int cloud_id = cloud_sdf_ids_[o];
+      if (cloud_id >= 0) {
+        auto& cert = clearance_cache_[g * cloud_sdf_count_ + cloud_id];
+        if ((center - cert.center).squaredNorm() <
+            std::abs(cert.signed_margin_sq)) {
+          if (cert.signed_margin_sq > 0.0) {
+            continue;
+          }
+          // The bounding sphere still overlaps: proceed to the narrow phase.
+        } else {
+          const double d = sdf.evaluate(center) - group.group_radius;
+          const double margin = std::max(0.0, std::abs(d) - guard);
+          cert.center = center;
+          cert.signed_margin_sq = std::copysign(margin * margin, d);
+          if (d > 0.0) {
+            continue;
+          }
+        }
+      } else if (sdf.is_outside(center, group.group_radius)) {
+        continue;
+      }
+
+      group.create_sphere_position_cache(kin_);
+      for (size_t i = 0; i < group.radii.size(); ++i) {
+        const Eigen::Vector3d p = group.sphere_positions_cache.col(i);
+        const double radius = group.radii[i];
+        if (sdf.is_outside_aabb(p, radius)) {
+          continue;
+        }
+        if (cloud_id >= 0) {
+          const size_t index = sphere_groups_.size() + sphere_offsets_[g] + i;
+          auto& cert = clearance_cache_[index * cloud_sdf_count_ + cloud_id];
+          if ((p - cert.center).squaredNorm() < cert.signed_margin_sq) {
+            continue;
+          }
+          const double d = sdf.evaluate(p) - radius;
+          if (!(d > 0.0)) {
+            return false;
+          }
+          const double margin = std::max(0.0, d - guard);
+          cert.center = p;
+          cert.signed_margin_sq = margin * margin;
+        } else if (!sdf.is_outside(p, radius)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+void SphereCollisionCst::reset_clearance_cache() {
+  for (auto& cert : clearance_cache_) {
+    cert.signed_margin_sq = 0.0;
+  }
+}
+
+void SphereCollisionCst::initialize_clearance_cache() {
+  cloud_sdf_ids_.clear();
+  cloud_sdf_count_ = 0;
+  for (const auto& sdf : all_sdfs_cache_) {
+    if (sdf->get_type() == plainmp::collision::SDFType::CLOUD) {
+      cloud_sdf_ids_.push_back(static_cast<int>(cloud_sdf_count_++));
+    } else {
+      cloud_sdf_ids_.push_back(-1);
+    }
+  }
+  sphere_offsets_.clear();
+  size_t total = 0;
+  for (const auto& group : sphere_groups_) {
+    sphere_offsets_.push_back(total);
+    total += group.radii.size();
+  }
+  clearance_cache_.assign((sphere_groups_.size() + total) * cloud_sdf_count_,
+                          ClearanceCertificate{});
 }
 
 bool SphereCollisionCst::check_self_collision() {
@@ -431,6 +530,7 @@ void SphereCollisionCst::set_all_sdfs() {
   if (sdf_ != nullptr) {
     set_all_sdfs_inner(sdf_);
   }
+  initialize_clearance_cache();
 }
 
 void SphereCollisionCst::set_all_sdfs_inner(

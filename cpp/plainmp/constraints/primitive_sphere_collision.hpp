@@ -77,6 +77,10 @@ class SphereCollisionCst : public IneqConstraintBase {
 
   plainmp::collision::SDFBase::Ptr get_sdf() const { return sdf_; }
 
+  // Certificates survive configuration changes, but require static point clouds.
+  // set_sdf() also invalidates them, including when reusing the same SDF pointer.
+  void reset_clearance_cache();
+
   bool is_valid_dirty() override;
   bool check_ext_collision();
   bool check_self_collision();
@@ -104,6 +108,14 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<std::pair<Eigen::Vector3d, double>> get_all_spheres();
 
  private:
+  struct ClearanceCertificate {
+    Eigen::Vector3d center = Eigen::Vector3d::Zero();
+    // Negative values certify overlap of the bounding sphere only. A negative
+    // certificate never rejects a configuration without testing its spheres.
+    double signed_margin_sq = 0.0;
+  };
+  bool check_ext_collision_with_cloud_cache();
+  void initialize_clearance_cache();
   void set_all_sdfs();
   void set_all_sdfs_inner(plainmp::collision::SDFBase::Ptr sdf);
 
@@ -112,6 +124,10 @@ class SphereCollisionCst : public IneqConstraintBase {
   plainmp::collision::SDFBase::Ptr fixed_sdf_;
   plainmp::collision::SDFBase::Ptr sdf_;  // set later by user
   std::vector<plainmp::collision::PrimitiveSDFBase::Ptr> all_sdfs_cache_;
+  std::vector<int> cloud_sdf_ids_;
+  std::vector<size_t> sphere_offsets_;
+  std::vector<ClearanceCertificate> clearance_cache_;
+  size_t cloud_sdf_count_ = 0;
   double cutoff_dist_ = 0.1;
 };
 
