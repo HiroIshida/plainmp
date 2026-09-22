@@ -22,6 +22,7 @@
 namespace plainmp::constraint {
 
 namespace kin = plainmp::kinematics;
+using VectorInput = kin::KinematicModel<double>::VectorInput;
 
 class ConstraintBase {
  public:
@@ -35,7 +36,7 @@ class ConstraintBase {
         control_joint_ids_(kin->get_joint_ids(control_joint_names)),
         base_type_(base_type) {}
 
-  void update_kintree(const Eigen::VectorXd& q, bool high_accuracy = true) {
+  void update_kintree(const VectorInput& q, bool high_accuracy = true) {
     if (base_type_ != kin::BaseType::FIXED) {
       const size_t n_joint = control_joint_ids_.size();
       const auto q_joint = q.head(n_joint);
@@ -110,7 +111,7 @@ class IneqConstraintBase : public ConstraintBase {
  public:
   using Ptr = std::shared_ptr<IneqConstraintBase>;
   using ConstraintBase::ConstraintBase;
-  bool is_valid(const Eigen::VectorXd& q) {
+  bool is_valid(const VectorInput& q) {
     update_kintree(q, false);
     post_update_kintree();
     return is_valid_dirty();
