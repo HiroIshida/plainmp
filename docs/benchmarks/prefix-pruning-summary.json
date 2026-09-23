@@ -1,0 +1,478 @@
+{
+  "baseline": "62508b79ee218366e9e96baefc5acc6c878e9613",
+  "original_master": "7019b1d0544cbf3ab59ea8acae34dd7f36ea6a6d",
+  "seeds": [
+    67867967,
+    67867979,
+    67867987
+  ],
+  "blocks": 6,
+  "plans_per_block": 100,
+  "rows": [
+    {
+      "scene": "panda",
+      "incremental": 1.0113071952881192,
+      "total": 2.491313674710178,
+      "wall_incremental": 1.013074188196255,
+      "wall_total": 2.3250680139914497,
+      "seed_ratios": {
+        "incremental": [
+          1.0113071952881192,
+          0.9978897885723367,
+          1.02687221894949
+        ],
+        "total": [
+          2.507494176080172,
+          2.4856627579095973,
+          2.491313674710178
+        ],
+        "wall_incremental": [
+          1.013074188196255,
+          0.9995433346288379,
+          1.0438885902540613
+        ],
+        "wall_total": [
+          2.3047483605909775,
+          2.3250680139914497,
+          2.363732928191378
+        ]
+      }
+    },
+    {
+      "scene": "panda_hard",
+      "incremental": 1.0424292877470815,
+      "total": 2.402494530811376,
+      "wall_incremental": 1.0371536587077947,
+      "wall_total": 2.327078913805882,
+      "seed_ratios": {
+        "incremental": [
+          1.050345575213751,
+          1.002925166838547,
+          1.0424292877470815
+        ],
+        "total": [
+          2.460770269880156,
+          2.3764546291068243,
+          2.402494530811376
+        ],
+        "wall_incremental": [
+          1.0399570672074128,
+          1.0026882444110283,
+          1.0371536587077947
+        ],
+        "wall_total": [
+          2.3679512505064815,
+          2.3138525349875585,
+          2.327078913805882
+        ]
+      }
+    },
+    {
+      "scene": "fetch_table",
+      "incremental": 1.0408314232715576,
+      "total": 2.451310150817293,
+      "wall_incremental": 1.0323131773618162,
+      "wall_total": 2.384408773382593,
+      "seed_ratios": {
+        "incremental": [
+          1.0031013635094037,
+          1.0593199133507933,
+          1.0408314232715576
+        ],
+        "total": [
+          2.451310150817293,
+          2.471130038153295,
+          2.4067932818130364
+        ],
+        "wall_incremental": [
+          1.0152939677686477,
+          1.0633625686721613,
+          1.0323131773618162
+        ],
+        "wall_total": [
+          2.384408773382593,
+          2.3990770642326233,
+          2.3539186360824655
+        ]
+      }
+    },
+    {
+      "scene": "fetch_spheres4",
+      "incremental": 1.0145645155905294,
+      "total": 2.3865088210156054,
+      "wall_incremental": 1.004138290367351,
+      "wall_total": 2.2359560171327,
+      "seed_ratios": {
+        "incremental": [
+          1.0240737862338407,
+          1.0145645155905294,
+          1.0068713256592705
+        ],
+        "total": [
+          2.3886580800510036,
+          2.373689874181693,
+          2.3865088210156054
+        ],
+        "wall_incremental": [
+          1.0247666589660354,
+          1.004138290367351,
+          0.9992580144837422
+        ],
+        "wall_total": [
+          2.2729500641851583,
+          2.2162677462340405,
+          2.2359560171327
+        ]
+      }
+    },
+    {
+      "scene": "fetch_spheres9",
+      "incremental": 1.0239040403076511,
+      "total": 2.322308755605003,
+      "wall_incremental": 1.0153494769950677,
+      "wall_total": 2.212751861835793,
+      "seed_ratios": {
+        "incremental": [
+          1.0343638672555433,
+          1.0239040403076511,
+          1.0083142306986979
+        ],
+        "total": [
+          2.322308755605003,
+          2.3014724125427026,
+          2.3317462864478267
+        ],
+        "wall_incremental": [
+          1.028001025904078,
+          1.0153494769950677,
+          1.0082822098630568
+        ],
+        "wall_total": [
+          2.244749935880995,
+          2.1728701636506216,
+          2.212751861835793
+        ]
+      }
+    },
+    {
+      "scene": "panda_boxes",
+      "incremental": 1.0367325713906377,
+      "total": 2.4966383796362885,
+      "wall_incremental": 1.0379679280286664,
+      "wall_total": 2.2878345065948307,
+      "seed_ratios": {
+        "incremental": [
+          1.0319584495123297,
+          1.0525748180102454,
+          1.0367325713906377
+        ],
+        "total": [
+          2.4637690405334913,
+          2.496907248721285,
+          2.4966383796362885
+        ],
+        "wall_incremental": [
+          1.0200632283940052,
+          1.0394519309279115,
+          1.0379679280286664
+        ],
+        "wall_total": [
+          2.2505465477878137,
+          2.3097447247845713,
+          2.2878345065948307
+        ]
+      }
+    },
+    {
+      "scene": "fetch_table_tilted",
+      "incremental": 1.014556773612058,
+      "total": 2.402450685173931,
+      "wall_incremental": 1.0230190292702528,
+      "wall_total": 2.318235439568931,
+      "seed_ratios": {
+        "incremental": [
+          1.014556773612058,
+          1.0095172412076003,
+          1.046741780117908
+        ],
+        "total": [
+          2.402450685173931,
+          2.4431312159287124,
+          2.3956609576768124
+        ],
+        "wall_incremental": [
+          1.0230190292702528,
+          1.0056837277233532,
+          1.0424956056855434
+        ],
+        "wall_total": [
+          2.318235439568931,
+          2.394272297153351,
+          2.2990201743128753
+        ]
+      }
+    },
+    {
+      "scene": "fetch_table_cloud",
+      "incremental": 1.0088280083595322,
+      "total": 1.4773599931515295,
+      "wall_incremental": 1.0102740885256394,
+      "wall_total": 1.4735747058171882,
+      "seed_ratios": {
+        "incremental": [
+          1.0088280083595322,
+          1.028200670015792,
+          1.0060493424737005
+        ],
+        "total": [
+          1.4773599931515295,
+          1.5036973170759618,
+          1.444567976932731
+        ],
+        "wall_incremental": [
+          1.0102740885256394,
+          1.0317339288551677,
+          1.0035518123691254
+        ],
+        "wall_total": [
+          1.4735747058171882,
+          1.4999351559889615,
+          1.428246741430859
+        ]
+      }
+    },
+    {
+      "scene": "fetch_table_cloud100k",
+      "incremental": 1.0101499182912617,
+      "total": 2.959494794419473,
+      "wall_incremental": 1.013892631051174,
+      "wall_total": 2.9364259919855846,
+      "seed_ratios": {
+        "incremental": [
+          0.9983377185315134,
+          1.0101499182912617,
+          1.1005636273355004
+        ],
+        "total": [
+          3.0508051237542726,
+          2.959192210662535,
+          2.959494794419473
+        ],
+        "wall_incremental": [
+          1.0036334937538192,
+          1.013892631051174,
+          1.097550276757995
+        ],
+        "wall_total": [
+          3.0358344498231653,
+          2.925084286510878,
+          2.9364259919855846
+        ]
+      }
+    }
+  ],
+  "analytic_geomeans": {
+    "incremental": 1.0262567277968742,
+    "total": 2.421174159235591,
+    "wall_incremental": 1.0232164346293724,
+    "wall_total": 2.2981174943613545
+  },
+  "measured_plans": 48600,
+  "paired_plans_per_comparison": 16200,
+  "mismatch_counts": {
+    "paths": 0,
+    "logical_calls": 0,
+    "independent_labels": 0
+  },
+  "fixed_work_counters": {
+    "baseline": {
+      "cycles:u": 27670696889.5,
+      "instructions:u": 73055112359.5,
+      "branch-misses:u": 82435364.0,
+      "L1-dcache-loads": 26401706123.0,
+      "L1-dcache-load-misses": 1283913078.0
+    },
+    "candidate": {
+      "cycles:u": 26503005082.5,
+      "instructions:u": 71537681504.5,
+      "branch-misses:u": 78924188.0,
+      "L1-dcache-loads": 26122739655.0,
+      "L1-dcache-load-misses": 1159111822.5
+    }
+  },
+  "fixed_work_runs": [
+    {
+      "name": "final2-fixed-0-baseline",
+      "stat": "# started on Wed Sep 23 21:38:56 2026\n\n29387447397;;cycles:u;6790490788;100.00;;\n73051643737;;instructions:u;6790490788;100.00;2.49;insn per cycle\n86482013;;branch-misses:u;6790490788;100.00;;\n26428209221;;L1-dcache-loads;6790490788;100.00;;\n1299427885;;L1-dcache-load-misses;6790490788;100.00;4.92;of all L1-dcache accesses\n",
+      "work": {
+        "scene": "fetch_table",
+        "variant": "baseline",
+        "mode": "plan",
+        "iterations": 10000,
+        "logical_calls": 32986037,
+        "internal_seconds": 6.379218384,
+        "wall_seconds": 6.799567303001822,
+        "checksum": 0
+      }
+    },
+    {
+      "name": "final2-fixed-1-candidate",
+      "stat": "# started on Wed Sep 23 21:39:04 2026\n\n26438526496;;cycles:u;5970665637;100.00;;\n71542421468;;instructions:u;5970665637;100.00;2.71;insn per cycle\n78767435;;branch-misses:u;5970665637;100.00;;\n26115185586;;L1-dcache-loads;5970665637;100.00;;\n1160986542;;L1-dcache-load-misses;5970665637;100.00;4.45;of all L1-dcache accesses\n",
+      "work": {
+        "scene": "fetch_table",
+        "variant": "candidate",
+        "mode": "plan",
+        "iterations": 10000,
+        "logical_calls": 32986037,
+        "internal_seconds": 5.653036287,
+        "wall_seconds": 5.9767870850009785,
+        "checksum": 0
+      }
+    },
+    {
+      "name": "final2-fixed-2-candidate",
+      "stat": "# started on Wed Sep 23 21:39:11 2026\n\n25962613894;;cycles:u;5761911285;100.00;;\n71541297475;;instructions:u;5761911285;100.00;2.76;insn per cycle\n77230945;;branch-misses:u;5761911285;100.00;;\n26117341341;;L1-dcache-loads;5761911285;100.00;;\n1086147766;;L1-dcache-load-misses;5761911285;100.00;4.16;of all L1-dcache accesses\n",
+      "work": {
+        "scene": "fetch_table",
+        "variant": "candidate",
+        "mode": "plan",
+        "iterations": 10000,
+        "logical_calls": 32986037,
+        "internal_seconds": 5.487782483,
+        "wall_seconds": 5.7667436490010004,
+        "checksum": 0
+      }
+    },
+    {
+      "name": "final2-fixed-3-baseline",
+      "stat": "# started on Wed Sep 23 21:39:18 2026\n\n27887608108;;cycles:u;6244449449;100.00;;\n73056162919;;instructions:u;6244449449;100.00;2.62;insn per cycle\n81811559;;branch-misses:u;6244449449;100.00;;\n26393626220;;L1-dcache-loads;6244449449;100.00;;\n1268398271;;L1-dcache-load-misses;6244449449;100.00;4.81;of all L1-dcache accesses\n",
+      "work": {
+        "scene": "fetch_table",
+        "variant": "baseline",
+        "mode": "plan",
+        "iterations": 10000,
+        "logical_calls": 32986037,
+        "internal_seconds": 5.915748894,
+        "wall_seconds": 6.251323185002548,
+        "checksum": 0
+      }
+    },
+    {
+      "name": "final2-fixed-4-baseline",
+      "stat": "# started on Wed Sep 23 21:40:02 2026\n\n27453785671;;cycles:u;6066799104;100.00;;\n73054061800;;instructions:u;6066799104;100.00;2.66;insn per cycle\n82314372;;branch-misses:u;6066799104;100.00;;\n26398677542;;L1-dcache-loads;6066799104;100.00;;\n1384841771;;L1-dcache-load-misses;6066799104;100.00;5.25;of all L1-dcache accesses\n",
+      "work": {
+        "scene": "fetch_table",
+        "variant": "baseline",
+        "mode": "plan",
+        "iterations": 10000,
+        "logical_calls": 32986037,
+        "internal_seconds": 5.766569404,
+        "wall_seconds": 6.073556927000027,
+        "checksum": 0
+      }
+    },
+    {
+      "name": "final2-fixed-5-candidate",
+      "stat": "# started on Wed Sep 23 21:40:09 2026\n\n26567483669;;cycles:u;5879187370;100.00;;\n71525719315;;instructions:u;5879187370;100.00;2.69;insn per cycle\n79080941;;branch-misses:u;5879187370;100.00;;\n26129494059;;L1-dcache-loads;5879187370;100.00;;\n1157237103;;L1-dcache-load-misses;5879187370;100.00;4.43;of all L1-dcache accesses\n",
+      "work": {
+        "scene": "fetch_table",
+        "variant": "candidate",
+        "mode": "plan",
+        "iterations": 10000,
+        "logical_calls": 32986037,
+        "internal_seconds": 5.580344451,
+        "wall_seconds": 5.88583829900017,
+        "checksum": 0
+      }
+    },
+    {
+      "name": "final2-fixed-6-candidate",
+      "stat": "# started on Wed Sep 23 21:40:16 2026\n\n27264485671;;cycles:u;6098195469;100.00;;\n71534065534;;instructions:u;6098195469;100.00;2.62;insn per cycle\n80494585;;branch-misses:u;6098195469;100.00;;\n26128137969;;L1-dcache-loads;6098195469;100.00;;\n1311348805;;L1-dcache-load-misses;6098195469;100.00;5.02;of all L1-dcache accesses\n",
+      "work": {
+        "scene": "fetch_table",
+        "variant": "candidate",
+        "mode": "plan",
+        "iterations": 10000,
+        "logical_calls": 32986037,
+        "internal_seconds": 5.772764574,
+        "wall_seconds": 6.105354465998971,
+        "checksum": 0
+      }
+    },
+    {
+      "name": "final2-fixed-7-baseline",
+      "stat": "# started on Wed Sep 23 21:40:23 2026\n\n27410315757;;cycles:u;6114685979;100.00;;\n73058788598;;instructions:u;6114685979;100.00;2.67;insn per cycle\n82556356;;branch-misses:u;6114685979;100.00;;\n26404734704;;L1-dcache-loads;6114685979;100.00;;\n1179127546;;L1-dcache-load-misses;6114685979;100.00;4.47;of all L1-dcache accesses\n",
+      "work": {
+        "scene": "fetch_table",
+        "variant": "baseline",
+        "mode": "plan",
+        "iterations": 10000,
+        "logical_calls": 32986037,
+        "internal_seconds": 5.8074963,
+        "wall_seconds": 6.1207409119997465,
+        "checksum": 0
+      }
+    }
+  ],
+  "binary_sha256": {
+    "master": "2b8135141db9dc1a05b7816ae025bf0f022c8842258320f53cfb68d3e7c9afa0",
+    "baseline": "3befa29669fd79b43f3314230715f41a67b798a5f2691ea0f2c9b66a8968a720",
+    "candidate": "e19d11e3bc435a3c5b4784daf827b69bc48eac0e86abf9092094642195009d88",
+    "avx2": "498994deed07cfe61bdb2c0877135204948aafe00118ffc96a01132d3d70c95e"
+  },
+  "validation": {
+    "unique_query_inputs": 4159717,
+    "query_mismatches": 0,
+    "api_cases": 772,
+    "api_states": 4388,
+    "api_mismatches": 0,
+    "native": {
+      "avx512": "SIMD batch width: 8\n9041 batches, 42077 states: predicates and visible kinematic state match\n",
+      "avx2": "SIMD batch width: 4\n9041 batches, 42077 states: predicates and visible kinematic state match\n",
+      "scalar": "SIMD batch width: 1\n9041 batches, 42077 states: predicates and visible kinematic state match\n",
+      "asan_ubsan": "SIMD batch width: 8\n9041 batches, 42077 states: predicates and visible kinematic state match\n"
+    },
+    "planning_mode_pairs_per_build": 600,
+    "planning_mode_builds": [
+      "candidate",
+      "avx2"
+    ],
+    "planning_mode_mismatches": 0
+  },
+  "environment": {
+    "cpu": "AMD Ryzen 7 7840HS",
+    "compiler": "GCC 9.4",
+    "ompl": "1.6",
+    "cpu_affinity": [
+      2
+    ],
+    "build": "Release/O3",
+    "frequency_locked": false
+  },
+  "avx2_kernel_text_sha256": "277923854e4ffbab527c18aa9add705832ee09d43d77fad986709c6ecfdf805c",
+  "avx2_kernel_text_bytes": 7980,
+  "final_tag": "final2",
+  "initial_both_widths_counters": {
+    "baseline": {
+      "cycles:u": 27150129863.5,
+      "instructions:u": 73047139238.5,
+      "branch-misses:u": 81760985.5,
+      "L1-dcache-loads": 26412171309.5,
+      "L1-dcache-load-misses": 1240187377.0
+    },
+    "prefix": {
+      "cycles:u": 27525089198.0,
+      "instructions:u": 71031805061.0,
+      "branch-misses:u": 82133004.0,
+      "L1-dcache-loads": 25721534597.5,
+      "L1-dcache-load-misses": 1249430205.0
+    },
+    "candidate": {
+      "cycles:u": 26370689788.5,
+      "instructions:u": 71540871862.0,
+      "branch-misses:u": 79701543.0,
+      "L1-dcache-loads": 26111093484.0,
+      "L1-dcache-load-misses": 1146718686.0
+    }
+  }
+}

@@ -247,6 +247,70 @@ int main() {
         states_checked += count;
       }
     }
+    // Obstacles deliberately reject later lanes first. Prefix evaluation must
+    // keep checking earlier lanes instead of returning the first discovered
+    // collision. Exercise every nonempty rejection mask and every tail.
+    for (size_t count = 1; count <= 8; ++count) {
+      double q[8];
+      const double *ptr[8];
+      for (size_t i = 0; i < count; ++i) {
+        q[i] = 2. * i;
+        ptr[i] = &q[i];
+      }
+      for (unsigned rejected = 1; rejected < (1u << count); ++rejected) {
+        std::vector<ps::SDFBase::Ptr> obstacles;
+        for (size_t i = count; i-- > 0;)
+          if (rejected & (1u << i))
+            obstacles.push_back(std::make_shared<ps::SphereSDF>(
+                .1, ps::Pose(Eigen::Vector3d(q[i], 0., 0.),
+                              Eigen::Matrix3d::Identity())));
+        line.set_sdf(std::make_shared<ps::UnionSDF>(obstacles));
+        require(line.is_valid_batch(ptr, count) ==
+                    (((1u << count) - 1) & ~rejected),
+                "Reverse obstacle order: full mask mismatch");
+        size_t first = 0;
+        while (!(rejected & (1u << first)))
+          ++first;
+        require(line.first_invalid_batch(ptr, count) == first,
+                "Reverse obstacle order: prefix mismatch");
+        require(line_kin->get_joint_angles(slide)[0] == q[first],
+                "Reverse obstacle order: restored state mismatch");
+        ++batches_checked;
+        states_checked += count;
+      }
+    }
+    // An earlier lane can also be rejected by a later self-collision pair,
+    // after an external obstacle has already rejected a later lane.
+    Eigen::Matrix3Xd root_points = Eigen::Matrix3Xd::Zero(3, 2);
+    root_points(0, 0) = 14.;
+    root_points(0, 1) = 4.;
+    pc::SphereCollisionCst mixed(
+        line_kin, {"slide"}, pk::BaseType::FIXED,
+        {{"tip", point, radius, false},
+         {"root", root_points, Eigen::VectorXd::Constant(2, .1), true}},
+        {{"root", "tip"}}, std::nullopt, false);
+    for (bool external : {false, true}) {
+      std::vector<ps::SDFBase::Ptr> obstacles;
+      if (external)
+        obstacles.push_back(std::make_shared<ps::SphereSDF>(
+            .1, ps::Pose(Eigen::Vector3d(14., 0., 0.),
+                          Eigen::Matrix3d::Identity())));
+      mixed.set_sdf(std::make_shared<ps::UnionSDF>(obstacles));
+      double q[8];
+      const double *ptr[8];
+      for (size_t i = 0; i < 8; ++i) {
+        q[i] = 2. * i;
+        ptr[i] = &q[i];
+      }
+      require(mixed.is_valid_batch(ptr, 8) == (255u & ~132u),
+              "Mixed collision order: full mask mismatch");
+      require(mixed.first_invalid_batch(ptr, 8) == 2,
+              "Mixed collision order: prefix mismatch");
+      require(line_kin->get_joint_angles(slide)[0] == q[2],
+              "Mixed collision order: restored state mismatch");
+      ++batches_checked;
+      states_checked += 8;
+    }
     // Keep touching/nextafter behavior unchanged when the batch is widened.
     for (const auto &shape : std::vector<ps::SDFBase::Ptr>{
              std::make_shared<ps::SphereSDF>(

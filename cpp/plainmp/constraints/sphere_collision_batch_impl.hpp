@@ -346,7 +346,7 @@ void SphereCollisionCst::PLAINMP_BATCH_RESTORE(const double *state,
 }
 
 unsigned SphereCollisionCst::PLAINMP_BATCH_CHECK(const double *const *states,
-                                                 size_t count) {
+                                                 size_t count, bool prefix) {
   if (!PLAINMP_BATCH_MEMBER ||
       PLAINMP_BATCH_MEMBER->pose_end.size() !=
           kin_->link_parent_link_ids_.size() ||
@@ -374,6 +374,12 @@ unsigned SphereCollisionCst::PLAINMP_BATCH_CHECK(const double *const *states,
     if (!kin_->joint_orientation_identity_flags_[joint])
       q = wide::mul(wide::broadcast(kin_->joint_orientations_[joint]), q);
   }
+  // An eight-lane prefix query needs only lanes before its earliest rejection.
+  // Unsigned negation fills all bits above the lowest set bit; OR also keeps
+  // that first rejected lane. Earlier lanes must still finish every check.
+  // Retain the four-lane schedule: applying the extra branch there regressed
+  // some scenes despite helping the wider kernel.
+  const unsigned prefix_mask = prefix ? ~0u : 0u;
   unsigned active = (1u << count) - 1;
   for (size_t g = 0;
        g < sphere_groups_.size() && active && !all_sdfs_cache_.empty(); ++g) {
@@ -400,8 +406,17 @@ unsigned SphereCollisionCst::PLAINMP_BATCH_CHECK(const double *const *states,
         if (!inside)
           continue;
         inside &= ~wide::outside_shape(p, r, sdf, w.kinds[o], inside);
-        active &= ~inside;
-        narrow &= ~inside;
+        // Avoid a loop-carried mask update for the common non-collision case.
+        if constexpr (wide::width == 8) {
+          if (inside) {
+            inside |= (0u - inside) & prefix_mask;
+            active &= ~inside;
+            narrow &= ~inside;
+          }
+        } else {
+          active &= ~inside;
+          narrow &= ~inside;
+        }
       }
     }
   }
@@ -429,8 +444,17 @@ unsigned SphereCollisionCst::PLAINMP_BATCH_CHECK(const double *const *states,
         unsigned inside =
             narrow & wide::bits(wide::lt(
                          wide::norm2(ag.spheres[i] - bg.spheres[j]), rr * rr));
-        active &= ~inside;
-        narrow &= ~inside;
+        // Keep independent distance calculations off the mask-update chain.
+        if constexpr (wide::width == 8) {
+          if (inside) {
+            inside |= (0u - inside) & prefix_mask;
+            active &= ~inside;
+            narrow &= ~inside;
+          }
+        } else {
+          active &= ~inside;
+          narrow &= ~inside;
+        }
       }
     }
   }

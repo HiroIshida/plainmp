@@ -87,7 +87,7 @@ size_t SphereCollisionCst::first_invalid_batch(const double *const *states,
   if (count > 1 && batch_supported()) {
 #ifdef PLAINMP_HAS_AVX512_COLLISION
     if (count > 4 && batch_size() == 8) {
-      const unsigned mask = is_valid_batch_avx512(states, count);
+      const unsigned mask = is_valid_batch_avx512(states, count, true);
       size_t first = 0;
       while (first < count && (mask & (1u << first)))
         ++first;
@@ -101,7 +101,7 @@ size_t SphereCollisionCst::first_invalid_batch(const double *const *states,
       const size_t first = first_invalid_batch(states, 4);
       return first < 4 ? first : 4 + first_invalid_batch(states + 4, count - 4);
     }
-    const unsigned mask = is_valid_batch_avx2(states, count);
+    const unsigned mask = is_valid_batch_avx2(states, count, true);
     size_t first = 0;
     while (first < count && (mask & (1u << first)))
       ++first;

@@ -122,9 +122,13 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<std::pair<Eigen::Vector3d, double>> get_all_spheres();
 
  private:
-  unsigned is_valid_batch_avx2(const double* const* states, size_t count);
+  // The eight-lane kernel can discard lanes after a known rejection; only
+  // leading valid bits then matter. Full-mask callers leave prefix disabled.
+  unsigned is_valid_batch_avx2(const double* const* states, size_t count,
+                                bool prefix = false);
   void restore_batch_state_avx2(const double *state, size_t lane);
-  unsigned is_valid_batch_avx512(const double* const* states, size_t count);
+  unsigned is_valid_batch_avx512(const double* const* states, size_t count,
+                                bool prefix = false);
   void restore_batch_state_avx512(const double *state, size_t lane);
   void update_batch_sdf_support();
   bool batch_sdfs_supported_ = false;
