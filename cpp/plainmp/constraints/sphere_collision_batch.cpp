@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-/* Four-state dispatch. This translation unit uses the portable target ISA. */
+/* Runtime SIMD dispatch. This translation unit uses the portable target ISA. */
 #include "plainmp/constraints/primitive_sphere_collision.hpp"
 #include <typeinfo>
 namespace plainmp::constraint {
@@ -39,12 +39,34 @@ bool SphereCollisionCst::batch_supported() const {
 #endif
 }
 
+size_t SphereCollisionCst::batch_size() const {
+  if (!batch_supported())
+    return 1;
+#ifdef PLAINMP_HAS_AVX512_COLLISION
+  if (__builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512dq"))
+    return 8;
+#endif
+  return 4;
+}
+
 unsigned SphereCollisionCst::is_valid_batch(const double *const *states,
                                             size_t count) {
-  if (count == 0 || count > 4)
-    throw std::invalid_argument("Batch size must be 1..4");
+  if (count == 0 || count > 8)
+    throw std::invalid_argument("Batch size must be 1..8");
 #ifdef PLAINMP_HAS_AVX2_COLLISION
   if (count > 1 && batch_supported()) {
+#ifdef PLAINMP_HAS_AVX512_COLLISION
+    if (count > 4 && batch_size() == 8) {
+      const unsigned mask = is_valid_batch_avx512(states, count);
+      restore_batch_state_avx512(states[count - 1], count - 1);
+      post_update_kintree();
+      return mask;
+    }
+#endif
+    if (count > 4) {
+      const unsigned first = is_valid_batch(states, 4);
+      return first | (is_valid_batch(states + 4, count - 4) << 4);
+    }
     const unsigned mask = is_valid_batch_avx2(states, count);
     restore_batch_state_avx2(states[count - 1], count - 1);
     post_update_kintree();
@@ -59,10 +81,26 @@ unsigned SphereCollisionCst::is_valid_batch(const double *const *states,
 }
 size_t SphereCollisionCst::first_invalid_batch(const double *const *states,
                                                size_t count) {
-  if (count == 0 || count > 4)
-    throw std::invalid_argument("Batch size must be 1..4");
+  if (count == 0 || count > 8)
+    throw std::invalid_argument("Batch size must be 1..8");
 #ifdef PLAINMP_HAS_AVX2_COLLISION
   if (count > 1 && batch_supported()) {
+#ifdef PLAINMP_HAS_AVX512_COLLISION
+    if (count > 4 && batch_size() == 8) {
+      const unsigned mask = is_valid_batch_avx512(states, count);
+      size_t first = 0;
+      while (first < count && (mask & (1u << first)))
+        ++first;
+      const size_t last = std::min(first, count - 1);
+      restore_batch_state_avx512(states[last], last);
+      post_update_kintree();
+      return first;
+    }
+#endif
+    if (count > 4) {
+      const size_t first = first_invalid_batch(states, 4);
+      return first < 4 ? first : 4 + first_invalid_batch(states + 4, count - 4);
+    }
     const unsigned mask = is_valid_batch_avx2(states, count);
     size_t first = 0;
     while (first < count && (mask & (1u << first)))

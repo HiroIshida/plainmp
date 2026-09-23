@@ -33,9 +33,9 @@ void bind_batch_queries_check(py::module &m) {
             flat = q;
         auto run = [&](bool verify) {
           uint64_t sum = 0, mismatches = 0;
-          for (size_t i = 0; i < q.rows(); i += 4) {
-            const size_t count = std::min(size_t(4), size_t(q.rows()) - i);
-            const double *values[4];
+          for (size_t i = 0; i < q.rows(); i += 8) {
+            const size_t count = std::min(size_t(8), size_t(q.rows()) - i);
+            const double *values[8];
             for (size_t k = 0; k < count; ++k)
               values[k] = flat.data() + (i + k) * q.cols();
             unsigned mask = 0;
@@ -71,22 +71,23 @@ void bind_batch_queries_check(py::module &m) {
         [](pc::SphereCollisionCst::Ptr cst, const Eigen::MatrixXd &q) {
           Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
               flat = q;
-          if (q.rows() < 1 || q.rows() > 4 || q.cols() != cst->q_dim())
+          if (q.rows() < 1 || q.rows() > 8 || q.cols() != cst->q_dim())
             throw std::invalid_argument("shape mismatch");
-          const double *ptr[4];
+          const double *ptr[8];
           for (size_t i = 0; i < q.rows(); ++i)
             ptr[i] = flat.data() + i * q.cols();
           return cst->is_valid_batch(ptr, q.rows());
         });
 
+  e.def("batch_size", &pc::SphereCollisionCst::batch_size);
   e.def("batch_supported", &pc::SphereCollisionCst::batch_supported);
   e.def("first_invalid",
         [](pc::SphereCollisionCst::Ptr cst, const Eigen::MatrixXd &q) {
           Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
               flat = q;
-          if (q.rows() < 1 || q.rows() > 4 || q.cols() != cst->q_dim())
+          if (q.rows() < 1 || q.rows() > 8 || q.cols() != cst->q_dim())
             throw std::invalid_argument("shape mismatch");
-          const double *ptr[4];
+          const double *ptr[8];
           for (size_t i = 0; i < q.rows(); ++i)
             ptr[i] = flat.data() + i * q.cols();
           return cst->first_invalid_batch(ptr, q.rows());

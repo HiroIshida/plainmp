@@ -10,6 +10,7 @@
 
 #include <array>
 #include <functional>
+#include <stdexcept>
 #include <ompl/base/MotionValidator.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
@@ -34,11 +35,14 @@ class CustomValidatorBase : public ob::MotionValidator {
         si_->freeState(state);
   }
   using BatchChecker = std::function<bool(const ob::State *const *, size_t)>;
-  void set_batch_checker(BatchChecker checker) {
+  void set_batch_checker(BatchChecker checker, size_t batch_size = 4) {
+    if (batch_size < 2 || batch_size > batch_states_.size())
+      throw std::invalid_argument("Batch width must be 2..8");
+    batch_size_ = batch_size;
     batch_checker_ = std::move(checker);
-    for (auto &state : batch_states_)
-      if (!state)
-        state = si_->allocState();
+    for (size_t i = 0; i < batch_size_; ++i)
+      if (!batch_states_[i])
+        batch_states_[i] = si_->allocState();
   }
   bool checkMotion(const ob::State *s1, const ob::State *s2) const;
   bool checkMotion(const ob::State *s1, const ob::State *s2,
@@ -50,7 +54,8 @@ class CustomValidatorBase : public ob::MotionValidator {
 
 private:
   BatchChecker batch_checker_;
-  std::array<ob::State *, 4> batch_states_{};
+  size_t batch_size_ = 4;
+  std::array<ob::State *, 8> batch_states_{};
   ob::RealVectorStateSpace::StateType *s_test_; // pre-allocated memory
 };
 

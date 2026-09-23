@@ -98,7 +98,7 @@ struct CollisionAwareSpaceInformation {
           si_->getMotionValidator());
       validator->set_batch_checker(
           [this, sphere](const ob::State *const *states, size_t count) {
-            const double *values[4];
+            const double *values[8];
             for (size_t i = 0; i < count; ++i)
               values[i] =
                   states[i]->as<ob::RealVectorStateSpace::StateType>()->values;
@@ -109,7 +109,7 @@ struct CollisionAwareSpaceInformation {
             // rejection.
             this->is_valid_call_count_ += std::min(count, first_invalid + 1);
             return first_invalid == count;
-          });
+          }, sphere->batch_size());
     }
 #endif
     // si_->setup();

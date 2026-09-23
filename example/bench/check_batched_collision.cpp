@@ -8,7 +8,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-// Standalone regression checks for the four-state collision kernel.
+// Standalone regression checks for the SIMD collision kernel.
 #include <iostream>
 #include <random>
 #include <sstream>
@@ -21,13 +21,14 @@ namespace pk = plainmp::kinematics;
 namespace ps = plainmp::collision;
 
 class OverrideBox : public ps::BoxSDF {
- public:
+public:
   using BoxSDF::BoxSDF;
-  bool is_outside(const ps::Point&, double) const override { return true; }
+  bool is_outside(const ps::Point &, double) const override { return true; }
 };
 
-void require(bool condition, const char* message) {
-  if (!condition) throw std::runtime_error(message);
+void require(bool condition, const char *message) {
+  if (!condition)
+    throw std::runtime_error(message);
 }
 
 int main() {
@@ -39,9 +40,7 @@ int main() {
           << (i == 1 ? "prismatic" : "revolute") << "'><parent link='l" << i - 1
           << "'/><child link='l" << i << "'/><origin xyz='.11 .02 .09' rpy='"
           << (i % 2 ? "0 0 0" : "1.5707963267948966 .1 .2") << "'/><axis xyz='"
-          << (i % 3 == 0   ? "1 0 0"
-              : i % 3 == 1 ? "0 1 0"
-                           : "0 0 1")
+          << (i % 3 == 0 ? "1 0 0" : i % 3 == 1 ? "0 1 0" : "0 0 1")
           << "'/><limit lower='-7' upper='7' effort='1' velocity='1'/></joint>";
     }
     xml << "<link name='side'/><joint name='branch' type='revolute'>"
@@ -51,7 +50,8 @@ int main() {
            "velocity='1'/></joint></robot>";
     auto kin = std::make_shared<pk::KinematicModel<double>>(xml.str());
     std::vector<std::string> names;
-    for (int i = 1; i <= 7; ++i) names.push_back("j" + std::to_string(i));
+    for (int i = 1; i <= 7; ++i)
+      names.push_back("j" + std::to_string(i));
     const auto ids = kin->get_joint_ids(names);
     const auto other_ids = kin->get_joint_ids({"j8", "j9", "branch"});
     std::vector<pc::SphereAttachmentSpec> specs;
@@ -85,27 +85,29 @@ int main() {
     std::mt19937 rng(19349663);
     std::uniform_real_distribution<double> angle(-18., 18.);
     size_t states_checked = 0, batches_checked = 0;
-    for (const auto& shape : shapes) {
+    for (const auto &shape : shapes) {
       cst.set_sdf(shape);
       if (shape == shapes.front()) {
 #ifdef PLAINMP_HAS_AVX2_COLLISION
         require(cst.batch_supported() == bool(__builtin_cpu_supports("avx2")),
                 "Runtime AVX2 dispatch mismatch");
 #else
-        require(!cst.batch_supported(), "Disabled build must use scalar checks");
+        require(!cst.batch_supported(),
+                "Disabled build must use scalar checks");
 #endif
-        std::cout << "AVX2 batch dispatch: " << cst.batch_supported() << '\n';
+        std::cout << "SIMD batch width: " << cst.batch_size() << '\n';
       }
-      if (dynamic_cast<OverrideBox*>(shape.get()))
+      if (dynamic_cast<OverrideBox *>(shape.get()))
         require(!cst.batch_supported(),
                 "Subclass must use the scalar fallback");
       for (size_t trial = 0; trial < 1200; ++trial) {
-        const size_t count = trial % 4 + 1;
-        Eigen::VectorXd q[4];
-        const double* ptr[4];
+        const size_t count = trial % 8 + 1;
+        Eigen::VectorXd q[8];
+        const double *ptr[8];
         for (size_t k = 0; k < count; ++k) {
           q[k].resize(7);
-          for (int j = 0; j < 7; ++j) q[k][j] = angle(rng);
+          for (int j = 0; j < 7; ++j)
+            q[k][j] = angle(rng);
           q[k][0] *= .025;
           ptr[k] = q[k].data();
         }
@@ -116,7 +118,8 @@ int main() {
               pk::QuatTrans<double>::fromXYZRPY(.1, -.2, .05, .2, -.1, .3));
         unsigned expected = 0;
         for (size_t k = 0; k < count; ++k)
-          if (cst.is_valid(q[k])) expected |= 1u << k;
+          if (cst.is_valid(q[k]))
+            expected |= 1u << k;
         const auto link_ids =
             kin->get_link_ids({"l0", "l2", "l5", "l7", "l9", "side"});
         std::vector<pk::QuatTrans<double>> poses;
@@ -136,7 +139,8 @@ int main() {
           require(actual[j] == q[count - 1][j],
                   "Full batch final state mismatch");
         size_t first = 0;
-        while (first < count && (expected & (1u << first))) ++first;
+        while (first < count && (expected & (1u << first)))
+          ++first;
         require(cst.first_invalid_batch(ptr, count) == first,
                 "Ordered prefix mismatch");
         actual = kin->get_joint_angles(ids);
@@ -151,9 +155,12 @@ int main() {
     // Exercise same-size reordering, subsets, expansion, empty and repeated
     // joints against the scalar path, including restored/prefix state.
     const std::vector<std::vector<std::string>> control_sets{
-        names, {"j7", "j6", "j5", "j4", "j3", "j2", "j1"}, {"j1", "j4"},
+        names,
+        {"j7", "j6", "j5", "j4", "j3", "j2", "j1"},
+        {"j1", "j4"},
         {"j1", "j2", "j3", "j4", "j5", "j6", "j7", "j8", "branch"},
-        {}, {"j2", "j1", "j2"}};
+        {},
+        {"j2", "j1", "j2"}};
     auto all_names = names;
     all_names.insert(all_names.end(), {"j8", "j9", "branch"});
     const auto all_ids = kin->get_joint_ids(all_names);
@@ -161,32 +168,37 @@ int main() {
     for (size_t trial = 0; trial < 90; ++trial) {
       cst.control_joint_names_ = control_sets[trial % control_sets.size()];
       cst.control_joint_ids_ = kin->get_joint_ids(cst.control_joint_names_);
-      const size_t count = trial % 3 + 2;
-      Eigen::VectorXd q[4];
-      const double* ptr[4];
+      const size_t count = trial % 7 + 2;
+      Eigen::VectorXd q[8];
+      const double *ptr[8];
       unsigned expected = 0;
       for (size_t k = 0; k < count; ++k) {
         q[k].resize(cst.q_dim());
-        for (Eigen::Index j = 0; j < q[k].size(); ++j) q[k][j] = angle(rng) * .03;
+        for (Eigen::Index j = 0; j < q[k].size(); ++j)
+          q[k][j] = angle(rng) * .03;
         ptr[k] = q[k].data();
-        if (cst.is_valid(q[k])) expected |= 1u << k;
+        if (cst.is_valid(q[k]))
+          expected |= 1u << k;
       }
       auto expected_joints = kin->get_joint_angles(all_ids);
       const auto links = kin->get_link_ids({"l0", "l2", "l7", "l9", "side"});
       std::vector<pk::QuatTrans<double>> expected_poses;
-      for (size_t link : links) expected_poses.push_back(kin->get_link_pose(link));
+      for (size_t link : links)
+        expected_poses.push_back(kin->get_link_pose(link));
       require(cst.is_valid_batch(ptr, count) == expected,
               "Changed controls: predicate mismatch");
       require(kin->get_joint_angles(all_ids) == expected_joints,
               "Changed controls: final joints mismatch");
       for (size_t j = 0; j < links.size(); ++j) {
-        const auto& pose = kin->get_link_pose(links[j]);
+        const auto &pose = kin->get_link_pose(links[j]);
         require((pose.trans() - expected_poses[j].trans()).norm() < 1e-14 &&
-                    (pose.quat().coeffs() - expected_poses[j].quat().coeffs()).norm() < 1e-14,
+                    (pose.quat().coeffs() - expected_poses[j].quat().coeffs())
+                            .norm() < 1e-14,
                 "Changed controls: final pose mismatch");
       }
       size_t first = 0;
-      while (first < count && (expected & (1u << first))) ++first;
+      while (first < count && (expected & (1u << first)))
+        ++first;
       cst.is_valid(q[std::min(first, count - 1)]);
       expected_joints = kin->get_joint_angles(all_ids);
       require(cst.first_invalid_batch(ptr, count) == first,
@@ -196,9 +208,82 @@ int main() {
       states_checked += count;
       ++batches_checked;
     }
+    // Put the first rejected state in every lane, including lanes 4..7,
+    // and check tails and restoration across the AVX2 chunk boundary.
+    auto line_kin = std::make_shared<pk::KinematicModel<double>>(
+        "<robot name='line'><link name='root'/><link name='tip'/>"
+        "<joint name='slide' type='prismatic'><parent link='root'/>"
+        "<child link='tip'/><axis xyz='1 0 0'/>"
+        "<limit lower='-20' upper='20' effort='1' velocity='1'/>"
+        "</joint></robot>");
+    Eigen::Matrix3Xd point = Eigen::Matrix3Xd::Zero(3, 1);
+    Eigen::VectorXd radius = Eigen::VectorXd::Constant(1, .1);
+    pc::SphereCollisionCst line(line_kin, {"slide"}, pk::BaseType::FIXED,
+                                {{"tip", point, radius, false}}, {},
+                                std::nullopt, false);
+    line.set_sdf(std::make_shared<ps::SphereSDF>(
+        .1, ps::Pose(Eigen::Vector3d::Zero(), Eigen::Matrix3d::Identity())));
+    const auto slide = line_kin->get_joint_ids({"slide"});
+    for (size_t count = 1; count <= 8; ++count) {
+      for (size_t first = 0; first <= count; ++first) {
+        double q[8];
+        const double *ptr[8];
+        for (size_t i = 0; i < count; ++i) {
+          q[i] = i == first ? 0. : 1. + i;
+          ptr[i] = &q[i];
+        }
+        const unsigned expected =
+            ((1u << count) - 1) & ~(first < count ? 1u << first : 0u);
+        require(line.is_valid_batch(ptr, count) == expected,
+                "Explicit lane: mask mismatch");
+        require(line_kin->get_joint_angles(slide)[0] == q[count - 1],
+                "Explicit lane: full-batch state mismatch");
+        require(line.first_invalid_batch(ptr, count) == first,
+                "Explicit lane: first rejection mismatch");
+        require(line_kin->get_joint_angles(slide)[0] ==
+                    q[std::min(first, count - 1)],
+                "Explicit lane: prefix state mismatch");
+        ++batches_checked;
+        states_checked += count;
+      }
+    }
+    // Keep touching/nextafter behavior unchanged when the batch is widened.
+    for (const auto &shape : std::vector<ps::SDFBase::Ptr>{
+             std::make_shared<ps::SphereSDF>(
+                 .1, ps::Pose(Eigen::Vector3d::Zero(),
+                              Eigen::Matrix3d::Identity())),
+             std::make_shared<ps::BoxSDF>(
+                 Eigen::Vector3d(.2, .2, .2),
+                 ps::Pose(Eigen::Vector3d::Zero(),
+                          Eigen::Matrix3d::Identity())),
+             std::make_shared<ps::CylinderSDF>(
+                 .1, .2,
+                 ps::Pose(Eigen::Vector3d::Zero(),
+                          Eigen::Matrix3d::Identity()))}) {
+      line.set_sdf(shape);
+      double q[8] = {.2,
+                     std::nextafter(.2, 0.),
+                     std::nextafter(.2, 1.),
+                     -.2,
+                     std::nextafter(-.2, 0.),
+                     std::nextafter(-.2, -1.),
+                     0.,
+                     1.};
+      const double *ptr[8];
+      unsigned expected = 0;
+      for (size_t i = 0; i < 8; ++i) {
+        ptr[i] = &q[i];
+        if (line.is_valid(Eigen::Map<const Eigen::VectorXd>(ptr[i], 1)))
+          expected |= 1u << i;
+      }
+      require(line.is_valid_batch(ptr, 8) == expected,
+              "Explicit lane: touching predicate mismatch");
+      ++batches_checked;
+      states_checked += 8;
+    }
     std::cout << batches_checked << " batches, " << states_checked
               << " states: predicates and visible kinematic state match\n";
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     std::cerr << e.what() << '\n';
     return 1;
   }

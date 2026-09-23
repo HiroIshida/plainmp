@@ -45,23 +45,31 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
   size_t n_test = std::floor(1 / step_ratio) + 2;  // including start and end
 #ifdef PLAINMP_BATCH_STATES
   if (batch_checker_ && n_test > 3) {
-    if (!si_->isValid(s2))
-      return false;
     const bool table = n_test < SEQUENCE_TABLE.size() + 1;
     const size_t end = table ? n_test : n_test - 1;
+    // Keep the original query order, including the exact endpoint first.
+    // Sharing its batch avoids a separate scalar FK/collision pass.
+    bool endpoint = true;
     for (size_t i = table ? 2 : 1; i < end;) {
-      const size_t count = std::min(size_t(4), end - i);
-      for (size_t k = 0; k < count; ++k) {
+      const size_t offset = endpoint ? 1 : 0;
+      const size_t count = std::min(batch_size_, end - i + offset);
+      std::array<const ob::State *, 8> states;
+      if (endpoint)
+        states[0] = s2;
+      for (size_t k = offset; k < count; ++k) {
         const double rate =
-            (table ? SEQUENCE_TABLE[n_test - 1][i + k] : i + k) * step_ratio;
+            (table ? SEQUENCE_TABLE[n_test - 1][i + k - offset]
+                   : i + k - offset) * step_ratio;
         space->interpolate(s1, s2, rate, batch_states_[k]);
+        states[k] = batch_states_[k];
       }
       if (count == 1) {
-        if (!si_->isValid(batch_states_[0]))
+        if (!si_->isValid(states[0]))
           return false;
-      } else if (!batch_checker_(batch_states_.data(), count))
+      } else if (!batch_checker_(states.data(), count))
         return false;
-      i += count;
+      i += count - offset;
+      endpoint = false;
     }
     return true;
   }

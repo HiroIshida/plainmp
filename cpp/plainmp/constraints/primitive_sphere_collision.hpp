@@ -15,7 +15,8 @@
 
 namespace plainmp::constraint {
 
-struct BatchCollisionWorkspace;
+struct BatchCollisionWorkspace4;
+struct BatchCollisionWorkspace8;
 
 struct SphereAttachmentSpec {
   std::string parent_link_name;
@@ -85,13 +86,15 @@ class SphereCollisionCst : public IneqConstraintBase {
   // set_sdf() also invalidates them, including when reusing the same SDF pointer.
   void reset_clearance_cache();
 
-  // Bit k reports validity of states[k], for one to four contiguous q vectors.
+  // Bit k reports validity of states[k], for one to eight contiguous q vectors.
   // The kinematic state after this call corresponds to the last input.
   unsigned is_valid_batch(const double* const* states, size_t count);
   // Returns count when all states are valid, otherwise the first invalid index.
   // Later SIMD lanes may be evaluated, but the visible state ends at that index.
   size_t first_invalid_batch(const double* const* states, size_t count);
   bool batch_supported() const;
+  // Preferred width for motion validation; portable callers may still pass 1..8.
+  size_t batch_size() const;
   bool is_valid_dirty() override;
   bool check_ext_collision();
   bool check_self_collision();
@@ -121,9 +124,12 @@ class SphereCollisionCst : public IneqConstraintBase {
  private:
   unsigned is_valid_batch_avx2(const double* const* states, size_t count);
   void restore_batch_state_avx2(const double *state, size_t lane);
+  unsigned is_valid_batch_avx512(const double* const* states, size_t count);
+  void restore_batch_state_avx512(const double *state, size_t lane);
   void update_batch_sdf_support();
   bool batch_sdfs_supported_ = false;
-  std::shared_ptr<BatchCollisionWorkspace> batch_workspace_;
+  std::shared_ptr<BatchCollisionWorkspace4> batch_workspace_4_;
+  std::shared_ptr<BatchCollisionWorkspace8> batch_workspace_8_;
   struct ClearanceCertificate {
     Eigen::Vector3d center = Eigen::Vector3d::Zero();
     // Negative values certify overlap of the bounding sphere only. A negative
