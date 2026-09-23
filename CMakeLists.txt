@@ -75,6 +75,12 @@ if(ompl_VERSION VERSION_LESS "1.7.0")
 endif()
 install(TARGETS _plainmp DESTINATION .)
 
+option(PLAINMP_BUILD_BATCH_QUERY_CHECK "Build diagnostic bindings for batch query checks" OFF)
+if(PLAINMP_BUILD_BATCH_QUERY_CHECK)
+    target_sources(_plainmp PRIVATE example/bench/check_batch_queries.cpp)
+    target_compile_definitions(_plainmp PRIVATE PLAINMP_BATCH_QUERY_CHECK)
+endif()
+
 option(PLAINMP_BUILD_BATCH_COLLISION_CHECK "Build the standalone batch collision regression check" OFF)
 if(PLAINMP_BUILD_BATCH_COLLISION_CHECK)
     set(_batch_check_sources

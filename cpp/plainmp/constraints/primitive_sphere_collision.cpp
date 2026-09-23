@@ -532,6 +532,7 @@ void SphereCollisionCst::set_all_sdfs() {
     set_all_sdfs_inner(sdf_);
   }
   initialize_clearance_cache();
+  update_batch_sdf_support();
 }
 
 void SphereCollisionCst::set_all_sdfs_inner(

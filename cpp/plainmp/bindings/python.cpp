@@ -11,6 +11,9 @@
 #include "plainmp/bindings/bindings.hpp"
 
 namespace pb = plainmp::bindings;
+#ifdef PLAINMP_BATCH_QUERY_CHECK
+void bind_batch_queries_check(pybind11::module &);
+#endif
 
 PYBIND11_MODULE(_plainmp, m) {
   pb::bind_kdtree_submodule(m);
@@ -18,4 +21,7 @@ PYBIND11_MODULE(_plainmp, m) {
   pb::bind_constraint_submodule(m);
   pb::bind_kinematics_submodule(m);
   pb::bind_ompl_wrapper_submodule(m);
+#ifdef PLAINMP_BATCH_QUERY_CHECK
+  bind_batch_queries_check(m);
+#endif
 }

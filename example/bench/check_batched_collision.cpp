@@ -44,24 +44,30 @@ int main() {
                            : "0 0 1")
           << "'/><limit lower='-7' upper='7' effort='1' velocity='1'/></joint>";
     }
-    xml << "</robot>";
+    xml << "<link name='side'/><joint name='branch' type='revolute'>"
+           "<parent link='l2'/><child link='side'/>"
+           "<origin xyz='.2 -.1 .4' rpy='.1 -.3 .2'/><axis xyz='.6 0 .8'/>"
+           "<limit lower='-7' upper='7' effort='1' "
+           "velocity='1'/></joint></robot>";
     auto kin = std::make_shared<pk::KinematicModel<double>>(xml.str());
     std::vector<std::string> names;
     for (int i = 1; i <= 7; ++i) names.push_back("j" + std::to_string(i));
     const auto ids = kin->get_joint_ids(names);
-    const auto other_ids = kin->get_joint_ids({"j8", "j9"});
+    const auto other_ids = kin->get_joint_ids({"j8", "j9", "branch"});
     std::vector<pc::SphereAttachmentSpec> specs;
-    for (const auto& name : {"l0", "l2", "l5", "l7", "l9"}) {
+    for (const auto &name : {"l0", "l9", "side", "l2", "l5", "l7"}) {
       Eigen::Matrix3Xd p(3, 5);
       p << 0., .05, .1, .15, .2, .02, -.02, 0., .01, -.01, 0., .03, .01, .02,
           .04;
       Eigen::VectorXd r(5);
       r << .03, .02, .05, 1e-7, 0.;
-      specs.push_back({name, p, r, std::string(name) == "l0"});
+      specs.push_back(
+          {name, p, r,
+           std::string(name) == "l0" || std::string(name) == "side"});
     }
     pc::SphereCollisionCst cst(kin, names, pk::BaseType::FIXED, specs,
-                               {{"l0", "l7"}, {"l2", "l9"}}, std::nullopt,
-                               true);
+                               {{"l0", "l7"}, {"side", "l9"}, {"l2", "l9"}},
+                               std::nullopt, true);
     const ps::Pose origin(Eigen::Vector3d(.4, .1, .6),
                           Eigen::Matrix3d::Identity());
     const ps::Pose tilted(
@@ -103,7 +109,7 @@ int main() {
           q[k][0] *= .025;
           ptr[k] = q[k].data();
         }
-        Eigen::Vector2d other(angle(rng), angle(rng));
+        Eigen::Vector3d other(angle(rng), angle(rng), angle(rng));
         kin->set_joint_angles(other_ids, other, trial % 2 == 0);
         if (trial % 13 == 0)
           kin->set_base_pose(
@@ -111,8 +117,20 @@ int main() {
         unsigned expected = 0;
         for (size_t k = 0; k < count; ++k)
           if (cst.is_valid(q[k])) expected |= 1u << k;
+        const auto link_ids =
+            kin->get_link_ids({"l0", "l2", "l5", "l7", "l9", "side"});
+        std::vector<pk::QuatTrans<double>> poses;
+        for (size_t id : link_ids)
+          poses.push_back(kin->get_link_pose(id));
         require(cst.is_valid_batch(ptr, count) == expected,
                 "Batch predicate mismatch");
+        for (size_t j = 0; j < link_ids.size(); ++j) {
+          const auto &pose = kin->get_link_pose(link_ids[j]);
+          require((pose.trans() - poses[j].trans()).norm() < 1e-14 &&
+                      (pose.quat().coeffs() - poses[j].quat().coeffs()).norm() <
+                          1e-14,
+                  "Batch restored transform mismatch");
+        }
         auto actual = kin->get_joint_angles(ids);
         for (size_t j = 0; j < ids.size(); ++j)
           require(actual[j] == q[count - 1][j],

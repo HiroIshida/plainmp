@@ -210,15 +210,46 @@ struct BatchCollisionWorkspace {
     bool center_ready = false, spheres_ready = false;
   };
   std::vector<wide::Frame> local, world;
-  std::vector<unsigned char> local_ready, world_ready;
-  std::vector<size_t> stack;
+  std::vector<unsigned char> local_ready;
+  std::vector<size_t> pose_order, pose_end;
+  size_t poses_ready = 0;
   std::vector<Group> groups;
   std::vector<int> kinds;
   BatchCollisionWorkspace(
-      size_t links, const std::vector<SphereGroup> &specs,
+      const kin::KinematicModel<double> &kin,
+      const std::vector<SphereGroup> &specs,
+      const std::vector<std::pair<size_t, size_t>> &self_pairs,
       const std::vector<collision::PrimitiveSDFBase::Ptr> &sdfs)
-      : local(links), world(links), local_ready(links), world_ready(links),
-        stack(links), groups(specs.size()) {
+      : local(kin.link_parent_link_ids_.size()), world(local.size()),
+        local_ready(local.size()), pose_end(local.size(), 0),
+        groups(specs.size()) {
+    // Group visits have a fixed order: external checks, then self-collision
+    // pairs. Flatten their ancestor paths once. Each query evaluates only the
+    // prefix needed so far, retaining the original early exits.
+    std::vector<unsigned char> seen(local.size(), 0);
+    seen[kin.root_link_id_] = 1;
+    std::vector<size_t> path;
+    auto append = [&](size_t group) {
+      size_t id = specs[group].parent_link_id;
+      path.clear();
+      while (!seen[id]) {
+        path.push_back(id);
+        id = kin.link_parent_link_ids_[id];
+      }
+      for (auto it = path.rbegin(); it != path.rend(); ++it) {
+        pose_order.push_back(*it);
+        pose_end[*it] = pose_order.size();
+        seen[*it] = 1;
+      }
+    };
+    if (!sdfs.empty())
+      for (size_t i = 0; i < specs.size(); ++i)
+        if (!specs[i].only_self_collision)
+          append(i);
+    for (const auto &pair : self_pairs) {
+      append(pair.first);
+      append(pair.second);
+    }
     for (size_t i = 0; i < specs.size(); ++i)
       groups[i].spheres.resize(specs[i].radii.size());
     for (const auto &sdf : sdfs) {
@@ -231,22 +262,14 @@ struct BatchCollisionWorkspace {
     }
   }
   const wide::Frame &pose(size_t id, const kin::KinematicModel<double> &kin) {
-    if (world_ready[id])
-      return world[id];
-    size_t n = 0, ancestor = id;
-    while (!world_ready[ancestor]) {
-      stack[n++] = ancestor;
-      ancestor = kin.link_parent_link_ids_[ancestor];
-    }
-    while (n) {
-      const size_t child = stack[--n];
+    while (poses_ready < pose_end[id]) {
+      const size_t child = pose_order[poses_ready++];
+      const size_t ancestor = kin.link_parent_link_ids_[child];
       const auto local_pose =
           local_ready[child]
               ? local[child]
               : wide::broadcast(kin.tf_plink_to_hlink_cache_[child]);
       world[child] = wide::mul(world[ancestor], local_pose);
-      world_ready[child] = 1;
-      ancestor = child;
     }
     return world[id];
   }
@@ -275,21 +298,46 @@ struct BatchCollisionWorkspace {
   }
 };
 
+void SphereCollisionCst::restore_batch_state_avx2(const double *state,
+                                                  size_t lane) {
+  // The local transforms have already been computed for every SIMD lane.
+  // Restore the public scalar model by selecting one lane, without repeating
+  // trigonometry and joint-origin composition in set_joint_angles().
+  auto extract = [lane](wide::V value) {
+    alignas(32) double lanes[4];
+    _mm256_store_pd(lanes, value.v);
+    return lanes[lane];
+  };
+  for (size_t i = 0; i < control_joint_ids_.size(); ++i) {
+    const size_t joint = control_joint_ids_[i];
+    const size_t link = kin_->joint_child_link_ids_[joint];
+    const auto &source = batch_workspace_->local[link];
+    auto &target = kin_->tf_plink_to_hlink_cache_[link];
+    kin_->joint_angles_[joint] = state[i];
+    target.quat() =
+        Eigen::Quaterniond(extract(source.q.w), extract(source.q.x),
+                           extract(source.q.y), extract(source.q.z));
+    target.trans() = Eigen::Vector3d(extract(source.p.x), extract(source.p.y),
+                                     extract(source.p.z));
+    target.is_quat_identity_ = source.identity;
+  }
+  kin_->clear_cache();
+}
+
 unsigned SphereCollisionCst::is_valid_batch_avx2(const double *const *states,
                                                  size_t count) {
   if (!batch_workspace_ ||
       batch_workspace_->world.size() != kin_->link_parent_link_ids_.size())
     batch_workspace_ = std::make_shared<BatchCollisionWorkspace>(
-        kin_->link_parent_link_ids_.size(), sphere_groups_, all_sdfs_cache_);
+        *kin_, sphere_groups_, selcol_group_id_pairs_, all_sdfs_cache_);
   auto &w = *batch_workspace_;
   std::fill(w.local_ready.begin(), w.local_ready.end(), 0);
-  std::fill(w.world_ready.begin(), w.world_ready.end(), 0);
+  w.poses_ready = 0;
   for (auto &g : w.groups) {
     g.center_ready = false;
     g.spheres_ready = false;
   }
   w.world[kin_->root_link_id_] = wide::broadcast(kin_->get_base_pose());
-  w.world_ready[kin_->root_link_id_] = 1;
   for (size_t i = 0; i < control_joint_ids_.size(); ++i) {
     const size_t joint = control_joint_ids_[i],
                  link = kin_->joint_child_link_ids_[joint];

@@ -12,24 +12,28 @@
 #include "plainmp/constraints/primitive_sphere_collision.hpp"
 #include <typeinfo>
 namespace plainmp::constraint {
-bool SphereCollisionCst::batch_supported() const {
-#ifdef PLAINMP_HAS_AVX2_COLLISION
-  if (!__builtin_cpu_supports("avx2"))
-    return false;
-  if (base_type_ != kin::BaseType::FIXED || cloud_sdf_count_ ||
-      typeid(*this) != typeid(SphereCollisionCst))
-    return false;
-  for (bool rotation : kin_->link_consider_rotation_)
-    if (!rotation)
-      return false;
+void SphereCollisionCst::update_batch_sdf_support() {
+  // Dynamic types cannot change without replacing an SDF. Classify once when
+  // set_all_sdfs() rebuilds the flattened obstacle list.
+  batch_sdfs_supported_ = true;
   for (const auto &sdf : all_sdfs_cache_) {
     const auto &t = typeid(*sdf);
     if (t != typeid(collision::BoxSDF) && t != typeid(collision::SphereSDF) &&
         t != typeid(collision::CylinderSDF) &&
-        t != typeid(collision::GroundSDF))
-      return false;
+        t != typeid(collision::GroundSDF)) {
+      batch_sdfs_supported_ = false;
+      break;
+    }
   }
-  return true;
+}
+bool SphereCollisionCst::batch_supported() const {
+#ifdef PLAINMP_HAS_AVX2_COLLISION
+  if (!__builtin_cpu_supports("avx2"))
+    return false;
+  if (base_type_ != kin::BaseType::FIXED || !batch_sdfs_supported_ ||
+      typeid(*this) != typeid(SphereCollisionCst))
+    return false;
+  return kin_->all_links_consider_rotation_;
 #else
   return false;
 #endif
@@ -42,8 +46,7 @@ unsigned SphereCollisionCst::is_valid_batch(const double *const *states,
 #ifdef PLAINMP_HAS_AVX2_COLLISION
   if (count > 1 && batch_supported()) {
     const unsigned mask = is_valid_batch_avx2(states, count);
-    update_kintree(
-        Eigen::Map<const Eigen::VectorXd>(states[count - 1], q_dim()), false);
+    restore_batch_state_avx2(states[count - 1], count - 1);
     post_update_kintree();
     return mask;
   }
@@ -65,8 +68,7 @@ size_t SphereCollisionCst::first_invalid_batch(const double *const *states,
     while (first < count && (mask & (1u << first)))
       ++first;
     const size_t last = std::min(first, count - 1);
-    update_kintree(Eigen::Map<const Eigen::VectorXd>(states[last], q_dim()),
-                   false);
+    restore_batch_state_avx2(states[last], last);
     post_update_kintree();
     return first;
   }

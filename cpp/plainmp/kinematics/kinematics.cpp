@@ -33,6 +33,7 @@ void KinematicModel<Scalar>::init_link_info(
   size_t N_link = links.size();
   link_parent_link_ids_.resize(N_link);
   link_consider_rotation_.resize(N_link);
+  all_links_consider_rotation_ = true;
   link_child_link_idss_.resize(N_link);
   for (const auto& link : links) {
     if (link->getParent() != nullptr) {
@@ -331,6 +332,7 @@ size_t KinematicModel<Scalar>::add_new_link(
   tf_plink_to_hlink_cache_.push_back(pose);
   link_parent_link_ids_.push_back(parent_id);
   link_consider_rotation_.push_back(consider_rotation);
+  all_links_consider_rotation_ &= consider_rotation;
   link_child_link_idss_[parent_id].push_back(link_id);
   link_child_link_idss_.push_back(std::vector<size_t>());
   this->update_rptable();  // set _rptable

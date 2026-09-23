@@ -66,6 +66,7 @@ class KinematicModel {
   std::vector<size_t> link_parent_link_ids_;               // N_link
   std::vector<std::vector<size_t>> link_child_link_idss_;  // N_link
   std::vector<bool> link_consider_rotation_;               // N_link
+  bool all_links_consider_rotation_ = true;
   std::vector<size_t> com_link_ids_;                       // N_COM_link
   std::vector<Scalar> link_masses_;                        // N_COM_link
   std::vector<Vector3> com_local_positions_;               // N_COM_link

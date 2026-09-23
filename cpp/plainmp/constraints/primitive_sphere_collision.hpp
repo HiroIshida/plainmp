@@ -120,6 +120,9 @@ class SphereCollisionCst : public IneqConstraintBase {
 
  private:
   unsigned is_valid_batch_avx2(const double* const* states, size_t count);
+  void restore_batch_state_avx2(const double *state, size_t lane);
+  void update_batch_sdf_support();
+  bool batch_sdfs_supported_ = false;
   std::shared_ptr<BatchCollisionWorkspace> batch_workspace_;
   struct ClearanceCertificate {
     Eigen::Vector3d center = Eigen::Vector3d::Zero();

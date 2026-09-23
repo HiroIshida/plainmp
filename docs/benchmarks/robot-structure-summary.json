@@ -1,0 +1,281 @@
+[
+  {
+    "scene": "panda",
+    "speedup": 1.0632060225820024,
+    "wall_speedup": 1.0577839631834365,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 193.117,
+        "new_us": 183.3085,
+        "speedup": 1.0535081570139955,
+        "wall_speedup": 1.048414245872103,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 198.3565,
+        "new_us": 186.5645,
+        "speedup": 1.0632060225820024,
+        "wall_speedup": 1.0577839631834365,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 202.84,
+        "new_us": 184.5555,
+        "speedup": 1.099073178528952,
+        "wall_speedup": 1.1006704396616454,
+        "plans": 600
+      }
+    ]
+  },
+  {
+    "scene": "panda_hard",
+    "speedup": 1.0599803143907593,
+    "wall_speedup": 1.0521485335052587,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 725.7305,
+        "new_us": 680.32,
+        "speedup": 1.0667487358889933,
+        "wall_speedup": 1.062336640401527,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 697.072,
+        "new_us": 674.8745,
+        "speedup": 1.0328913005306912,
+        "wall_speedup": 1.0367116758083668,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 732.298,
+        "new_us": 690.86,
+        "speedup": 1.0599803143907593,
+        "wall_speedup": 1.0521485335052587,
+        "plans": 600
+      }
+    ]
+  },
+  {
+    "scene": "fetch_table",
+    "speedup": 1.0442847131067277,
+    "wall_speedup": 1.0413327637628689,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 639.1225,
+        "new_us": 621.034,
+        "speedup": 1.0291264246401968,
+        "wall_speedup": 1.0305107060917797,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 631.2585,
+        "new_us": 602.4745,
+        "speedup": 1.0477762959262176,
+        "wall_speedup": 1.0490678666103193,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 645.204,
+        "new_us": 617.843,
+        "speedup": 1.0442847131067277,
+        "wall_speedup": 1.0413327637628689,
+        "plans": 600
+      }
+    ]
+  },
+  {
+    "scene": "fetch_spheres4",
+    "speedup": 1.0283962206025725,
+    "wall_speedup": 1.0237704860966066,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 270.8825,
+        "new_us": 259.0755,
+        "speedup": 1.045573587622141,
+        "wall_speedup": 1.042076262440434,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 283.752,
+        "new_us": 275.917,
+        "speedup": 1.0283962206025725,
+        "wall_speedup": 1.0222085256958218,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 272.065,
+        "new_us": 267.386,
+        "speedup": 1.0174990463225448,
+        "wall_speedup": 1.0237704860966066,
+        "plans": 600
+      }
+    ]
+  },
+  {
+    "scene": "fetch_spheres9",
+    "speedup": 1.0677004596987163,
+    "wall_speedup": 1.059185667551004,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 321.7085,
+        "new_us": 300.243,
+        "speedup": 1.0714937567237204,
+        "wall_speedup": 1.059185667551004,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 303.9795,
+        "new_us": 294.1815,
+        "speedup": 1.0333059692740707,
+        "wall_speedup": 1.0312864685510985,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 311.1135,
+        "new_us": 291.3865,
+        "speedup": 1.0677004596987163,
+        "wall_speedup": 1.0667358965455997,
+        "plans": 600
+      }
+    ]
+  },
+  {
+    "scene": "panda_boxes",
+    "speedup": 1.038940237963413,
+    "wall_speedup": 1.040983439646088,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 192.7515,
+        "new_us": 182.397,
+        "speedup": 1.0567690258063456,
+        "wall_speedup": 1.0536189040117456,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 183.8945,
+        "new_us": 177.002,
+        "speedup": 1.038940237963413,
+        "wall_speedup": 1.040983439646088,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 188.774,
+        "new_us": 182.512,
+        "speedup": 1.0343100727623389,
+        "wall_speedup": 1.0275387347663665,
+        "plans": 600
+      }
+    ]
+  },
+  {
+    "scene": "fetch_table_tilted",
+    "speedup": 1.026569873174569,
+    "wall_speedup": 1.0270074274459553,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 516.784,
+        "new_us": 503.4085,
+        "speedup": 1.026569873174569,
+        "wall_speedup": 1.0270074274459553,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 527.524,
+        "new_us": 505.247,
+        "speedup": 1.0440913058365513,
+        "wall_speedup": 1.0391822301469054,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 520.8315,
+        "new_us": 510.1765,
+        "speedup": 1.0208849290392639,
+        "wall_speedup": 1.02102857526323,
+        "plans": 600
+      }
+    ]
+  },
+  {
+    "scene": "fetch_table_cloud",
+    "speedup": 0.995040708689641,
+    "wall_speedup": 0.9912132435775216,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 1626.378,
+        "new_us": 1646.8565,
+        "speedup": 0.9875650975054596,
+        "wall_speedup": 0.9900236445537444,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 1748.8935,
+        "new_us": 1757.61,
+        "speedup": 0.995040708689641,
+        "wall_speedup": 0.9912132435775216,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 1746.0625,
+        "new_us": 1738.208,
+        "speedup": 1.004518734236639,
+        "wall_speedup": 0.9975010581333682,
+        "plans": 600
+      }
+    ]
+  },
+  {
+    "scene": "fetch_table_cloud100k",
+    "speedup": 0.9898832234040267,
+    "wall_speedup": 0.9900648372996962,
+    "seed_results": [
+      {
+        "seed": 67867967,
+        "baseline_us": 3178.518,
+        "new_us": 3211.003,
+        "speedup": 0.9898832234040267,
+        "wall_speedup": 0.9896886345080884,
+        "plans": 600
+      },
+      {
+        "seed": 67867979,
+        "baseline_us": 3538.0815,
+        "new_us": 3561.4605,
+        "speedup": 0.993435558249207,
+        "wall_speedup": 0.9946896785678588,
+        "plans": 600
+      },
+      {
+        "seed": 67867987,
+        "baseline_us": 3252.8965,
+        "new_us": 3301.6585,
+        "speedup": 0.9852310588754106,
+        "wall_speedup": 0.9900648372996962,
+        "plans": 600
+      }
+    ]
+  }
+]
