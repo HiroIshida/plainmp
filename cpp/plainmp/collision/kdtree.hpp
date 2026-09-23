@@ -33,7 +33,16 @@ class KDTree {
   double sqdist(const Eigen::Vector3d& target) const;
 
  private:
-  std::vector<KDNode> nodes_;
+  // Preorder storage puts a non-leaf's left child immediately after it.
+  // -2 marks a leaf; -1 marks a non-leaf without a right child.
+  struct alignas(32) Node {
+    Eigen::Vector3d point;
+    int axis;
+    int right;
+    Node(const Eigen::Vector3d& p, int a) : point(p), axis(a), right(-2) {}
+  };
+  static_assert(sizeof(Node) == 32);
+  std::vector<Node> nodes_;
   int root_index_;
   Eigen::Vector3d lower_, upper_;
 

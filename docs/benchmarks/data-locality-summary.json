@@ -1,0 +1,753 @@
+{
+  "plans": 48600,
+  "matched_pairs_per_comparison": 16200,
+  "mismatches": 0,
+  "rows": [
+    {
+      "scene": "panda",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 327410.0,
+              "ns_wall": 346095.0
+            },
+            "baseline": {
+              "ns_internal": 178985.5,
+              "ns_wall": 197741.0
+            },
+            "candidate": {
+              "ns_internal": 165440.5,
+              "ns_wall": 184886.5
+            }
+          },
+          "incremental": 1.08187233476688,
+          "total": 1.9790196475470032,
+          "wall_incremental": 1.0695264391937755,
+          "wall_total": 1.8719322395091043
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 335940.5,
+              "ns_wall": 353413.5
+            },
+            "baseline": {
+              "ns_internal": 171972.5,
+              "ns_wall": 191454.0
+            },
+            "candidate": {
+              "ns_internal": 168821.5,
+              "ns_wall": 189540.5
+            }
+          },
+          "incremental": 1.0186646842967275,
+          "total": 1.9899153840002606,
+          "wall_incremental": 1.010095467723257,
+          "wall_total": 1.864580393108597
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 325255.0,
+              "ns_wall": 347888.0
+            },
+            "baseline": {
+              "ns_internal": 174227.0,
+              "ns_wall": 193858.5
+            },
+            "candidate": {
+              "ns_internal": 166217.0,
+              "ns_wall": 185753.5
+            }
+          },
+          "incremental": 1.048190016664962,
+          "total": 1.9568094719553355,
+          "wall_incremental": 1.0436330943966063,
+          "wall_total": 1.8728476179452878
+        }
+      ],
+      "incremental": 1.048190016664962,
+      "total": 1.9790196475470032,
+      "wall_incremental": 1.0436330943966063,
+      "wall_total": 1.8719322395091043
+    },
+    {
+      "scene": "panda_hard",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 1225744.5,
+              "ns_wall": 1256632.5
+            },
+            "baseline": {
+              "ns_internal": 649183.5,
+              "ns_wall": 675587.5
+            },
+            "candidate": {
+              "ns_internal": 610085.0,
+              "ns_wall": 637712.0
+            }
+          },
+          "incremental": 1.0640869714875796,
+          "total": 2.009137251366613,
+          "wall_incremental": 1.0593927980028601,
+          "wall_total": 1.9705329364979802
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 1185985.5,
+              "ns_wall": 1213487.0
+            },
+            "baseline": {
+              "ns_internal": 615340.0,
+              "ns_wall": 637080.5
+            },
+            "candidate": {
+              "ns_internal": 599655.0,
+              "ns_wall": 623123.5
+            }
+          },
+          "incremental": 1.0261567067730613,
+          "total": 1.9777797233409211,
+          "wall_incremental": 1.0223984491035887,
+          "wall_total": 1.9474261522796044
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 1213477.0,
+              "ns_wall": 1235383.0
+            },
+            "baseline": {
+              "ns_internal": 629025.0,
+              "ns_wall": 652569.5
+            },
+            "candidate": {
+              "ns_internal": 628058.5,
+              "ns_wall": 652264.0
+            }
+          },
+          "incremental": 1.0015388693887592,
+          "total": 1.9321082351405163,
+          "wall_incremental": 1.0004683686360125,
+          "wall_total": 1.8939923098622644
+        }
+      ],
+      "incremental": 1.0261567067730613,
+      "total": 1.9777797233409211,
+      "wall_incremental": 1.0223984491035887,
+      "wall_total": 1.9474261522796044
+    },
+    {
+      "scene": "fetch_table",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 1064637.5,
+              "ns_wall": 1086564.5
+            },
+            "baseline": {
+              "ns_internal": 568607.0,
+              "ns_wall": 592061.0
+            },
+            "candidate": {
+              "ns_internal": 534313.0,
+              "ns_wall": 557361.0
+            }
+          },
+          "incremental": 1.064183353203085,
+          "total": 1.9925352742680789,
+          "wall_incremental": 1.0622576750077597,
+          "wall_total": 1.9494806776936313
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 1035408.0,
+              "ns_wall": 1054824.5
+            },
+            "baseline": {
+              "ns_internal": 548620.0,
+              "ns_wall": 570645.5
+            },
+            "candidate": {
+              "ns_internal": 526298.0,
+              "ns_wall": 547402.5
+            }
+          },
+          "incremental": 1.0424132335672947,
+          "total": 1.9673416961493297,
+          "wall_incremental": 1.0424605295006872,
+          "wall_total": 1.926963249163093
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 1062143.0,
+              "ns_wall": 1085607.0
+            },
+            "baseline": {
+              "ns_internal": 561584.0,
+              "ns_wall": 587763.0
+            },
+            "candidate": {
+              "ns_internal": 526884.0,
+              "ns_wall": 551645.0
+            }
+          },
+          "incremental": 1.0658588987329278,
+          "total": 2.015895339391593,
+          "wall_incremental": 1.065473266321638,
+          "wall_total": 1.9679449646058607
+        }
+      ],
+      "incremental": 1.064183353203085,
+      "total": 1.9925352742680789,
+      "wall_incremental": 1.0622576750077597,
+      "wall_total": 1.9494806776936313
+    },
+    {
+      "scene": "fetch_spheres4",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 447795.5,
+              "ns_wall": 465949.5
+            },
+            "baseline": {
+              "ns_internal": 242490.0,
+              "ns_wall": 262327.5
+            },
+            "candidate": {
+              "ns_internal": 230462.5,
+              "ns_wall": 249217.5
+            }
+          },
+          "incremental": 1.0521885339263437,
+          "total": 1.9430297770787004,
+          "wall_incremental": 1.0526046525625208,
+          "wall_total": 1.8696500045141293
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 460298.5,
+              "ns_wall": 481098.0
+            },
+            "baseline": {
+              "ns_internal": 262507.5,
+              "ns_wall": 281593.5
+            },
+            "candidate": {
+              "ns_internal": 239068.0,
+              "ns_wall": 259266.5
+            }
+          },
+          "incremental": 1.098045326016029,
+          "total": 1.9253873374939348,
+          "wall_incremental": 1.0861160234739158,
+          "wall_total": 1.8556118896965093
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 448421.5,
+              "ns_wall": 469305.5
+            },
+            "baseline": {
+              "ns_internal": 248511.5,
+              "ns_wall": 268824.0
+            },
+            "candidate": {
+              "ns_internal": 231725.0,
+              "ns_wall": 251056.0
+            }
+          },
+          "incremental": 1.0724414715719064,
+          "total": 1.935145107347071,
+          "wall_incremental": 1.0707730546172964,
+          "wall_total": 1.8693259671149067
+        }
+      ],
+      "incremental": 1.0724414715719064,
+      "total": 1.935145107347071,
+      "wall_incremental": 1.0707730546172964,
+      "wall_total": 1.8693259671149067
+    },
+    {
+      "scene": "fetch_spheres9",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 494713.5,
+              "ns_wall": 513819.0
+            },
+            "baseline": {
+              "ns_internal": 283076.0,
+              "ns_wall": 304666.5
+            },
+            "candidate": {
+              "ns_internal": 269536.0,
+              "ns_wall": 290700.5
+            }
+          },
+          "incremental": 1.0502344770271874,
+          "total": 1.8354264365427995,
+          "wall_incremental": 1.0480425730261902,
+          "wall_total": 1.7675201797038533
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 482976.0,
+              "ns_wall": 503815.5
+            },
+            "baseline": {
+              "ns_internal": 273077.5,
+              "ns_wall": 293045.0
+            },
+            "candidate": {
+              "ns_internal": 261741.5,
+              "ns_wall": 281332.5
+            }
+          },
+          "incremental": 1.0433099069119722,
+          "total": 1.845240437607334,
+          "wall_incremental": 1.041632232322963,
+          "wall_total": 1.790818693183333
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 483056.0,
+              "ns_wall": 502858.0
+            },
+            "baseline": {
+              "ns_internal": 279324.5,
+              "ns_wall": 301655.5
+            },
+            "candidate": {
+              "ns_internal": 261776.0,
+              "ns_wall": 281273.0
+            }
+          },
+          "incremental": 1.0670363211295153,
+          "total": 1.8453028543487562,
+          "wall_incremental": 1.0724651850693099,
+          "wall_total": 1.787793353787957
+        }
+      ],
+      "incremental": 1.0502344770271874,
+      "total": 1.845240437607334,
+      "wall_incremental": 1.0480425730261902,
+      "wall_total": 1.787793353787957
+    },
+    {
+      "scene": "panda_boxes",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 326558.0,
+              "ns_wall": 345864.0
+            },
+            "baseline": {
+              "ns_internal": 177388.0,
+              "ns_wall": 197010.0
+            },
+            "candidate": {
+              "ns_internal": 169387.5,
+              "ns_wall": 188664.5
+            }
+          },
+          "incremental": 1.0472319386023172,
+          "total": 1.9278754335473396,
+          "wall_incremental": 1.0442346069345319,
+          "wall_total": 1.8332224663357441
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 312241.0,
+              "ns_wall": 331281.5
+            },
+            "baseline": {
+              "ns_internal": 166817.5,
+              "ns_wall": 184651.5
+            },
+            "candidate": {
+              "ns_internal": 159619.0,
+              "ns_wall": 179967.0
+            }
+          },
+          "incremental": 1.0450980146473792,
+          "total": 1.956164366397484,
+          "wall_incremental": 1.0260297721248897,
+          "wall_total": 1.8407902559913762
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 328722.0,
+              "ns_wall": 348419.0
+            },
+            "baseline": {
+              "ns_internal": 173400.0,
+              "ns_wall": 192661.5
+            },
+            "candidate": {
+              "ns_internal": 167499.0,
+              "ns_wall": 186981.0
+            }
+          },
+          "incremental": 1.0352300610749916,
+          "total": 1.9625311195887736,
+          "wall_incremental": 1.0303800920949187,
+          "wall_total": 1.863392537209663
+        }
+      ],
+      "incremental": 1.0450980146473792,
+      "total": 1.956164366397484,
+      "wall_incremental": 1.0303800920949187,
+      "wall_total": 1.8407902559913762
+    },
+    {
+      "scene": "fetch_table_tilted",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 875172.5,
+              "ns_wall": 894683.5
+            },
+            "baseline": {
+              "ns_internal": 462683.0,
+              "ns_wall": 484078.5
+            },
+            "candidate": {
+              "ns_internal": 442751.0,
+              "ns_wall": 463765.0
+            }
+          },
+          "incremental": 1.0450185318610234,
+          "total": 1.9766697308419405,
+          "wall_incremental": 1.043801278664841,
+          "wall_total": 1.9291742585145495
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 882746.5,
+              "ns_wall": 904507.0
+            },
+            "baseline": {
+              "ns_internal": 479124.0,
+              "ns_wall": 499457.0
+            },
+            "candidate": {
+              "ns_internal": 445561.0,
+              "ns_wall": 466810.5
+            }
+          },
+          "incremental": 1.075327508466854,
+          "total": 1.9812023493977255,
+          "wall_incremental": 1.0699352306771164,
+          "wall_total": 1.9376320798268247
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 875998.5,
+              "ns_wall": 901171.0
+            },
+            "baseline": {
+              "ns_internal": 474575.5,
+              "ns_wall": 496947.5
+            },
+            "candidate": {
+              "ns_internal": 452414.0,
+              "ns_wall": 474651.0
+            }
+          },
+          "incremental": 1.0489850004641765,
+          "total": 1.9362762867638932,
+          "wall_incremental": 1.0469745139060067,
+          "wall_total": 1.8985970744820932
+        }
+      ],
+      "incremental": 1.0489850004641765,
+      "total": 1.9766697308419405,
+      "wall_incremental": 1.0469745139060067,
+      "wall_total": 1.9291742585145495
+    },
+    {
+      "scene": "fetch_table_cloud",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 1890618.0,
+              "ns_wall": 1915239.0
+            },
+            "baseline": {
+              "ns_internal": 1346031.5,
+              "ns_wall": 1370125.5
+            },
+            "candidate": {
+              "ns_internal": 1269927.5,
+              "ns_wall": 1293137.0
+            }
+          },
+          "incremental": 1.0599278305257585,
+          "total": 1.4887605788519422,
+          "wall_incremental": 1.059536228566656,
+          "wall_total": 1.4810797309179151
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 2000829.0,
+              "ns_wall": 2025325.0
+            },
+            "baseline": {
+              "ns_internal": 1457495.0,
+              "ns_wall": 1480502.5
+            },
+            "candidate": {
+              "ns_internal": 1379057.5,
+              "ns_wall": 1401279.0
+            }
+          },
+          "incremental": 1.056877613877594,
+          "total": 1.4508669870545645,
+          "wall_incremental": 1.0565365640960864,
+          "wall_total": 1.4453402926897498
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 1997948.5,
+              "ns_wall": 2028090.0
+            },
+            "baseline": {
+              "ns_internal": 1443392.5,
+              "ns_wall": 1471094.5
+            },
+            "candidate": {
+              "ns_internal": 1357225.5,
+              "ns_wall": 1388705.0
+            }
+          },
+          "incremental": 1.0634876076230515,
+          "total": 1.4720829368443196,
+          "wall_incremental": 1.0593282950662668,
+          "wall_total": 1.4604181593642998
+        }
+      ],
+      "incremental": 1.0599278305257585,
+      "total": 1.4720829368443196,
+      "wall_incremental": 1.0593282950662668,
+      "wall_total": 1.4604181593642998
+    },
+    {
+      "scene": "fetch_table_cloud100k",
+      "seeds": [
+        {
+          "seed": 67867967,
+          "median_ns": {
+            "master": {
+              "ns_internal": 4471220.0,
+              "ns_wall": 4500955.5
+            },
+            "baseline": {
+              "ns_internal": 1558510.0,
+              "ns_wall": 1582344.5
+            },
+            "candidate": {
+              "ns_internal": 1440904.5,
+              "ns_wall": 1463721.5
+            }
+          },
+          "incremental": 1.081619219039152,
+          "total": 3.103064776326259,
+          "wall_incremental": 1.0810420561561744,
+          "wall_total": 3.0750081214220053
+        },
+        {
+          "seed": 67867979,
+          "median_ns": {
+            "master": {
+              "ns_internal": 4870759.0,
+              "ns_wall": 4897338.5
+            },
+            "baseline": {
+              "ns_internal": 1715048.0,
+              "ns_wall": 1743035.5
+            },
+            "candidate": {
+              "ns_internal": 1642988.0,
+              "ns_wall": 1669668.0
+            }
+          },
+          "incremental": 1.0438591152217789,
+          "total": 2.964573691347715,
+          "wall_incremental": 1.0439413703802194,
+          "wall_total": 2.933121135459265
+        },
+        {
+          "seed": 67867987,
+          "median_ns": {
+            "master": {
+              "ns_internal": 4458429.0,
+              "ns_wall": 4488400.5
+            },
+            "baseline": {
+              "ns_internal": 1558879.0,
+              "ns_wall": 1584668.0
+            },
+            "candidate": {
+              "ns_internal": 1441048.5,
+              "ns_wall": 1467808.5
+            }
+          },
+          "incremental": 1.0817671993690705,
+          "total": 3.0938785197028413,
+          "wall_incremental": 1.0796149497703549,
+          "wall_total": 3.0578924294279535
+        }
+      ],
+      "incremental": 1.081619219039152,
+      "total": 3.0938785197028413,
+      "wall_incremental": 1.0796149497703549,
+      "wall_total": 3.0578924294279535
+    }
+  ],
+  "analytic_geomean": {
+    "incremental": 1.0506672408488573,
+    "total": 1.951217642942744,
+    "wall_incremental": 1.0462360731124765,
+    "wall_total": 1.8842986627778577
+  },
+  "baselines": {
+    "master": "7019b1d0544cbf3ab59ea8acae34dd7f36ea6a6d",
+    "baseline": "2f6fb0767af4659db3a0b2120d9fa5d48c29114d"
+  },
+  "binaries": {
+    "master": {
+      "path": "/home/h-ishida/tmp/plainmp-origin-master/build/_plainmp.cpython-38-x86_64-linux-gnu.so",
+      "sha256": "2b8135141db9dc1a05b7816ae025bf0f022c8842258320f53cfb68d3e7c9afa0"
+    },
+    "baseline": {
+      "path": "/home/h-ishida/tmp/plainmp-perf/build/_plainmp.cpython-38-x86_64-linux-gnu.so",
+      "sha256": "98d3bebc6a8f33d823ad3c3c51f763b178731a674316e944059b821d976b9340"
+    },
+    "candidate": {
+      "path": "/home/h-ishida/tmp/plainmp-locality/build/_plainmp.cpython-38-x86_64-linux-gnu.so",
+      "sha256": "ad5c896135d1b478a2d16cb85b86fdab21892b93728fc035233c12c16ae4cc6e"
+    }
+  },
+  "perf_counters": {
+    "fetch_table": {
+      "raw": {
+        "base": [
+          {
+            "cycles:u": 36404755011,
+            "instructions:u": 106606751996,
+            "L1-dcache-loads": 36014560487,
+            "L1-dcache-load-misses": 1210572890,
+            "cache-misses:u": 25507144
+          },
+          {
+            "cycles:u": 34977125200,
+            "instructions:u": 106617278256,
+            "L1-dcache-loads": 36043317911,
+            "L1-dcache-load-misses": 1185021097,
+            "cache-misses:u": 22387303
+          }
+        ],
+        "new": [
+          {
+            "cycles:u": 35384788430,
+            "instructions:u": 106924275287,
+            "L1-dcache-loads": 34798981866,
+            "L1-dcache-load-misses": 778522329,
+            "cache-misses:u": 20941813
+          },
+          {
+            "cycles:u": 32037593620,
+            "instructions:u": 106931838739,
+            "L1-dcache-loads": 34777331238,
+            "L1-dcache-load-misses": 762962267,
+            "cache-misses:u": 21449090
+          }
+        ]
+      },
+      "median": {
+        "base": {
+          "cycles:u": 35690940105.5,
+          "instructions:u": 106612015126.0,
+          "L1-dcache-loads": 36028939199.0,
+          "L1-dcache-load-misses": 1197796993.5,
+          "cache-misses:u": 23947223.5
+        },
+        "new": {
+          "cycles:u": 33711191025.0,
+          "instructions:u": 106928057013.0,
+          "L1-dcache-loads": 34788156552.0,
+          "L1-dcache-load-misses": 770742298.0,
+          "cache-misses:u": 21195451.5
+        }
+      },
+      "plans": 10000,
+      "logical_calls": 32986037
+    },
+    "cloud100k": {
+      "baseline": {
+        "cycles:u": 42517020751,
+        "instructions:u": 141390406778,
+        "L1-dcache-loads": 51814801933,
+        "L1-dcache-load-misses": 382346344,
+        "cache-misses:u": 31287627
+      },
+      "candidate": {
+        "cycles:u": 40253139369,
+        "instructions:u": 140997609075,
+        "L1-dcache-loads": 50614627315,
+        "L1-dcache-load-misses": 370904096,
+        "cache-misses:u": 29279243
+      },
+      "plans": 5000,
+      "logical_calls": 16634462
+    }
+  }
+}

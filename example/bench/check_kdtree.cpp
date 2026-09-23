@@ -1,4 +1,5 @@
 // Exact-distance regression check for KD-tree pruning, independent of Python.
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -74,6 +75,18 @@ int main() {
       queries.push_back(scale * random_point());
     }
     check(points, queries);
+  }
+  // Compacted preorder storage must retain the old strict-less-than tie
+  // rule, including a two-point subtree that has only a left child.
+  for (int count : {2, 3}) {
+    std::vector<Point> points{Point(-1., 0., 0.), Point(1., 0., 0.)};
+    const Point expected = count == 2 ? Point(1., 0., 0.) : Point(0., 1., 0.);
+    if (count == 3) points.push_back(expected);
+    plainmp::collision::KDTree tree(points);
+    if ((tree.query(Point::Zero()) - expected).squaredNorm() != 0. ||
+        tree.sqdist(Point::Zero()) != 1.)
+      throw std::runtime_error("KD-tree changed nearest-point tie selection");
+    ++checked;
   }
   std::cout << checked << " exact KD-tree distances match brute force\n";
 }

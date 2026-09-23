@@ -54,13 +54,16 @@ double KDTree::nearest_sqdist(int node_index,
                              double best_sqdist) const {
   // Distance-only traversal: no nearest-point copies or reference updates.
   while (node_index != -1) {
-    const KDNode& node = nodes_[node_index];
+    const Node& node = nodes_[node_index];
     const double sqdist = (node.point - target).squaredNorm();
     if (sqdist < best_sqdist)
       best_sqdist = sqdist;
+    if (node.right == -2)
+      break;
     const double diff = target(node.axis) - node.point(node.axis);
-    const int first = diff < 0 ? node.left : node.right;
-    const int second = diff < 0 ? node.right : node.left;
+    const int left = node_index + 1;
+    const int first = diff < 0 ? left : node.right;
+    const int second = diff < 0 ? node.right : left;
     if (first != -1)
       best_sqdist = nearest_sqdist(first, target, best_sqdist);
     if (!(diff * diff < best_sqdist))
@@ -75,13 +78,16 @@ double KDTree::nearest_sqdist(int node_index,
                              double best_sqdist,
                              Eigen::Vector3d lower_delta) const {
   while (node_index != -1) {
-    const KDNode& node = nodes_[node_index];
+    const Node& node = nodes_[node_index];
     const double sqdist = (node.point - target).squaredNorm();
     if (sqdist < best_sqdist)
       best_sqdist = sqdist;
+    if (node.right == -2)
+      break;
     const double diff = target(node.axis) - node.point(node.axis);
-    const int first = diff < 0 ? node.left : node.right;
-    const int second = diff < 0 ? node.right : node.left;
+    const int left = node_index + 1;
+    const int first = diff < 0 ? left : node.right;
+    const int second = diff < 0 ? node.right : left;
     if (first != -1)
       best_sqdist = nearest_sqdist(first, target, best_sqdist, lower_delta);
     // The far child's region inherits all ancestor bounds and tightens this
@@ -117,8 +123,9 @@ int KDTree::build(std::vector<Eigen::Vector3d>::iterator begin,
   int node_index = static_cast<int>(nodes_.size() - 1);
 
   // Recursively build left and right subtrees and store their indices
-  nodes_[node_index].left = build(begin, median_it, depth + 1);
-  nodes_[node_index].right = build(median_it + 1, end, depth + 1);
+  const int left = build(begin, median_it, depth + 1);
+  const int right = build(median_it + 1, end, depth + 1);
+  nodes_[node_index].right = left == -1 ? -2 : right;
 
   return node_index;
 }
@@ -130,7 +137,7 @@ void KDTree::nearest(int node_index,
   if (node_index == -1)
     return;
 
-  const KDNode& node = nodes_[node_index];
+  const Node& node = nodes_[node_index];
 
   double sqdist = (node.point - target).squaredNorm();
   if (sqdist < best_sqdist) {
@@ -138,11 +145,13 @@ void KDTree::nearest(int node_index,
     best_point = node.point;
   }
 
+  if (node.right == -2)
+    return;
   int axis = node.axis;
   double diff = target(axis) - node.point(axis);
-
-  int first_index = (diff < 0) ? node.left : node.right;
-  int second_index = (diff < 0) ? node.right : node.left;
+  const int left = node_index + 1;
+  int first_index = (diff < 0) ? left : node.right;
+  int second_index = (diff < 0) ? node.right : left;
 
   // Explore the side of the split where the target lies
   nearest(first_index, target, best_sqdist, best_point);

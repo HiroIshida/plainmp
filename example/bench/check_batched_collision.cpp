@@ -147,6 +147,55 @@ int main() {
         ++batches_checked;
       }
     }
+    // The public C++ control list can change without replacing the SDF.
+    // Exercise same-size reordering, subsets, expansion, empty and repeated
+    // joints against the scalar path, including restored/prefix state.
+    const std::vector<std::vector<std::string>> control_sets{
+        names, {"j7", "j6", "j5", "j4", "j3", "j2", "j1"}, {"j1", "j4"},
+        {"j1", "j2", "j3", "j4", "j5", "j6", "j7", "j8", "branch"},
+        {}, {"j2", "j1", "j2"}};
+    auto all_names = names;
+    all_names.insert(all_names.end(), {"j8", "j9", "branch"});
+    const auto all_ids = kin->get_joint_ids(all_names);
+    cst.set_sdf(shapes.front());
+    for (size_t trial = 0; trial < 90; ++trial) {
+      cst.control_joint_names_ = control_sets[trial % control_sets.size()];
+      cst.control_joint_ids_ = kin->get_joint_ids(cst.control_joint_names_);
+      const size_t count = trial % 3 + 2;
+      Eigen::VectorXd q[4];
+      const double* ptr[4];
+      unsigned expected = 0;
+      for (size_t k = 0; k < count; ++k) {
+        q[k].resize(cst.q_dim());
+        for (Eigen::Index j = 0; j < q[k].size(); ++j) q[k][j] = angle(rng) * .03;
+        ptr[k] = q[k].data();
+        if (cst.is_valid(q[k])) expected |= 1u << k;
+      }
+      auto expected_joints = kin->get_joint_angles(all_ids);
+      const auto links = kin->get_link_ids({"l0", "l2", "l7", "l9", "side"});
+      std::vector<pk::QuatTrans<double>> expected_poses;
+      for (size_t link : links) expected_poses.push_back(kin->get_link_pose(link));
+      require(cst.is_valid_batch(ptr, count) == expected,
+              "Changed controls: predicate mismatch");
+      require(kin->get_joint_angles(all_ids) == expected_joints,
+              "Changed controls: final joints mismatch");
+      for (size_t j = 0; j < links.size(); ++j) {
+        const auto& pose = kin->get_link_pose(links[j]);
+        require((pose.trans() - expected_poses[j].trans()).norm() < 1e-14 &&
+                    (pose.quat().coeffs() - expected_poses[j].quat().coeffs()).norm() < 1e-14,
+                "Changed controls: final pose mismatch");
+      }
+      size_t first = 0;
+      while (first < count && (expected & (1u << first))) ++first;
+      cst.is_valid(q[std::min(first, count - 1)]);
+      expected_joints = kin->get_joint_angles(all_ids);
+      require(cst.first_invalid_batch(ptr, count) == first,
+              "Changed controls: prefix mismatch");
+      require(kin->get_joint_angles(all_ids) == expected_joints,
+              "Changed controls: prefix joints mismatch");
+      states_checked += count;
+      ++batches_checked;
+    }
     std::cout << batches_checked << " batches, " << states_checked
               << " states: predicates and visible kinematic state match\n";
   } catch (const std::exception& e) {
