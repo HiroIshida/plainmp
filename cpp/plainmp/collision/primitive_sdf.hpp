@@ -442,6 +442,9 @@ struct CylinderSDF : public TransformableSDFBase {
     return std::make_shared<CylinderSDF>(r_cylinder_, height_, pose);
   }
 
+  double get_radius() const { return r_cylinder_; }
+  double get_half_height() const { return half_height_; }
+
   double evaluate(const Point& p) const override {
     double z_signed_dist, xdot_abs, ydot_abs;
     if (pose.z_axis_aligned_) {
@@ -537,6 +540,8 @@ struct SphereSDF : public TransformableSDFBase {
         rsq_sphere_(radius * radius) {
     update_aabb();
   }
+
+  double get_radius() const { return r_sphere_; }
 
   double evaluate(const Point& p) const override {
     auto p_from_center = p - pose.position_;

@@ -43,9 +43,32 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
 
   const auto space = si_->getStateSpace();
   size_t n_test = std::floor(1 / step_ratio) + 2;  // including start and end
+#ifdef PLAINMP_BATCH_STATES
+  if (batch_checker_ && n_test > 3) {
+    if (!si_->isValid(s2))
+      return false;
+    const bool table = n_test < SEQUENCE_TABLE.size() + 1;
+    const size_t end = table ? n_test : n_test - 1;
+    for (size_t i = table ? 2 : 1; i < end;) {
+      const size_t count = std::min(size_t(4), end - i);
+      for (size_t k = 0; k < count; ++k) {
+        const double rate =
+            (table ? SEQUENCE_TABLE[n_test - 1][i + k] : i + k) * step_ratio;
+        space->interpolate(s1, s2, rate, batch_states_[k]);
+      }
+      if (count == 1) {
+        if (!si_->isValid(batch_states_[0]))
+          return false;
+      } else if (!batch_checker_(batch_states_.data(), count))
+        return false;
+      i += count;
+    }
+    return true;
+  }
+#endif
   if (n_test < SEQUENCE_TABLE.size() + 1) {
     // TABLE[i] for i+1 steps because n_test = 0 never happens
-    auto& sequence = SEQUENCE_TABLE[n_test - 1];
+    auto &sequence = SEQUENCE_TABLE[n_test - 1];
     // NOTE: OMPL's algorithm assumes that the first state is valid
     // e.g., see comment in ompl::base::DiscreteMotionValidator::checkMotion of
     // https://github.com/ompl/ompl/blob/main/src/ompl/base/src/DiscreteMotionValidator.cpp

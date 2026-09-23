@@ -22,6 +22,7 @@
 #include <chrono>
 #include <optional>
 #include "plainmp/constraints/primitive.hpp"
+#include "plainmp/constraints/primitive_sphere_collision.hpp"
 #include "plainmp/ompl/algorithm_selector.hpp"
 #include "plainmp/ompl/custom_goal_samplable_region.hpp"
 #include "plainmp/ompl/motion_validator.hpp"
@@ -89,6 +90,28 @@ struct CollisionAwareSpaceInformation {
     } else {
       throw std::runtime_error("unknown validator type");
     }
+#ifdef PLAINMP_BATCH_STATES
+    auto sphere =
+        std::dynamic_pointer_cast<constraint::SphereCollisionCst>(ineq_cst_);
+    if (sphere && sphere->batch_supported()) {
+      auto validator = std::dynamic_pointer_cast<CustomValidatorBase>(
+          si_->getMotionValidator());
+      validator->set_batch_checker(
+          [this, sphere](const ob::State *const *states, size_t count) {
+            const double *values[4];
+            for (size_t i = 0; i < count; ++i)
+              values[i] =
+                  states[i]->as<ob::RealVectorStateSpace::StateType>()->values;
+            const size_t first_invalid =
+                sphere->first_invalid_batch(values, count);
+            // Count the ordered prefix consumed by the motion validator. SIMD
+            // may also compute later lanes, whose results are discarded on
+            // rejection.
+            this->is_valid_call_count_ += std::min(count, first_invalid + 1);
+            return first_invalid == count;
+          });
+    }
+#endif
     // si_->setup();
   }
 

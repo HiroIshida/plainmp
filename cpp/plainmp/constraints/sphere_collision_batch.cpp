@@ -1,0 +1,79 @@
+/*
+ * plainmp - library for fast motion planning
+ *
+ * Copyright (C) 2024 Hirokazu Ishida
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+/* Four-state dispatch. This translation unit uses the portable target ISA. */
+#include "plainmp/constraints/primitive_sphere_collision.hpp"
+#include <typeinfo>
+namespace plainmp::constraint {
+bool SphereCollisionCst::batch_supported() const {
+#ifdef PLAINMP_HAS_AVX2_COLLISION
+  if (!__builtin_cpu_supports("avx2"))
+    return false;
+  if (base_type_ != kin::BaseType::FIXED || cloud_sdf_count_ ||
+      typeid(*this) != typeid(SphereCollisionCst))
+    return false;
+  for (bool rotation : kin_->link_consider_rotation_)
+    if (!rotation)
+      return false;
+  for (const auto &sdf : all_sdfs_cache_) {
+    const auto &t = typeid(*sdf);
+    if (t != typeid(collision::BoxSDF) && t != typeid(collision::SphereSDF) &&
+        t != typeid(collision::CylinderSDF) &&
+        t != typeid(collision::GroundSDF))
+      return false;
+  }
+  return true;
+#else
+  return false;
+#endif
+}
+
+unsigned SphereCollisionCst::is_valid_batch(const double *const *states,
+                                            size_t count) {
+  if (count == 0 || count > 4)
+    throw std::invalid_argument("Batch size must be 1..4");
+#ifdef PLAINMP_HAS_AVX2_COLLISION
+  if (count > 1 && batch_supported()) {
+    const unsigned mask = is_valid_batch_avx2(states, count);
+    update_kintree(
+        Eigen::Map<const Eigen::VectorXd>(states[count - 1], q_dim()), false);
+    post_update_kintree();
+    return mask;
+  }
+#endif
+  unsigned valid = 0;
+  for (size_t k = 0; k < count; ++k)
+    if (is_valid(Eigen::Map<const Eigen::VectorXd>(states[k], q_dim())))
+      valid |= 1u << k;
+  return valid;
+}
+size_t SphereCollisionCst::first_invalid_batch(const double *const *states,
+                                               size_t count) {
+  if (count == 0 || count > 4)
+    throw std::invalid_argument("Batch size must be 1..4");
+#ifdef PLAINMP_HAS_AVX2_COLLISION
+  if (count > 1 && batch_supported()) {
+    const unsigned mask = is_valid_batch_avx2(states, count);
+    size_t first = 0;
+    while (first < count && (mask & (1u << first)))
+      ++first;
+    const size_t last = std::min(first, count - 1);
+    update_kintree(Eigen::Map<const Eigen::VectorXd>(states[last], q_dim()),
+                   false);
+    post_update_kintree();
+    return first;
+  }
+#endif
+  for (size_t k = 0; k < count; ++k)
+    if (!is_valid(Eigen::Map<const Eigen::VectorXd>(states[k], q_dim())))
+      return k;
+  return count;
+}
+} // namespace plainmp::constraint

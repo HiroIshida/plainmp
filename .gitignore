@@ -1,6 +1,7 @@
 compile_commands.json
 /pybind11
 /build
+/build-*/
 /_skbuild
 /dist
 *.egg/

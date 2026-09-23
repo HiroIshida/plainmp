@@ -44,10 +44,25 @@ add_custom_target(generate_sequence_table
 )
 
 file(GLOB_RECURSE SRC_FILES cpp/*.cpp)
+option(PLAINMP_ENABLE_AVX2_COLLISION "Batch collision checks across four states on AVX2 CPUs" ON)
+set(_batch_avx2_source ${CMAKE_CURRENT_SOURCE_DIR}/cpp/plainmp/constraints/sphere_collision_batch_avx2.cpp)
+if(PLAINMP_ENABLE_AVX2_COLLISION AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64|i.86)$"
+   AND CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang)$")
+    # Keep the ISA-specific kernel out of LTO, so portable callers never acquire
+    # AVX instructions before the runtime CPU feature check.
+    set_source_files_properties(${_batch_avx2_source} PROPERTIES
+        COMPILE_OPTIONS "-mavx2;-ffp-contract=off;-fno-lto")
+    set(_batch_avx2_enabled TRUE)
+else()
+    list(REMOVE_ITEM SRC_FILES ${_batch_avx2_source})
+endif()
 include_directories(cpp)
 add_subdirectory(pybind11)
 pybind11_add_module(_plainmp ${SRC_FILES})
 add_dependencies(_plainmp generate_sequence_table)
+if(_batch_avx2_enabled)
+    target_compile_definitions(_plainmp PRIVATE PLAINMP_HAS_AVX2_COLLISION PLAINMP_BATCH_STATES)
+endif()
 
 if (TARGET ompl::ompl)
     set(_ompl_target ompl::ompl)
@@ -59,3 +74,23 @@ if(ompl_VERSION VERSION_LESS "1.7.0")
     target_compile_definitions(_plainmp PRIVATE OMPL_OLD_VERSION)
 endif()
 install(TARGETS _plainmp DESTINATION .)
+
+option(PLAINMP_BUILD_BATCH_COLLISION_CHECK "Build the standalone batch collision regression check" OFF)
+if(PLAINMP_BUILD_BATCH_COLLISION_CHECK)
+    set(_batch_check_sources
+        example/bench/check_batched_collision.cpp
+        cpp/plainmp/kinematics/algorithm.cpp
+        cpp/plainmp/kinematics/kinematics.cpp
+        cpp/plainmp/kinematics/kinematic_model_wrapper.cpp
+        cpp/plainmp/collision/kdtree.cpp
+        cpp/plainmp/constraints/primitive_sphere_collision.cpp
+        cpp/plainmp/constraints/sphere_collision_batch.cpp)
+    if(_batch_avx2_enabled)
+        list(APPEND _batch_check_sources ${_batch_avx2_source})
+    endif()
+    add_executable(check_batched_collision ${_batch_check_sources})
+    target_link_libraries(check_batched_collision PRIVATE urdfdom_model)
+    if(_batch_avx2_enabled)
+        target_compile_definitions(check_batched_collision PRIVATE PLAINMP_HAS_AVX2_COLLISION)
+    endif()
+endif()

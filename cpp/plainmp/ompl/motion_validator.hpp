@@ -8,6 +8,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include <array>
+#include <functional>
 #include <ompl/base/MotionValidator.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
@@ -25,18 +27,31 @@ class CustomValidatorBase : public ob::MotionValidator {
       : ob::MotionValidator(si) {
     s_test_ = si_->allocState()->as<ob::RealVectorStateSpace::StateType>();
   }
-  ~CustomValidatorBase() override { si_->freeState(s_test_); }
-  bool checkMotion(const ob::State* s1, const ob::State* s2) const;
-  bool checkMotion(const ob::State* s1,
-                   const ob::State* s2,
-                   std::pair<ob::State*, double>& lastValid) const {
+  ~CustomValidatorBase() override {
+    si_->freeState(s_test_);
+    for (auto *state : batch_states_)
+      if (state)
+        si_->freeState(state);
+  }
+  using BatchChecker = std::function<bool(const ob::State *const *, size_t)>;
+  void set_batch_checker(BatchChecker checker) {
+    batch_checker_ = std::move(checker);
+    for (auto &state : batch_states_)
+      if (!state)
+        state = si_->allocState();
+  }
+  bool checkMotion(const ob::State *s1, const ob::State *s2) const;
+  bool checkMotion(const ob::State *s1, const ob::State *s2,
+                   std::pair<ob::State *, double> &lastValid) const {
     return checkMotion(s1, s2);
   }
   virtual double determine_step_ratio(const ob::State* s1,
                                       const ob::State* s2) const = 0;
 
- private:
-  ob::RealVectorStateSpace::StateType* s_test_;  // pre-allocated memory
+private:
+  BatchChecker batch_checker_;
+  std::array<ob::State *, 4> batch_states_{};
+  ob::RealVectorStateSpace::StateType *s_test_; // pre-allocated memory
 };
 
 class BoxMotionValidator : public CustomValidatorBase {

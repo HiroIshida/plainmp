@@ -8,10 +8,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#pragma once
+
 #include "plainmp/collision/primitive_sdf.hpp"
 #include "plainmp/constraints/primitive.hpp"
 
 namespace plainmp::constraint {
+
+struct BatchCollisionWorkspace;
 
 struct SphereAttachmentSpec {
   std::string parent_link_name;
@@ -81,6 +85,13 @@ class SphereCollisionCst : public IneqConstraintBase {
   // set_sdf() also invalidates them, including when reusing the same SDF pointer.
   void reset_clearance_cache();
 
+  // Bit k reports validity of states[k], for one to four contiguous q vectors.
+  // The kinematic state after this call corresponds to the last input.
+  unsigned is_valid_batch(const double* const* states, size_t count);
+  // Returns count when all states are valid, otherwise the first invalid index.
+  // Later SIMD lanes may be evaluated, but the visible state ends at that index.
+  size_t first_invalid_batch(const double* const* states, size_t count);
+  bool batch_supported() const;
   bool is_valid_dirty() override;
   bool check_ext_collision();
   bool check_self_collision();
@@ -108,6 +119,8 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<std::pair<Eigen::Vector3d, double>> get_all_spheres();
 
  private:
+  unsigned is_valid_batch_avx2(const double* const* states, size_t count);
+  std::shared_ptr<BatchCollisionWorkspace> batch_workspace_;
   struct ClearanceCertificate {
     Eigen::Vector3d center = Eigen::Vector3d::Zero();
     // Negative values certify overlap of the bounding sphere only. A negative

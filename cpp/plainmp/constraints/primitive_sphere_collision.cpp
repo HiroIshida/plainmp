@@ -523,6 +523,7 @@ SphereCollisionCst::get_all_spheres() {
 }
 
 void SphereCollisionCst::set_all_sdfs() {
+  batch_workspace_.reset();
   all_sdfs_cache_.clear();
   if (fixed_sdf_ != nullptr) {
     set_all_sdfs_inner(fixed_sdf_);
