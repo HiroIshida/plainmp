@@ -81,6 +81,11 @@ if(PLAINMP_BUILD_BATCH_QUERY_CHECK)
     target_compile_definitions(_plainmp PRIVATE PLAINMP_BATCH_QUERY_CHECK)
 endif()
 
+option(PLAINMP_BUILD_KDTREE_CHECK "Build the standalone KD-tree regression check" OFF)
+if(PLAINMP_BUILD_KDTREE_CHECK)
+    add_executable(check_kdtree example/bench/check_kdtree.cpp cpp/plainmp/collision/kdtree.cpp)
+endif()
+
 option(PLAINMP_BUILD_BATCH_COLLISION_CHECK "Build the standalone batch collision regression check" OFF)
 if(PLAINMP_BUILD_BATCH_COLLISION_CHECK)
     set(_batch_check_sources

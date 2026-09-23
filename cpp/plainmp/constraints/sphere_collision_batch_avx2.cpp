@@ -21,6 +21,13 @@ struct V {
   V() = default;
   V(double x) : v(_mm256_set1_pd(x)) {}
   V(__m256d x) : v(x) {}
+  // Keep aggregate Frame/Mat copies as full-width vector stores. GCC's
+  // generic tuning can split trivial aggregate copies into 128-bit stores,
+  // which cannot forward to the immediately following 256-bit FK loads.
+  V &operator=(const V &other) {
+    v = other.v;
+    return *this;
+  }
 };
 inline V operator+(V a, V b) { return _mm256_add_pd(a.v, b.v); }
 inline V operator-(V a, V b) { return _mm256_sub_pd(a.v, b.v); }

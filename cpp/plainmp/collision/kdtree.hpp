@@ -35,6 +35,7 @@ class KDTree {
  private:
   std::vector<KDNode> nodes_;
   int root_index_;
+  Eigen::Vector3d lower_, upper_;
 
   int build(std::vector<Eigen::Vector3d>::iterator begin,
             std::vector<Eigen::Vector3d>::iterator end,
@@ -44,6 +45,13 @@ class KDTree {
                const Eigen::Vector3d& target,
                double& best_dist,
                Eigen::Vector3d& best_point) const;
+  double nearest_sqdist(int node_index,
+                        const Eigen::Vector3d& target,
+                        double best_sqdist) const;
+  double nearest_sqdist(int node_index,
+                        const Eigen::Vector3d& target,
+                        double best_sqdist,
+                        Eigen::Vector3d lower_delta) const;
 };
 
 }  // namespace plainmp::collision

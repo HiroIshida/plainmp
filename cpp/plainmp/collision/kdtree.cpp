@@ -18,6 +18,12 @@
 namespace plainmp::collision {
 
 KDTree::KDTree(const std::vector<Eigen::Vector3d>& points) {
+  lower_.setConstant(std::numeric_limits<double>::infinity());
+  upper_.setConstant(-std::numeric_limits<double>::infinity());
+  for (const auto& point : points) {
+    lower_ = lower_.cwiseMin(point);
+    upper_ = upper_.cwiseMax(point);
+  }
   nodes_.reserve(points.size());
   std::vector<Eigen::Vector3d> points_copy = points;
   root_index_ = build(points_copy.begin(), points_copy.end(), 0);
@@ -31,9 +37,62 @@ Eigen::Vector3d KDTree::query(const Eigen::Vector3d& target) const {
 }
 
 double KDTree::sqdist(const Eigen::Vector3d& target) const {
-  Eigen::Vector3d best_point;
-  double best_sqdist = std::numeric_limits<double>::max();
-  nearest(root_index_, target, best_sqdist, best_point);
+  // Start with the cloud's finite bounds. This matters for queries outside
+  // thin clouds: their distance along the thin axis is already unavoidable.
+  const Eigen::Vector3d lower_delta =
+      (lower_ - target).cwiseMax(target - upper_).cwiseMax(0.);
+  // Inside the cloud bounds, the initial lower bound is zero and carrying
+  // it through recursion costs more on dense volume clouds than it saves.
+  if (lower_delta.isZero(0.))
+    return nearest_sqdist(root_index_, target, std::numeric_limits<double>::max());
+  return nearest_sqdist(root_index_, target, std::numeric_limits<double>::max(),
+                        lower_delta);
+}
+
+double KDTree::nearest_sqdist(int node_index,
+                             const Eigen::Vector3d& target,
+                             double best_sqdist) const {
+  // Distance-only traversal: no nearest-point copies or reference updates.
+  while (node_index != -1) {
+    const KDNode& node = nodes_[node_index];
+    const double sqdist = (node.point - target).squaredNorm();
+    if (sqdist < best_sqdist)
+      best_sqdist = sqdist;
+    const double diff = target(node.axis) - node.point(node.axis);
+    const int first = diff < 0 ? node.left : node.right;
+    const int second = diff < 0 ? node.right : node.left;
+    if (first != -1)
+      best_sqdist = nearest_sqdist(first, target, best_sqdist);
+    if (!(diff * diff < best_sqdist))
+      break;
+    node_index = second;
+  }
+  return best_sqdist;
+}
+
+double KDTree::nearest_sqdist(int node_index,
+                             const Eigen::Vector3d& target,
+                             double best_sqdist,
+                             Eigen::Vector3d lower_delta) const {
+  while (node_index != -1) {
+    const KDNode& node = nodes_[node_index];
+    const double sqdist = (node.point - target).squaredNorm();
+    if (sqdist < best_sqdist)
+      best_sqdist = sqdist;
+    const double diff = target(node.axis) - node.point(node.axis);
+    const int first = diff < 0 ? node.left : node.right;
+    const int second = diff < 0 ? node.right : node.left;
+    if (first != -1)
+      best_sqdist = nearest_sqdist(first, target, best_sqdist, lower_delta);
+    // The far child's region inherits all ancestor bounds and tightens this
+    // axis. Using the same squaredNorm operation order as the point distance
+    // preserves a conservative lower bound, without a subtraction-based
+    // update of an accumulated squared distance. No approximate pruning.
+    lower_delta(node.axis) = diff;
+    if (!(lower_delta.squaredNorm() < best_sqdist))
+      break;
+    node_index = second;
+  }
   return best_sqdist;
 }
 
