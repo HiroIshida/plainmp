@@ -80,6 +80,15 @@ void bind_constraint_submodule(py::module& m) {
       .def("set_sdf", &SphereCollisionCst::set_sdf)
       .def("get_sdf", &SphereCollisionCst::get_sdf)
       .def("reset_clearance_cache", &SphereCollisionCst::reset_clearance_cache)
+      .def("set_motion_certificate_steps", &SphereCollisionCst::set_motion_certificate_steps)
+      .def("motion_certificate_stats", &SphereCollisionCst::motion_certificate_stats)
+      .def("reset_motion_certificate_stats", &SphereCollisionCst::reset_motion_certificate_stats)
+      .def("prepare_motion_certificate", &SphereCollisionCst::prepare_motion_certificate)
+      .def("check_motion_certificate", [](SphereCollisionCst& self, const Eigen::VectorXd& q) {
+        double certified = 0;
+        const bool valid = self.is_valid_with_motion_certificate(q, certified);
+        return std::make_pair(valid, certified);
+      })
       .def("is_valid", &SphereCollisionCst::is_valid)
       .def("get_group_spheres", &SphereCollisionCst::get_group_spheres)
       .def("get_all_spheres", &SphereCollisionCst::get_all_spheres);

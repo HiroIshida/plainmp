@@ -76,6 +76,30 @@ class SphereAttachmentSpec:
 class SphereCollisionCst(IneqConstraintBase):
     def set_sdf(self, sdf: SDFBase) -> None: ...
     def get_sdf(self) -> SDFBase: ...
+    def set_motion_certificate_steps(self, steps: float) -> None:
+        """Set the experimental interval radius cap (default 6 resolution steps)."""
+        ...
+    def motion_certificate_stats(self) -> Tuple[int, int, int, int]:
+        """Prepared edges, certificate queries, certificates, skipped point queries."""
+        ...
+    def reset_motion_certificate_stats(self) -> None: ...
+    def prepare_motion_certificate(
+        self, start: np.ndarray, end: np.ndarray, rate_radius: float
+    ) -> bool:
+        """Experimental diagnostic API; return False when bounds are unsupported.
+
+        Keep the robot structure, base, uncontrolled joints, and environment
+        fixed between preparation and the last query on this segment.
+        rate_radius is measured in the normalized interpolation parameter.
+        """
+        ...
+    def check_motion_certificate(self, q: np.ndarray) -> Tuple[bool, float]:
+        """Return point validity and certified interpolation radius (0 if unproven).
+
+        q must lie on the most recently prepared segment. This is an internal
+        research diagnostic, not a general-purpose configuration-space cache.
+        """
+        ...
     def get_all_spheres(self) -> List[Tuple[np.ndarray, float]]:
         """Return all spheres approximating the robot
         Returns:

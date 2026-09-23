@@ -8,10 +8,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#pragma once
+
+#include <array>
 #include "plainmp/collision/primitive_sdf.hpp"
 #include "plainmp/constraints/primitive.hpp"
 
 namespace plainmp::constraint {
+
+struct ScalarMotionBounds;
 
 struct SphereAttachmentSpec {
   std::string parent_link_name;
@@ -84,6 +89,23 @@ class SphereCollisionCst : public IneqConstraintBase {
   bool is_valid_dirty() override;
   bool check_ext_collision();
   bool check_self_collision();
+  // Experimental scalar interval certificates. The anchor q must lie on the
+  // prepared segment; robot structure, uncontrolled joints, base, and SDFs must
+  // stay unchanged until the last certificate query for that segment.
+  // The returned radius is in the segment's normalized interpolation parameter.
+  bool prepare_motion_certificate(const VectorInput& start, const VectorInput& end,
+                                  double rate_radius);
+  bool is_valid_with_motion_certificate(const VectorInput& q, double& certified_radius);
+  void note_certified_skip() { ++motion_certificate_stats_[3]; }
+  std::array<size_t, 4> motion_certificate_stats() const { return motion_certificate_stats_; }
+  void reset_motion_certificate_stats() { motion_certificate_stats_.fill(0); }
+  double motion_certificate_steps() const { return motion_certificate_steps_; }
+  void set_motion_certificate_steps(double steps) {
+    if (!std::isfinite(steps) || steps <= 0 || steps > 64)
+      throw std::invalid_argument("Certificate radius must be in (0,64]");
+    motion_certificate_steps_ = steps;
+    motion_certificate_prepared_ = false;
+  }
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   // retrun double and take block of eigen matrix
   double evaluate_ext_collision(
@@ -115,6 +137,13 @@ class SphereCollisionCst : public IneqConstraintBase {
     double signed_margin_sq = 0.0;
   };
   bool check_ext_collision_with_cloud_cache();
+  bool check_motion_envelope(double& radius);
+  bool finish_point_check(size_t group, size_t sdf, size_t sphere,
+                          size_t pair, size_t row, size_t column);
+  std::shared_ptr<ScalarMotionBounds> motion_bounds_;
+  std::array<size_t, 4> motion_certificate_stats_{};
+  double motion_certificate_steps_ = 6;
+  bool motion_certificate_prepared_ = false;
   void initialize_clearance_cache();
   void set_all_sdfs();
   void set_all_sdfs_inner(plainmp::collision::SDFBase::Ptr sdf);

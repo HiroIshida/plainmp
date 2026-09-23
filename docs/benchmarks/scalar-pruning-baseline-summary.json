@@ -1,0 +1,233 @@
+{
+  "metadata": {
+    "note": "Scalar: unmodified pre-batch commit; SIMD: current clean source, Release with diagnostic bindings. Both measured with identical Python code and scenes.",
+    "sources": {
+      "scalar": {
+        "path": "/home/h-ishida/tmp/plainmp-scalar-pruning",
+        "commit": "fe44f5ffccf38ab3a1f121723aec42893f05667c"
+      },
+      "simd": {
+        "path": "/home/h-ishida/tmp/plainmp-working-set",
+        "commit": "994535ee80d30fd9b722007547ba0ee1162f2b32"
+      }
+    },
+    "binary_sha256": {
+      "scalar": "313cd768b5df76a73db47b55a1e2d2abd8db65181e29ca33fe69f7843460a915",
+      "simd": "8d65e15651bbb7ecb855ce837b2fbb41258b8a5876f8114649aaa073edcecb12"
+    },
+    "driver_sha256": {
+      "screen.py": "a0f8e341b314790ed08797d6deee7e61877e17aa6bb3f34fce3f9108efaa8495",
+      "benchmark.py": "5d036169b6eace878d3328607fb3f4ed62cdabc547db107083284779b4e4f48b"
+    }
+  },
+  "method": {
+    "cpu": 2,
+    "compiler": "GCC 9.4",
+    "build": "Release/O3, normal LTO, no fast-math, Eigen internal vectorization disabled",
+    "seeds": [
+      67867967,
+      67867979,
+      67867987
+    ],
+    "scenes": [
+      "panda",
+      "panda_hard",
+      "fetch_table",
+      "fetch_spheres4"
+    ],
+    "warmup_per_scene_seed_variant": 30,
+    "blocks": 6,
+    "plans_per_block": 100,
+    "order": "alternating scalar/SIMD order each block",
+    "rng": "continuous through scenes; same seed per process",
+    "planner": "RRTConnect",
+    "range": 2,
+    "resolution": 0.03125,
+    "resolution_metric": "euclidean",
+    "self_collision": true,
+    "simplification": false,
+    "cpu_frequency_locked": false,
+    "ratio_aggregation": "median of seed-level ratios of median internal solve time"
+  },
+  "validation": {
+    "measured_plans": 14400,
+    "paired_plans": 7200,
+    "unique_independent_queries_per_binary": 126000,
+    "path_mismatches": 0,
+    "call_count_mismatches": 0,
+    "independent_label_mismatches": 0
+  },
+  "scenes": {
+    "panda": {
+      "per_seed": [
+        {
+          "seed": 67867967,
+          "scalar_ms": 0.3250235,
+          "scalar_wall_ms": 0.3517785,
+          "simd_ms": 0.1327385,
+          "simd_wall_ms": 0.1565635,
+          "simd_speedup": 2.448600067049123,
+          "wall_speedup": 2.2468742714617393,
+          "scalar_1_5x_target_ms": 0.21668233333333334
+        },
+        {
+          "seed": 67867979,
+          "scalar_ms": 0.330514,
+          "scalar_wall_ms": 0.3542435,
+          "simd_ms": 0.1412395,
+          "simd_wall_ms": 0.1659255,
+          "simd_speedup": 2.340096077938537,
+          "wall_speedup": 2.1349551455321816,
+          "scalar_1_5x_target_ms": 0.22034266666666666
+        },
+        {
+          "seed": 67867987,
+          "scalar_ms": 0.329792,
+          "scalar_wall_ms": 0.3628895,
+          "simd_ms": 0.142853,
+          "simd_wall_ms": 0.1694975,
+          "simd_speedup": 2.3086109497175413,
+          "wall_speedup": 2.1409725807165296,
+          "scalar_1_5x_target_ms": 0.21986133333333333
+        }
+      ],
+      "scalar_ms": 0.329792,
+      "scalar_wall_ms": 0.3542435,
+      "simd_ms": 0.1412395,
+      "simd_wall_ms": 0.1659255,
+      "simd_speedup": 2.340096077938537,
+      "wall_speedup": 2.1409725807165296,
+      "scalar_1_5x_target_ms": 0.21986133333333333
+    },
+    "panda_hard": {
+      "per_seed": [
+        {
+          "seed": 67867967,
+          "scalar_ms": 1.1906495,
+          "scalar_wall_ms": 1.246945,
+          "simd_ms": 0.531675,
+          "simd_wall_ms": 0.5682335,
+          "simd_speedup": 2.2394310434005735,
+          "wall_speedup": 2.194423595229778,
+          "scalar_1_5x_target_ms": 0.7937663333333332
+        },
+        {
+          "seed": 67867979,
+          "scalar_ms": 1.19096,
+          "scalar_wall_ms": 1.23374,
+          "simd_ms": 0.5142475,
+          "simd_wall_ms": 0.568164,
+          "simd_speedup": 2.3159276418456094,
+          "wall_speedup": 2.171450496687576,
+          "scalar_1_5x_target_ms": 0.7939733333333333
+        },
+        {
+          "seed": 67867987,
+          "scalar_ms": 1.265259,
+          "scalar_wall_ms": 1.336928,
+          "simd_ms": 0.5258295,
+          "simd_wall_ms": 0.5763285,
+          "simd_speedup": 2.40621532264736,
+          "wall_speedup": 2.319732583066775,
+          "scalar_1_5x_target_ms": 0.843506
+        }
+      ],
+      "scalar_ms": 1.19096,
+      "scalar_wall_ms": 1.246945,
+      "simd_ms": 0.5258295,
+      "simd_wall_ms": 0.5682335,
+      "simd_speedup": 2.3159276418456094,
+      "wall_speedup": 2.194423595229778,
+      "scalar_1_5x_target_ms": 0.7939733333333333
+    },
+    "fetch_table": {
+      "per_seed": [
+        {
+          "seed": 67867967,
+          "scalar_ms": 1.0737955,
+          "scalar_wall_ms": 1.119816,
+          "simd_ms": 0.460918,
+          "simd_wall_ms": 0.4918015,
+          "simd_speedup": 2.329688794970038,
+          "wall_speedup": 2.276967435032223,
+          "scalar_1_5x_target_ms": 0.7158636666666666
+        },
+        {
+          "seed": 67867979,
+          "scalar_ms": 1.119005,
+          "scalar_wall_ms": 1.188029,
+          "simd_ms": 0.442258,
+          "simd_wall_ms": 0.476808,
+          "simd_speedup": 2.530208611263109,
+          "wall_speedup": 2.49162975453432,
+          "scalar_1_5x_target_ms": 0.7460033333333334
+        },
+        {
+          "seed": 67867987,
+          "scalar_ms": 1.094494,
+          "scalar_wall_ms": 1.165888,
+          "simd_ms": 0.4804695,
+          "simd_wall_ms": 0.5368955,
+          "simd_speedup": 2.277967696180507,
+          "wall_speedup": 2.1715361741716968,
+          "scalar_1_5x_target_ms": 0.7296626666666667
+        }
+      ],
+      "scalar_ms": 1.094494,
+      "scalar_wall_ms": 1.165888,
+      "simd_ms": 0.460918,
+      "simd_wall_ms": 0.4918015,
+      "simd_speedup": 2.329688794970038,
+      "wall_speedup": 2.276967435032223,
+      "scalar_1_5x_target_ms": 0.7296626666666667
+    },
+    "fetch_spheres4": {
+      "per_seed": [
+        {
+          "seed": 67867967,
+          "scalar_ms": 0.4607275,
+          "scalar_wall_ms": 0.489862,
+          "simd_ms": 0.1918335,
+          "simd_wall_ms": 0.215544,
+          "simd_speedup": 2.401705124495982,
+          "wall_speedup": 2.2726775043610585,
+          "scalar_1_5x_target_ms": 0.30715166666666666
+        },
+        {
+          "seed": 67867979,
+          "scalar_ms": 0.4609985,
+          "scalar_wall_ms": 0.4968055,
+          "simd_ms": 0.2025045,
+          "simd_wall_ms": 0.233001,
+          "simd_speedup": 2.2764852139088267,
+          "wall_speedup": 2.1322032952648273,
+          "scalar_1_5x_target_ms": 0.3073323333333333
+        },
+        {
+          "seed": 67867987,
+          "scalar_ms": 0.4757255,
+          "scalar_wall_ms": 0.518005,
+          "simd_ms": 0.204588,
+          "simd_wall_ms": 0.2341035,
+          "simd_speedup": 2.32528545173715,
+          "wall_speedup": 2.2127178790577675,
+          "scalar_1_5x_target_ms": 0.31715033333333337
+        }
+      ],
+      "scalar_ms": 0.4609985,
+      "scalar_wall_ms": 0.4968055,
+      "simd_ms": 0.2025045,
+      "simd_wall_ms": 0.233001,
+      "simd_speedup": 2.32528545173715,
+      "wall_speedup": 2.2127178790577675,
+      "scalar_1_5x_target_ms": 0.3073323333333333
+    }
+  },
+  "objective": {
+    "baseline_commit": "fe44f5ffccf38ab3a1f121723aec42893f05667c",
+    "target_speedup_over_baseline": 1.5,
+    "approach": "Scalar calculation with conditional execution and conservative geometric pruning; no state-batch SIMD.",
+    "current_simd_measurement": "Reference only; outperforming current SIMD is not the objective.",
+    "status": "Baseline prepared and measured. No new scalar optimization implemented or timed yet."
+  }
+}

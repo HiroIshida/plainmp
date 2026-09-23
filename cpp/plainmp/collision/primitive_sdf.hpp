@@ -429,6 +429,8 @@ struct BoxSDF : public TransformableSDFBase {
 struct CylinderSDF : public TransformableSDFBase {
   using Ptr = std::shared_ptr<CylinderSDF>;
   SDFType get_type() const override { return SDFType::CYLINDER; }
+  double get_radius() const { return r_cylinder_; }
+  double get_half_height() const { return half_height_; }
   CylinderSDF(double radius, double height, const Pose& pose)
       : TransformableSDFBase(pose),
         r_cylinder_(radius),
@@ -531,6 +533,7 @@ struct CylinderSDF : public TransformableSDFBase {
 struct SphereSDF : public TransformableSDFBase {
   using Ptr = std::shared_ptr<SphereSDF>;
   SDFType get_type() const override { return SDFType::SPHERE; }
+  double get_radius() const { return r_sphere_; }
   SphereSDF(double radius, const Pose& pose)
       : TransformableSDFBase(pose),
         r_sphere_(radius),

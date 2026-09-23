@@ -1,0 +1,170 @@
+{
+  "certificate-validation-interval.json": {
+    "panda": {
+      "anchors": 3000,
+      "certified": 1668,
+      "unproven": 1332,
+      "point_queries": 34692,
+      "mismatches": 0
+    },
+    "panda_hard": {
+      "anchors": 3000,
+      "certified": 1025,
+      "unproven": 1975,
+      "point_queries": 22475,
+      "mismatches": 0
+    },
+    "fetch_table": {
+      "anchors": 3000,
+      "certified": 732,
+      "unproven": 2268,
+      "point_queries": 16908,
+      "mismatches": 0
+    },
+    "fetch_spheres4": {
+      "anchors": 3000,
+      "certified": 827,
+      "unproven": 2173,
+      "point_queries": 18713,
+      "mismatches": 0
+    },
+    "panda_boxes": {
+      "anchors": 3000,
+      "certified": 1618,
+      "unproven": 1382,
+      "point_queries": 33742,
+      "mismatches": 0
+    },
+    "fetch_table_tilted": {
+      "anchors": 3000,
+      "certified": 746,
+      "unproven": 2254,
+      "point_queries": 17174,
+      "mismatches": 0
+    }
+  },
+  "interval-edge-checks-interval.json": {
+    "panda": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "panda_hard": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "fetch_table": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "fetch_spheres4": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "panda_boxes": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "fetch_table_tilted": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "box": {
+      "queries": 210,
+      "supported": true,
+      "mismatches": 0
+    },
+    "translated_box": {
+      "queries": 273,
+      "supported": true,
+      "mismatches": 0
+    },
+    "rotated_box": {
+      "queries": 252,
+      "supported": true,
+      "mismatches": 0
+    },
+    "base_changed_between_edges": {
+      "queries": 189,
+      "supported": true,
+      "mismatches": 0
+    },
+    "link_added_after_preparation": {
+      "queries": 252,
+      "supported": true,
+      "mismatches": 0
+    },
+    "attachment": {
+      "queries": 252,
+      "supported": true,
+      "mismatches": 0
+    },
+    "tiny_radius_fallback": {
+      "queries": 21,
+      "supported": false,
+      "mismatches": 0
+    },
+    "cloud_fallback": {
+      "queries": 21,
+      "supported": false,
+      "mismatches": 0
+    },
+    "planar_fallback": {
+      "queries": 21,
+      "supported": false,
+      "mismatches": 0
+    },
+    "prismatic_out_of_bounds_fallback": {
+      "mismatches": 0
+    }
+  },
+  "planning_modes": {
+    "plans": 600,
+    "modes": [
+      "box",
+      "budget",
+      "euclidean_long",
+      "euclidean_short",
+      "generic",
+      "shortcut"
+    ],
+    "checked": [
+      "success",
+      "path_sha256",
+      "logical_calls",
+      "final_joint_positions"
+    ],
+    "mismatches": 0
+  },
+  "perf_scalar": {
+    "run": {
+      "scene": "fetch_table",
+      "variant": "scalar",
+      "mode": "plan",
+      "iterations": 3000,
+      "logical_calls": 9982975,
+      "internal_seconds": 4.08784973,
+      "wall_seconds": 4.215124066999124,
+      "checksum": 0
+    },
+    "stat_text": "# started on Thu Sep 24 02:57:13 2026\n\n19155040441;;cycles:u;4210993533;100.00;;\n68850776303;;instructions:u;4210993533;100.00;3.59;insn per cycle\n7622779407;;branches:u;4210993533;100.00;;\n34656029;;branch-misses:u;4210993533;100.00;0.45;of all branches\n"
+  },
+  "perf_enabled": {
+    "run": {
+      "scene": "fetch_table",
+      "variant": "interval",
+      "mode": "plan",
+      "iterations": 3000,
+      "logical_calls": 9982975,
+      "internal_seconds": 2.511097707,
+      "wall_seconds": 2.6244339810000383,
+      "checksum": 0
+    },
+    "stat_text": "# started on Thu Sep 24 02:57:18 2026\n\n11928307433;;cycles:u;2622008905;100.00;;\n36051958117;;instructions:u;2622008905;100.00;3.02;insn per cycle\n4167195763;;branches:u;2622008905;100.00;;\n54229972;;branch-misses:u;2622008905;100.00;1.30;of all branches\n"
+  }
+}
