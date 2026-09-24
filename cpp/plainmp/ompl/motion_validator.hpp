@@ -40,7 +40,7 @@ class CustomValidatorBase : public ob::MotionValidator {
     double radius_steps = 6;
     std::function<bool(const ob::State*, const ob::State*, double)> prepare;
     std::function<bool(const ob::State*, double&)> check;
-    std::function<void()> skip;
+    std::function<void(size_t)> skip;
     std::function<void(const ob::State*)> restore;
   };
   void set_motion_certificate(MotionCertificate certificate) {

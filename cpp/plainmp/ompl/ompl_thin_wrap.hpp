@@ -104,7 +104,10 @@ struct CollisionAwareSpaceInformation {
         const Eigen::Map<const Eigen::VectorXd> q(state->as<ob::RealVectorStateSpace::StateType>()->values, dim);
         return sphere->is_valid_with_motion_certificate(q, certified);
       };
-      certificate.skip = [this, sphere]() { ++is_valid_call_count_; sphere->note_certified_skip(); };
+      certificate.skip = [this, sphere](size_t count) {
+        is_valid_call_count_ += count;
+        sphere->note_certified_skip(count);
+      };
       certificate.restore = [sphere, dim](const ob::State* state) {
         const Eigen::Map<const Eigen::VectorXd> q(state->as<ob::RealVectorStateSpace::StateType>()->values, dim);
         sphere->update_kintree(q, false);

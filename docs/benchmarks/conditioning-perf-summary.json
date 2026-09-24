@@ -1,0 +1,138 @@
+{
+  "measurements": {
+    "before": [
+      {
+        "run": {
+          "scene": "fetch_table",
+          "variant": "interval",
+          "mode": "plan",
+          "iterations": 3000,
+          "logical_calls": 9982975,
+          "internal_seconds": 2.434047253,
+          "wall_seconds": 2.5234461699874373,
+          "checksum": 0
+        },
+        "counter": {
+          "cycles:u": 11604883117,
+          "instructions:u": 36048096784,
+          "branches:u": 4166362895,
+          "branch-misses:u": 51466656
+        }
+      },
+      {
+        "run": {
+          "scene": "fetch_table",
+          "variant": "interval",
+          "mode": "plan",
+          "iterations": 3000,
+          "logical_calls": 9982975,
+          "internal_seconds": 2.397935777,
+          "wall_seconds": 2.4784942810074426,
+          "checksum": 0
+        },
+        "counter": {
+          "cycles:u": 11364945509,
+          "instructions:u": 36050649921,
+          "branches:u": 4166538938,
+          "branch-misses:u": 49495332
+        }
+      },
+      {
+        "run": {
+          "scene": "fetch_table",
+          "variant": "interval",
+          "mode": "plan",
+          "iterations": 3000,
+          "logical_calls": 9982975,
+          "internal_seconds": 2.422791938,
+          "wall_seconds": 2.5077163499954622,
+          "checksum": 0
+        },
+        "counter": {
+          "cycles:u": 11526400847,
+          "instructions:u": 36051395584,
+          "branches:u": 4166682302,
+          "branch-misses:u": 50795211
+        }
+      }
+    ],
+    "after": [
+      {
+        "run": {
+          "scene": "fetch_table",
+          "variant": "conditioning_stream",
+          "mode": "plan",
+          "iterations": 3000,
+          "logical_calls": 9982975,
+          "internal_seconds": 2.321836619,
+          "wall_seconds": 2.4085442580108065,
+          "checksum": 0
+        },
+        "counter": {
+          "cycles:u": 11071678328,
+          "instructions:u": 35459158074,
+          "branches:u": 4074836674,
+          "branch-misses:u": 49666586
+        }
+      },
+      {
+        "run": {
+          "scene": "fetch_table",
+          "variant": "conditioning_stream",
+          "mode": "plan",
+          "iterations": 3000,
+          "logical_calls": 9982975,
+          "internal_seconds": 2.286352267,
+          "wall_seconds": 2.3682428850006545,
+          "checksum": 0
+        },
+        "counter": {
+          "cycles:u": 10881290329,
+          "instructions:u": 35460966993,
+          "branches:u": 4074802288,
+          "branch-misses:u": 47731503
+        }
+      },
+      {
+        "run": {
+          "scene": "fetch_table",
+          "variant": "conditioning_final",
+          "mode": "plan",
+          "iterations": 3000,
+          "logical_calls": 9982975,
+          "internal_seconds": 2.428300426,
+          "wall_seconds": 2.53240036299394,
+          "checksum": 0
+        },
+        "counter": {
+          "cycles:u": 11590443526,
+          "instructions:u": 35454572589,
+          "branches:u": 4073926854,
+          "branch-misses:u": 49757028
+        }
+      }
+    ]
+  },
+  "median_counters": {
+    "cycles:u": {
+      "before": 11526400847,
+      "after": 11071678328,
+      "percent_change": -3.945052102871749
+    },
+    "instructions:u": {
+      "before": 36050649921,
+      "after": 35459158074,
+      "percent_change": -1.6407245037084572
+    },
+    "branches:u": {
+      "before": 4166538938,
+      "after": 4074802288,
+      "percent_change": -2.2017470942929607
+    },
+    "branch-misses:u": {
+      "before": 50795211,
+      "after": 49666586,
+      "percent_change": -2.2219122192444485
+    }
+  }
+}

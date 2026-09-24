@@ -14,6 +14,28 @@
 namespace plainmp::constraint {
 
 namespace {
+// Axis-aligned boxes need no separate AABB pass: the face distances
+// simultaneously reject the envelope and supply its remaining clearance.
+inline double aligned_box_clearance(const collision::BoxSDF& box,
+                                    const Eigen::Vector3d& point, double radius,
+                                    double required) {
+  const double target = radius + required;
+  const double infinity = std::numeric_limits<double>::infinity();
+  const auto half = (box.get_width() * .5).eval();
+  const double z = std::abs(point.z() - box.pose.position_.z()) - half.z();
+  if (z > target) return infinity;
+  const double x = std::abs(point.x() - box.pose.position_.x()) - half.x();
+  if (x > target) return infinity;
+  const double y = std::abs(point.y() - box.pose.position_.y()) - half.y();
+  if (y > target) return infinity;
+  const double dx = std::max(x, 0.0), dy = std::max(y, 0.0),
+               dz = std::max(z, 0.0);
+  const double squared = dx * dx + dy * dy + dz * dz;
+  if (squared > target * target) return infinity;
+  if (squared <= radius * radius) return -radius;
+  return std::sqrt(squared) - radius;
+}
+
 // Return the available clearance, or +infinity when the requested margin is
 // already certified. Retain squared distances until a smaller interval must be
 // computed; plane/face cases need no square root at all.
@@ -304,27 +326,44 @@ bool SphereCollisionCst::check_motion_envelope(double& rate) {
     group.create_group_sphere_position_cache(kin_);
     const double speed = bounds.group_margin[g];
     const double error = 2 * bounds.error[g] + bounds.rounding;
+    double movement = speed * rate;
+    double padding = movement + error;
     for (size_t o = 0; o < all_sdfs_cache_.size(); ++o) {
       const auto& sdf = all_sdfs_cache_[o];
-      const double outer = group.group_radius + speed * rate + error;
-      if (sdf->is_outside_aabb(group.group_sphere_position_cache, outer) ||
-          sdf->is_outside(group.group_sphere_position_cache, outer))
+      const bool aligned_box =
+          bounds.kinds[o] == collision::BOX &&
+          static_cast<const collision::BoxSDF&>(*sdf).pose.axis_aligned_;
+      const double outer = group.group_radius + padding;
+      if (aligned_box) {
+        if (aligned_box_clearance(static_cast<const collision::BoxSDF&>(*sdf),
+                                  group.group_sphere_position_cache,
+                                  group.group_radius, padding) > padding)
+          continue;
+      } else if (sdf->is_outside_aabb(group.group_sphere_position_cache,
+                                      outer) ||
+                 sdf->is_outside(group.group_sphere_position_cache, outer)) {
         continue;
+      }
       group.create_sphere_position_cache(kin_);
       for (size_t i = 0; i < group.radii.size(); ++i) {
-        const double radius = group.radii[i] + speed * rate + error;
+        const double radius = group.radii[i] + padding;
         const auto point = group.sphere_positions_cache.col(i);
-        if (!sdf->is_outside_aabb(point, radius)) {
+        if (aligned_box || !sdf->is_outside_aabb(point, radius)) {
           const double clearance =
-              analytic_clearance(*sdf, point, group.radii[i],
-                                 speed * rate + error, bounds.kinds[o]) -
+              (aligned_box ? aligned_box_clearance(
+                                 static_cast<const collision::BoxSDF&>(*sdf),
+                                 point, group.radii[i], padding)
+                           : analytic_clearance(*sdf, point, group.radii[i],
+                                                padding, bounds.kinds[o])) -
               error;
-          if (clearance > speed * rate) continue;
+          if (clearance > movement) continue;
           if (!(clearance > 0) || speed == 0) {
             rate = 0;
             return finish_point_check(g, o, i, 0, 0, 0);
           }
           rate = std::min(rate, clearance / speed);
+          movement = speed * rate;
+          padding = movement + error;
           if (!(rate > bounds.minimum_rate)) {
             rate = 0;
             return finish_point_check(g, o, i, 0, 0, 0);
@@ -342,7 +381,8 @@ bool SphereCollisionCst::check_motion_envelope(double& rate) {
     const double speed = bounds.pair_margin[p];
     const double error =
         2 * (bounds.error[a] + bounds.error[b]) + 2 * bounds.rounding;
-    const double outer = x.group_radius + y.group_radius + speed * rate + error;
+    double padding = speed * rate + error;
+    const double outer = x.group_radius + y.group_radius + padding;
     const double distance_sq =
         (x.group_sphere_position_cache - y.group_sphere_position_cache)
             .squaredNorm();
@@ -351,7 +391,7 @@ bool SphereCollisionCst::check_motion_envelope(double& rate) {
     y.create_sphere_position_cache(kin_);
     for (size_t i = 0; i < x.radii.size(); ++i)
       for (size_t j = 0; j < y.radii.size(); ++j) {
-        const double radius = x.radii[i] + y.radii[j] + speed * rate + error;
+        const double radius = x.radii[i] + y.radii[j] + padding;
         const double squared =
             (x.sphere_positions_cache.col(i) - y.sphere_positions_cache.col(j))
                 .squaredNorm();
@@ -363,6 +403,7 @@ bool SphereCollisionCst::check_motion_envelope(double& rate) {
             return finish_point_check(sphere_groups_.size(), 0, 0, p, i, j);
           }
           rate = std::min(rate, clearance / speed);
+          padding = speed * rate + error;
           if (!(rate > bounds.minimum_rate)) {
             rate = 0;
             return finish_point_check(sphere_groups_.size(), 0, 0, p, i, j);

@@ -1,0 +1,157 @@
+{
+  "certificate-validation-conditioning_stream.json": {
+    "panda": {
+      "anchors": 3000,
+      "certified": 1668,
+      "unproven": 1332,
+      "point_queries": 34692,
+      "mismatches": 0
+    },
+    "panda_hard": {
+      "anchors": 3000,
+      "certified": 1025,
+      "unproven": 1975,
+      "point_queries": 22475,
+      "mismatches": 0
+    },
+    "fetch_table": {
+      "anchors": 3000,
+      "certified": 732,
+      "unproven": 2268,
+      "point_queries": 16908,
+      "mismatches": 0
+    },
+    "fetch_spheres4": {
+      "anchors": 3000,
+      "certified": 827,
+      "unproven": 2173,
+      "point_queries": 18713,
+      "mismatches": 0
+    },
+    "panda_boxes": {
+      "anchors": 3000,
+      "certified": 1618,
+      "unproven": 1382,
+      "point_queries": 33742,
+      "mismatches": 0
+    },
+    "fetch_table_tilted": {
+      "anchors": 3000,
+      "certified": 746,
+      "unproven": 2254,
+      "point_queries": 17174,
+      "mismatches": 0
+    }
+  },
+  "interval-edge-checks-conditioning_stream.json": {
+    "panda": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "panda_hard": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "fetch_table": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "fetch_spheres4": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "panda_boxes": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "fetch_table_tilted": {
+      "boundary_segments": 150,
+      "queries": 6600,
+      "mismatches": 0
+    },
+    "box": {
+      "queries": 210,
+      "supported": true,
+      "mismatches": 0
+    },
+    "translated_box": {
+      "queries": 273,
+      "supported": true,
+      "mismatches": 0
+    },
+    "rotated_box": {
+      "queries": 252,
+      "supported": true,
+      "mismatches": 0
+    },
+    "base_changed_between_edges": {
+      "queries": 189,
+      "supported": true,
+      "mismatches": 0
+    },
+    "link_added_after_preparation": {
+      "queries": 252,
+      "supported": true,
+      "mismatches": 0
+    },
+    "attachment": {
+      "queries": 252,
+      "supported": true,
+      "mismatches": 0
+    },
+    "tiny_radius_fallback": {
+      "queries": 21,
+      "supported": false,
+      "mismatches": 0
+    },
+    "cloud_fallback": {
+      "queries": 21,
+      "supported": false,
+      "mismatches": 0
+    },
+    "planar_fallback": {
+      "queries": 21,
+      "supported": false,
+      "mismatches": 0
+    },
+    "prismatic_out_of_bounds_fallback": {
+      "mismatches": 0
+    }
+  },
+  "box-certificate-validation-conditioning_stream.json": {
+    "anchors": 6000,
+    "certificates": 872,
+    "queries": 33032,
+    "mismatches": 0
+  },
+  "planning_modes": {
+    "plans": 600,
+    "modes": [
+      "box",
+      "budget",
+      "euclidean_long",
+      "euclidean_short",
+      "generic",
+      "shortcut"
+    ],
+    "checked": [
+      "success",
+      "path_sha256",
+      "logical_calls",
+      "final_joint_positions"
+    ],
+    "mismatches": 0
+  },
+  "interval_grid": {
+    "sets": 500000,
+    "includes_ulp_boundary_probes": true,
+    "mismatches": 0
+  },
+  "validated_binary_sha256": "f661a0d10d12b8db53c4105b43bd636e53400dc292739fc1a4a63e0fcba31471",
+  "final_binary_matches_validated_binary": true
+}

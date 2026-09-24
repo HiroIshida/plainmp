@@ -96,7 +96,7 @@ class SphereCollisionCst : public IneqConstraintBase {
   bool prepare_motion_certificate(const VectorInput& start, const VectorInput& end,
                                   double rate_radius);
   bool is_valid_with_motion_certificate(const VectorInput& q, double& certified_radius);
-  void note_certified_skip() { ++motion_certificate_stats_[3]; }
+  void note_certified_skip(size_t count) { motion_certificate_stats_[3] += count; }
   std::array<size_t, 4> motion_certificate_stats() const { return motion_certificate_stats_; }
   void reset_motion_certificate_stats() { motion_certificate_stats_.fill(0); }
   double motion_certificate_steps() const { return motion_certificate_steps_; }

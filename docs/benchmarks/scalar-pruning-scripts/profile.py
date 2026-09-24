@@ -63,7 +63,7 @@ def driver(args):
         ctl=str(Path(tmp)/'ctl');ack=str(Path(tmp)/'ack');os.mkfifo(ctl);os.mkfifo(ack)
         command=['perf',args.kind,'-D','-1','--control',f'fifo:{ctl},{ack}']
         if args.kind=='record':
-            command += ['-e','cycles:u','-F','999','--call-graph','dwarf,8192','--no-buildid-cache','-o',str(ROOT/'results'/(tag+'.data'))]
+            command += ['-e',args.record_event,'-F','999','--call-graph','dwarf,8192','--no-buildid-cache','-o',str(ROOT/'results'/(tag+'.data'))]
         else:
             command += ['-x',';','-e',args.events,'-o',str(ROOT/'results'/(tag+'.stat'))]
         command += ['--','taskset','-c','2',sys.executable,__file__,'--worker','--variant',args.variant,'--scene',args.scene,'--mode',args.mode,'--seconds',str(args.seconds),'--plans',str(args.plans),'--ctl',ctl,'--ack',ack]
@@ -83,5 +83,6 @@ if __name__=='__main__':
     p.add_argument('--mode',choices=['plan','query'],default='plan');p.add_argument('--seconds',type=float,default=10)
     p.add_argument('--plans',type=int,default=0)
     p.add_argument('--kind',choices=['record','stat'],default='record');p.add_argument('--tag')
+    p.add_argument('--record-event',default='cycles:u')
     p.add_argument('--events',default='cycles:u,instructions:u,branches:u,branch-misses:u')
     args=p.parse_args();worker(args) if args.worker else driver(args)

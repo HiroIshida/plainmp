@@ -19,6 +19,9 @@ SIMD導入直前の `fe44f5ffccf38ab3a1f121723aec42893f05667c` を基準に、
 実験機能は `PLAINMP_ENABLE_INTERVAL_PRUNING=ON` で有効化する。CMake既定値はOFF。
 この作業treeの `build` はONでビルド済み。
 
+追加の条件判定・管理処理の最適化は
+[次の実験記録](scalar-pruning-conditioning.md)にまとめた。以下の数値は初回実装時の記録。
+
 ## 計画時間
 
 2026-09-24、Ryzen 7 7840HS、CPU 2、GCC 9.4、Release/O3/LTO。

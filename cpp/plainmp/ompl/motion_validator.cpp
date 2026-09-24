@@ -43,7 +43,8 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
    */
 
   const auto space = si_->getStateSpace();
-  size_t n_test = std::floor(1 / step_ratio) + 2;  // including start and end
+  const double inverse_step = 1 / step_ratio;
+  size_t n_test = std::floor(inverse_step) + 2;  // including start and end
   if (n_test > 3 && n_test <= 128 && n_test < SEQUENCE_TABLE.size() + 1 && certificate_.prepare) {
     const double rate_radius = std::min(1.0, certificate_.radius_steps * step_ratio);
     if (certificate_.prepare(s1, s2, rate_radius)) {
@@ -51,14 +52,21 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
       const auto& sequence = SEQUENCE_TABLE[n_test-1];
       double last_rate = 1;
       bool last_skipped = false;
+      // Preserve the logical count at each actual query (including the first
+      // invalid one), without an indirect callback for every skipped sample.
+      size_t pending_skips = 0;
       for (size_t i = 1; i < n_test; ++i) {
         const size_t index = sequence[i];
         const double rate = i == 1 ? 1.0 : index * step_ratio;
         last_rate = rate;
         last_skipped = covered[index];
         if (last_skipped) {
-          certificate_.skip();
+          ++pending_skips;
           continue;
+        }
+        if (pending_skips != 0) {
+          certificate_.skip(pending_skips);
+          pending_skips = 0;
         }
         const ob::State* state = s2;
         if (i != 1) {
@@ -71,11 +79,20 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
           // Only skip members of the original discrete query set. Uncertain
           // intervals use the ordinary point test in the original order.
           const double inner_radius = std::max(0.0, certified_radius - 1e-12);
-          for (size_t j = 1; j + 1 < n_test; ++j)
+          // Only visit grid indices near the certified interval. A one-index
+          // guard on each side retains the original comparison at boundaries
+          // even when the multiplication used for these bounds rounds.
+          const int first = std::max(
+              1, static_cast<int>((rate - inner_radius) * inverse_step) - 1);
+          const int last = std::min(
+              static_cast<int>(n_test) - 2,
+              static_cast<int>((rate + inner_radius) * inverse_step) + 1);
+          for (int j = first; j <= last; ++j)
             if (std::abs(j * step_ratio - rate) <= inner_radius) covered[j] = true;
           if (std::abs(1.0-rate) <= inner_radius) covered[n_test-1] = true;
         }
       }
+      if (pending_skips != 0) certificate_.skip(pending_skips);
       if (last_skipped) {
         space->interpolate(s1, s2, last_rate, s_test_);
         certificate_.restore(s_test_);
