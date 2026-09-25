@@ -11,8 +11,8 @@
 #include <ompl/base/MotionValidator.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
-#include <vector>
 #include <functional>
+#include <vector>
 
 namespace plainmp::ompl_wrapper {
 

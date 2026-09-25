@@ -345,25 +345,30 @@ struct BoxSDF : public TransformableSDFBase {
         return true;
       }
       auto p_from_center = p - pose.position_;
-      x_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
+      x_signed_dist =
+          std::abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
       if (x_signed_dist > radius) {
         return true;
       }
-      y_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
+      y_signed_dist =
+          std::abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
       if (y_signed_dist > radius) {
         return true;
       }
     } else {
       auto p_from_center = p - pose.position_;
-      x_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
+      x_signed_dist =
+          std::abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
       if (x_signed_dist > radius) {
         return true;
       }
-      y_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
+      y_signed_dist =
+          std::abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
       if (y_signed_dist > radius) {
         return true;
       }
-      z_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(2))) - half_width_(2);
+      z_signed_dist =
+          std::abs(p_from_center.dot(pose.rot_.col(2))) - half_width_(2);
       if (z_signed_dist > radius) {
         return true;
       }
@@ -452,7 +457,8 @@ struct CylinderSDF : public TransformableSDFBase {
       ydot_abs = std::abs(p(1) - pose.position_(1));
     } else {
       auto p_from_center = p - pose.position_;
-      z_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
+      z_signed_dist =
+          std::abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
       xdot_abs = std::abs(p_from_center.dot(pose.rot_.col(0)));
       ydot_abs = std::abs(p_from_center.dot(pose.rot_.col(1)));
     }
@@ -475,7 +481,8 @@ struct CylinderSDF : public TransformableSDFBase {
       ydot_abs = std::abs(p(1) - pose.position_(1));
     } else {
       auto p_from_center = p - pose.position_;
-      z_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
+      z_signed_dist =
+          std::abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
       if (z_signed_dist > radius) {
         return true;
       }

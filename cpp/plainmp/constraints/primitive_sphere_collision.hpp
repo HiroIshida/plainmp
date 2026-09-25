@@ -89,7 +89,8 @@ class SphereCollisionCst : public IneqConstraintBase {
   // The anchor must lie on the prepared segment. Keep the robot structure,
   // uncontrolled joints, base, and SDFs fixed while checking that segment.
   // The returned radius uses the segment's normalized interpolation parameter.
-  bool prepare_motion_certificate(const VectorInput& start, const VectorInput& end,
+  bool prepare_motion_certificate(const VectorInput& start,
+                                  const VectorInput& end,
                                   double rate_radius);
   bool is_valid_with_motion_certificate(const VectorInput& q,
                                         double& certified_radius);
@@ -119,8 +120,12 @@ class SphereCollisionCst : public IneqConstraintBase {
 
  private:
   bool check_motion_envelope(double& radius);
-  bool finish_point_check(size_t group, size_t sdf, size_t sphere,
-                          size_t pair, size_t row, size_t column);
+  bool finish_point_check(size_t group,
+                          size_t sdf,
+                          size_t sphere,
+                          size_t pair,
+                          size_t row,
+                          size_t column);
   std::shared_ptr<ScalarMotionBounds> motion_bounds_;
   bool motion_certificate_prepared_ = false;
   void set_all_sdfs();
