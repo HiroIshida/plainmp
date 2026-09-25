@@ -251,13 +251,13 @@ bool ompl::geometric::ERTConnect::getValidSegment(const Motion *imotion, Motion 
 ompl::base::PlannerStatus ompl::geometric::ERTConnect::solve(const base::PlannerTerminationCondition &ptc)
 {
     checkValidity();
-    auto *goal_s = dynamic_cast<base::GoalSampleableRegion *>(pdef_->getGoal().get());
-
-    if (goal_s == nullptr)
+    auto *goal = pdef_->getGoal().get();
+    if (goal == nullptr || !goal->hasType(base::GOAL_SAMPLEABLE_REGION))
     {
         OMPL_ERROR("%s: Unknown type of goal", getName().c_str());
         return base::PlannerStatus::UNRECOGNIZED_GOAL_TYPE;
     }
+    auto *goal_s = goal->as<base::GoalSampleableRegion>();
 
     while (const base::State *st = pis_.nextStart())
     {
