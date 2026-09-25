@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "ninja", "wheel"]
+requires = ["scikit-build-core", "ninja", "wheel", "nanobind>=2.9,<2.10"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -22,5 +22,3 @@ dependencies = [
 [tool.scikit-build]
 # see: https://scikit-build-core.readthedocs.io/en/latest/configuration/index.html#customizing-the-built-wheel
 wheel.install-dir = "plainmp"
-# Why do we need this? The documentation says that anything except listed in .gitignore will be included...
-sdist.include = ["pybind11"]

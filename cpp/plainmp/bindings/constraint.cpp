@@ -26,93 +26,102 @@ using namespace plainmp::kinematics;
 
 namespace plainmp::bindings {
 
-void bind_constraint_submodule(py::module& m) {
+void bind_constraint_submodule(nb::module_& m) {
   auto cst_m = m.def_submodule("constraint");
-  py::class_<ConstraintBase, ConstraintBase::Ptr>(cst_m, "ConstraintBase")
+  nb::class_<ConstraintBase>(cst_m, "ConstraintBase")
       .def("update_kintree", &ConstraintBase::update_kintree)
       .def("evaluate", &ConstraintBase::evaluate)
       .def("get_kin", &ConstraintBase::get_kin)
       .def("get_control_joint_names", &ConstraintBase::get_control_joint_names);
-  py::class_<EqConstraintBase, EqConstraintBase::Ptr, ConstraintBase>(
-      cst_m, "EqConstraintBase");
-  py::class_<IneqConstraintBase, IneqConstraintBase::Ptr, ConstraintBase>(
-      cst_m, "IneqConstraintBase");
-  py::class_<ConfigPointCst, ConfigPointCst::Ptr, EqConstraintBase>(
-      cst_m, "ConfigPointCst")
-      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+  nb::class_<EqConstraintBase, ConstraintBase>(cst_m, "EqConstraintBase");
+  nb::class_<IneqConstraintBase, ConstraintBase>(cst_m, "IneqConstraintBase");
+  nb::class_<ConfigPointCst, EqConstraintBase>(cst_m, "ConfigPointCst")
+      .def(nb::init<std::shared_ptr<kin::KinematicModel<double>>,
                     const std::vector<std::string>&, BaseType,
                     const Eigen::VectorXd&>())
       .def("cst_dim", &ConfigPointCst::cst_dim);
-  py::class_<LinkPoseCst, LinkPoseCst::Ptr, EqConstraintBase>(cst_m,
-                                                              "LinkPoseCst")
-      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
-                    const std::vector<std::string>&, BaseType,
-                    const std::vector<std::string>&,
-                    const std::vector<Eigen::VectorXd>&>())
+  nb::class_<LinkPoseCst, EqConstraintBase>(cst_m, "LinkPoseCst")
+      .def("__init__",
+           [](LinkPoseCst* self,
+              std::shared_ptr<kin::KinematicModel<double>> kin,
+              const std::vector<std::string>& control_joint_names,
+              BaseType base_type, const std::vector<std::string>& link_names,
+              nb::sequence poses) {
+             std::vector<Eigen::VectorXd> converted;
+             converted.reserve(nb::len(poses));
+             for (nb::handle pose : poses) {
+               nb::sequence values = nb::cast<nb::sequence>(pose);
+               converted.push_back(vector_from_sequence(values));
+             }
+             new (self) LinkPoseCst(std::move(kin), control_joint_names,
+                                    base_type, link_names, converted);
+           })
       .def("cst_dim", &LinkPoseCst::cst_dim)
       .def("get_desired_poses", &LinkPoseCst::get_desired_poses);
-  py::class_<RelativePoseCst, RelativePoseCst::Ptr, EqConstraintBase>(
-      cst_m, "RelativePoseCst")
-      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+  nb::class_<RelativePoseCst, EqConstraintBase>(cst_m, "RelativePoseCst")
+      .def(nb::init<std::shared_ptr<kin::KinematicModel<double>>,
                     const std::vector<std::string>&, BaseType,
                     const std::string&, const std::string&,
                     const Eigen::Vector3d&>());
-  py::class_<FixedZAxisCst, FixedZAxisCst::Ptr, EqConstraintBase>(
-      cst_m, "FixedZAxisCst")
-      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+  nb::class_<FixedZAxisCst, EqConstraintBase>(cst_m, "FixedZAxisCst")
+      .def(nb::init<std::shared_ptr<kin::KinematicModel<double>>,
                     const std::vector<std::string>&, BaseType,
                     const std::string&>());
-  py::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
-      .def(py::init<const std::string&, const Eigen::Matrix3Xd&,
+  nb::class_<SphereAttachmentSpec>(cst_m, "SphereAttachmentSpec")
+      .def(nb::init<const std::string&, const Eigen::Matrix3Xd&,
                     Eigen::VectorXd, bool>())
-      .def_readonly("parent_link_name", &SphereAttachmentSpec::parent_link_name)
-      .def_readwrite("relative_positions",
-                     &SphereAttachmentSpec::relative_positions)
-      .def_readwrite("radii", &SphereAttachmentSpec::radii);
+      .def_ro("parent_link_name", &SphereAttachmentSpec::parent_link_name)
+      .def_rw("relative_positions", &SphereAttachmentSpec::relative_positions)
+      .def_rw("radii", &SphereAttachmentSpec::radii);
 
-  py::class_<SphereCollisionCst, SphereCollisionCst::Ptr, IneqConstraintBase>(
-      cst_m, "SphereCollisionCst")
-      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+  nb::class_<SphereCollisionCst, IneqConstraintBase>(cst_m,
+                                                     "SphereCollisionCst")
+      .def(nb::init<std::shared_ptr<kin::KinematicModel<double>>,
                     const std::vector<std::string>&, BaseType,
                     const std::vector<SphereAttachmentSpec>&,
                     const std::vector<std::pair<std::string, std::string>>&,
-                    std::optional<SDFBase::Ptr>, bool>())
+                    std::optional<SDFBase::Ptr>, bool>(),
+           nb::arg("kin"), nb::arg("control_joint_names"), nb::arg("base_type"),
+           nb::arg("attachments"), nb::arg("self_collision_pairs"),
+           nb::arg("sdf").none(), nb::arg("use_mesh"))
       .def("set_sdf", &SphereCollisionCst::set_sdf)
       .def("get_sdf", &SphereCollisionCst::get_sdf)
       .def("is_valid", &SphereCollisionCst::is_valid)
       .def("get_group_spheres", &SphereCollisionCst::get_group_spheres)
       .def("get_all_spheres", &SphereCollisionCst::get_all_spheres);
 
-  py::class_<AppliedForceSpec>(cst_m, "AppliedForceSpec")
-      .def(py::init<const std::string&, double>())
-      .def_readonly("link_name", &AppliedForceSpec::link_name)
-      .def_readonly("force", &AppliedForceSpec::force);
+  nb::class_<AppliedForceSpec>(cst_m, "AppliedForceSpec")
+      .def(nb::init<const std::string&, double>())
+      .def_ro("link_name", &AppliedForceSpec::link_name)
+      .def_ro("force", &AppliedForceSpec::force);
 
-  py::class_<ComInPolytopeCst, ComInPolytopeCst::Ptr, IneqConstraintBase>(
-      cst_m, "ComInPolytopeCst")
-      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+  nb::class_<ComInPolytopeCst, IneqConstraintBase>(cst_m, "ComInPolytopeCst")
+      .def(nb::init<std::shared_ptr<kin::KinematicModel<double>>,
                     const std::vector<std::string>&, BaseType, BoxSDF::Ptr,
                     const std::vector<AppliedForceSpec>&>())
       .def("is_valid", &ComInPolytopeCst::is_valid);
-  py::class_<LinkPositionBoundCst, LinkPositionBoundCst::Ptr,
-             IneqConstraintBase>(cst_m, "LinkPositionBoundCst")
-      .def(py::init<std::shared_ptr<kin::KinematicModel<double>>,
+  nb::class_<LinkPositionBoundCst, IneqConstraintBase>(cst_m,
+                                                       "LinkPositionBoundCst")
+      .def(nb::init<std::shared_ptr<kin::KinematicModel<double>>,
                     const std::vector<std::string>&, BaseType,
                     const std::string&, size_t, const std::optional<double>&,
-                    const std::optional<double>&>())
+                    const std::optional<double>&>(),
+           nb::arg("kin"), nb::arg("control_joint_names"), nb::arg("base_type"),
+           nb::arg("link_name"), nb::arg("axis"), nb::arg("lower_bound").none(),
+           nb::arg("upper_bound").none())
       .def("is_valid", &LinkPositionBoundCst::is_valid);
-  py::class_<EqCompositeCst, EqCompositeCst::Ptr>(cst_m, "EqCompositeCst")
-      .def(py::init<std::vector<EqConstraintBase::Ptr>>())
+  nb::class_<EqCompositeCst>(cst_m, "EqCompositeCst")
+      .def(nb::init<std::vector<EqConstraintBase::Ptr>>())
       .def("evaluate", &EqCompositeCst::evaluate)
-      .def_readonly("constraints", &EqCompositeCst::constraints_);
-  py::class_<IneqCompositeCst, IneqCompositeCst::Ptr>(cst_m, "IneqCompositeCst")
-      .def(py::init<std::vector<IneqConstraintBase::Ptr>>())
+      .def_ro("constraints", &EqCompositeCst::constraints_);
+  nb::class_<IneqCompositeCst>(cst_m, "IneqCompositeCst")
+      .def(nb::init<std::vector<IneqConstraintBase::Ptr>>())
       .def("evaluate", &IneqCompositeCst::evaluate)
       .def("is_valid", &IneqCompositeCst::is_valid)
       .def("__str__", &IneqCompositeCst::to_string)
-      .def_readonly("constraints", &IneqCompositeCst::constraints_);
-  py::class_<SequentialCst, SequentialCst::Ptr>(cst_m, "SequentialCst")
-      .def(py::init<size_t, size_t>())
+      .def_ro("constraints", &IneqCompositeCst::constraints_);
+  nb::class_<SequentialCst>(cst_m, "SequentialCst")
+      .def(nb::init<size_t, size_t>())
       .def("add_globally", &SequentialCst::add_globally)
       .def("add_at", &SequentialCst::add_at)
       .def("add_motion_step_box_constraint",

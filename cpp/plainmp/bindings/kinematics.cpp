@@ -16,41 +16,67 @@ using namespace plainmp::kinematics;
 
 namespace plainmp::bindings {
 
-void bind_kinematics_submodule(py::module& m) {
+void bind_kinematics_submodule(nb::module_& m) {
   auto m_kin = m.def_submodule("kinematics");
-  py::class_<urdf::Link, urdf::LinkSharedPtr>(m_kin, "Link")
-      .def_readonly("name", &urdf::Link::name)
-      .def_readonly("id", &urdf::Link::id);
+  nb::class_<urdf::Link>(m_kin, "Link")
+      .def_ro("name", &urdf::Link::name)
+      .def_ro("id", &urdf::Link::id);
 
-  py::enum_<BaseType>(m_kin, "BaseType")
+  nb::enum_<BaseType>(m_kin, "BaseType")
       .value("FIXED", BaseType::FIXED)
       .value("FLOATING", BaseType::FLOATING)
       .value("PLANAR", BaseType::PLANAR);
 
   // parent class
-  py::class_<KinematicModel<double>, std::shared_ptr<KinematicModel<double>>>(
-      m_kin, "KinematicModel_cpp", py::module_local());
+  nb::class_<KinematicModel<double>>(m_kin, "KinematicModel_cpp");
 
   // child "binding" class
-  py::class_<utils::_KinematicModel, std::shared_ptr<utils::_KinematicModel>,
-             KinematicModel<double>>(m_kin, "KinematicModel",
-                                     py::module_local())
-      .def(py::init<std::string&>())
-      .def("add_new_link", &utils::_KinematicModel::add_new_link_py)
+  nb::class_<utils::_KinematicModel, KinematicModel<double>>(m_kin,
+                                                             "KinematicModel")
+      .def(nb::init<std::string&>())
+      .def("add_new_link",
+           [](utils::_KinematicModel& self, const std::string& link_name,
+              const std::string& parent_name, nb::sequence position,
+              nb::sequence rpy, bool consider_rotation) {
+             const Eigen::Vector3d position_vec =
+                 vector3_from_sequence(position);
+             const Eigen::Vector3d rpy_vec = vector3_from_sequence(rpy);
+             return self.add_new_link_py(
+                 link_name, parent_name,
+                 {position_vec.x(), position_vec.y(), position_vec.z()},
+                 {rpy_vec.x(), rpy_vec.y(), rpy_vec.z()}, consider_rotation);
+           })
       .def("debug_get_link_pose", &utils::_KinematicModel::debug_get_link_pose)
       .def("set_joint_positions", &utils::_KinematicModel::set_joint_angles,
-           py::arg("joint_ids"), py::arg("positions"),
-           py::arg("accurate") = true)
+           nb::arg("joint_ids"), nb::arg("positions"),
+           nb::arg("accurate") = true)
+      .def(
+          "set_joint_positions",
+          [](utils::_KinematicModel& self, const std::vector<size_t>& joint_ids,
+             nb::sequence positions, bool accurate) {
+            Eigen::VectorXd vector = vector_from_sequence(positions);
+            self.set_joint_angles(joint_ids, vector, accurate);
+          },
+          nb::arg("joint_ids"), nb::arg("positions"),
+          nb::arg("accurate") = true)
       .def("get_joint_positions", &utils::_KinematicModel::get_joint_angles)
       .def("set_base_pose", &utils::_KinematicModel::set_base_pose)
+      .def("set_base_pose",
+           [](utils::_KinematicModel& self, nb::sequence values) {
+             if (nb::len(values) != 7) {
+               throw std::invalid_argument("expected a 7-element pose");
+             }
+             const Eigen::VectorXd vector = vector_from_sequence(values);
+             self.set_base_pose(vector);
+           })
       .def("get_base_pose", &utils::_KinematicModel::get_base_pose)
       .def("get_joint_position_limits",
            &utils::_KinematicModel::get_joint_position_limits)
       .def("get_gravity_term", &utils::_KinematicModel::get_gravity_term,
-           py::arg("joint_ids"), py::arg("base_type") = BaseType::FIXED)
+           nb::arg("joint_ids"), nb::arg("base_type") = BaseType::FIXED)
       .def("get_gravity_term2", &utils::_KinematicModel::get_gravity_term2,
-           py::arg("joint_ids"), py::arg("positions"),
-           py::arg("base_type") = BaseType::FIXED, py::arg("accurate") = true)
+           nb::arg("joint_ids"), nb::arg("positions"),
+           nb::arg("base_type") = BaseType::FIXED, nb::arg("accurate") = true)
       .def("get_link_ids", &utils::_KinematicModel::get_link_ids)
       .def("get_joint_ids", &utils::_KinematicModel::get_joint_ids);
 }
