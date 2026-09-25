@@ -12,6 +12,12 @@ FetchContent_Declare(googletest
 FetchContent_MakeAvailable(googletest)
 
 add_executable(test_motion_certificate test_motion_certificate.cpp)
+# Match plainmp_core and the Python extension: Apple ARM64 RTTI distinguishes
+# default-visibility and hidden types, even for the same class in one binary.
+set_target_properties(test_motion_certificate PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON
+)
 target_link_libraries(test_motion_certificate PRIVATE plainmp_core GTest::gtest_main)
 include(GoogleTest)
 gtest_discover_tests(test_motion_certificate)
