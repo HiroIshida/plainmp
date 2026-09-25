@@ -22,6 +22,8 @@ class LinkPoseCst : public EqConstraintBase {
               const std::vector<Eigen::VectorXd>& poses);
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
+  void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
+                           Eigen::Ref<Eigen::MatrixXd> jacobian) override;
   size_t cst_dim() const;
   std::string get_name() const override { return "LinkPoseCst"; }
 

@@ -246,6 +246,41 @@ def test_eq_composite_constraint():
     check_jacobian(cst, 8)
 
 
+def test_evaluate_into_reuses_output_arrays():
+    fs = FetchSpec()
+    q = fs.q_reset_pose()
+    pose_cst = fs.create_gripper_pose_const([0.7, 0.2, 0.8])
+    config_cst = fs.create_config_point_const(q)
+    collision_cst = fs.create_collision_const(True)
+    constraints = [
+        pose_cst,
+        collision_cst,
+        EqCompositeCst([pose_cst, config_cst]),
+        IneqCompositeCst([collision_cst]),
+    ]
+
+    for cst in constraints:
+        values = np.empty(cst.cst_dim())
+        jacobian = np.empty((cst.cst_dim(), len(q)), order="F")
+        for q_test in (q, q + 0.01):
+            cst.evaluate_into(q_test, values, jacobian)
+            expected_values, expected_jacobian = cst.evaluate(q_test)
+            np.testing.assert_allclose(values, expected_values)
+            np.testing.assert_allclose(jacobian, expected_jacobian)
+
+    pose_jacobian = np.empty((pose_cst.cst_dim(), len(q)), order="F")
+    with pytest.raises(ValueError, match="output shape mismatch"):
+        pose_cst.evaluate_into(q, np.empty(pose_cst.cst_dim() + 1), pose_jacobian)
+    with pytest.raises(TypeError):
+        pose_cst.evaluate_into(
+            q, np.empty(pose_cst.cst_dim()), np.empty((pose_cst.cst_dim(), len(q)))
+        )
+    read_only = np.empty(pose_cst.cst_dim())
+    read_only.flags.writeable = False
+    with pytest.raises(TypeError):
+        pose_cst.evaluate_into(q, read_only, np.empty((pose_cst.cst_dim(), len(q)), order="F"))
+
+
 @pytest.mark.parametrize("with_msbox", [False, True])
 @pytest.mark.parametrize("with_fixed_point", [False, True])
 def test_sequntial_constraint(with_msbox: bool, with_fixed_point: bool):

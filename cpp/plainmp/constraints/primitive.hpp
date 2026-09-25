@@ -78,7 +78,21 @@ class ConstraintBase {
     return evaluate_dirty();
   }
 
+  void evaluate_into(const Eigen::VectorXd& q,
+                     Eigen::Ref<Eigen::VectorXd> values,
+                     Eigen::Ref<Eigen::MatrixXd> jacobian) {
+    update_kintree(q);
+    post_update_kintree();
+    evaluate_dirty_into(values, jacobian);
+  }
+
   virtual std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() = 0;
+  virtual void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
+                                   Eigen::Ref<Eigen::MatrixXd> jacobian) {
+    auto [result_values, result_jacobian] = evaluate_dirty();
+    values = result_values;
+    jacobian = result_jacobian;
+  }
   virtual size_t cst_dim() const = 0;
   virtual std::string get_name() const = 0;
   virtual bool is_equality() const = 0;

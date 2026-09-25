@@ -24,6 +24,14 @@ class ConstraintBase:
             jacobian: constraint jacobian (m, n)
         """
         ...
+    def evaluate_into(self, q: np.ndarray, values: np.ndarray, jacobian: np.ndarray) -> None:
+        """Write values and Jacobian into preallocated arrays.
+
+        Both outputs must be writable float64 arrays. The Jacobian must have
+        Fortran-contiguous layout and shape (cst_dim(), len(q)).
+        """
+        ...
+    def cst_dim(self) -> int: ...
     def get_kin(self) -> KinematicModel:
         """Get the kinematic model wrapper
         Returns:

@@ -22,6 +22,21 @@ def scipinize(fun: Callable) -> Tuple[Callable, Callable]:
     return fun_scipinized, fun_scipinized_jac
 
 
+def _make_evaluator(constraint, q_dim: int) -> Callable:
+    """Reuse output buffers until the next evaluation of this constraint."""
+    if not hasattr(constraint, "evaluate_into"):
+        return constraint.evaluate
+
+    values = np.empty(constraint.cst_dim(), dtype=np.float64)
+    jacobian = np.empty((len(values), q_dim), dtype=np.float64, order="F")
+
+    def evaluate(q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        constraint.evaluate_into(q, values, jacobian)
+        return values, jacobian
+
+    return evaluate
+
+
 @dataclass
 class IKConfig:
     ftol: float = 1e-6
@@ -93,8 +108,10 @@ def solve_ik(
     if config is None:
         config = IKConfig()
 
+    evaluate_eq = _make_evaluator(eq_const, len(lb))
+
     def objective_fun(q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        vals, jac = eq_const.evaluate(q)
+        vals, jac = evaluate_eq(q)
         f = vals.dot(vals)
         grad = 2 * vals.dot(jac)
         elapsed_time = time.time() - ts
@@ -107,9 +124,10 @@ def solve_ik(
     # define constraint
     constraints = []
     if ineq_const is not None:
+        evaluate_ineq = _make_evaluator(ineq_const, len(lb))
 
         def fun_ineq(q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-            val, jac = ineq_const.evaluate(q)
+            val, jac = evaluate_ineq(q)
             margin_numerical = 1e-6
             return val - margin_numerical, jac
 
@@ -202,6 +220,8 @@ def solve_ik_srinv(
     if q_seed is None:
         q_seed = np.random.uniform(lb, ub)
 
+    evaluate_pose = _make_evaluator(link_pose_cst, len(lb))
+
     for trial in range(max_trial):
         q = q_seed.copy()
 
@@ -210,7 +230,7 @@ def solve_ik_srinv(
             if config.timeout is not None and elapsed_time > config.timeout:
                 return IKResult(np.empty([0]), elapsed_time, False, trial + 1)
 
-            vals, jac = link_pose_cst.evaluate(q)
+            vals, jac = evaluate_pose(q)
 
             error = np.linalg.norm(vals)
             if error < config.acceptable_error:

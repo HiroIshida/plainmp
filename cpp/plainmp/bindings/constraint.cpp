@@ -26,11 +26,33 @@ using namespace plainmp::kinematics;
 
 namespace plainmp::bindings {
 
+using OutputValues = nb::ndarray<double, nb::numpy, nb::ndim<1>, nb::c_contig>;
+using OutputJacobian =
+    nb::ndarray<double, nb::numpy, nb::ndim<2>, nb::f_contig>;
+
+template <typename Constraint>
+void evaluate_into(Constraint& self,
+                   const Eigen::VectorXd& q,
+                   OutputValues values,
+                   OutputJacobian jacobian) {
+  const size_t rows = self.cst_dim();
+  if (values.shape(0) != rows || jacobian.shape(0) != rows ||
+      jacobian.shape(1) != static_cast<size_t>(q.size())) {
+    throw std::invalid_argument("evaluate_into output shape mismatch");
+  }
+  Eigen::Map<Eigen::VectorXd> result_values(values.data(), rows);
+  Eigen::Map<Eigen::MatrixXd> result_jacobian(jacobian.data(), rows, q.size());
+  self.evaluate_into(q, result_values, result_jacobian);
+}
+
 void bind_constraint_submodule(nb::module_& m) {
   auto cst_m = m.def_submodule("constraint");
   nb::class_<ConstraintBase>(cst_m, "ConstraintBase")
       .def("update_kintree", &ConstraintBase::update_kintree)
       .def("evaluate", &ConstraintBase::evaluate)
+      .def("evaluate_into", &evaluate_into<ConstraintBase>, nb::arg("q"),
+           nb::arg("values").noconvert(), nb::arg("jacobian").noconvert())
+      .def("cst_dim", &ConstraintBase::cst_dim)
       .def("get_kin", &ConstraintBase::get_kin)
       .def("get_control_joint_names", &ConstraintBase::get_control_joint_names);
   nb::class_<EqConstraintBase, ConstraintBase>(cst_m, "EqConstraintBase");
@@ -113,10 +135,16 @@ void bind_constraint_submodule(nb::module_& m) {
   nb::class_<EqCompositeCst>(cst_m, "EqCompositeCst")
       .def(nb::init<std::vector<EqConstraintBase::Ptr>>())
       .def("evaluate", &EqCompositeCst::evaluate)
+      .def("evaluate_into", &evaluate_into<EqCompositeCst>, nb::arg("q"),
+           nb::arg("values").noconvert(), nb::arg("jacobian").noconvert())
+      .def("cst_dim", &EqCompositeCst::cst_dim)
       .def_ro("constraints", &EqCompositeCst::constraints_);
   nb::class_<IneqCompositeCst>(cst_m, "IneqCompositeCst")
       .def(nb::init<std::vector<IneqConstraintBase::Ptr>>())
       .def("evaluate", &IneqCompositeCst::evaluate)
+      .def("evaluate_into", &evaluate_into<IneqCompositeCst>, nb::arg("q"),
+           nb::arg("values").noconvert(), nb::arg("jacobian").noconvert())
+      .def("cst_dim", &IneqCompositeCst::cst_dim)
       .def("is_valid", &IneqCompositeCst::is_valid)
       .def("__str__", &IneqCompositeCst::to_string)
       .def_ro("constraints", &IneqCompositeCst::constraints_);

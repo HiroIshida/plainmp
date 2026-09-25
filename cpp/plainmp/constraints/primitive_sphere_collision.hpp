@@ -81,11 +81,15 @@ class SphereCollisionCst : public IneqConstraintBase {
   bool check_ext_collision();
   bool check_self_collision();
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
-  // retrun double and take block of eigen matrix
+  void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
+                           Eigen::Ref<Eigen::MatrixXd> jacobian) override;
+  // Accept a strided row of the caller's Jacobian buffer.
   double evaluate_ext_collision(
-      Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad);
+      Eigen::Ref<Eigen::RowVectorXd, 0, Eigen::InnerStride<Eigen::Dynamic>>
+          grad);
   double evaluate_self_collision(
-      Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad);
+      Eigen::Ref<Eigen::RowVectorXd, 0, Eigen::InnerStride<Eigen::Dynamic>>
+          grad);
 
   inline bool ext_colliision_enabled() const {
     // NOTE: anchored primitives for self collision is also considered
