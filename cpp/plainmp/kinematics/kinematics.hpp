@@ -30,7 +30,7 @@ namespace plainmp::kinematics {
 
 struct RelevancePredicateTable {
   std::vector<std::vector<bool>> table_;
-  RelevancePredicateTable() : RelevancePredicateTable(0, 0){};
+  RelevancePredicateTable() : RelevancePredicateTable(0, 0) {};
   RelevancePredicateTable(int N_link, int N_joint) {
     // Jacobian computation typically iterates over all joint fixing a link,
     // and does not iterate over all links fixing a joint.
@@ -54,7 +54,8 @@ class KinematicModel {
   using Transform = QuatTrans<Scalar>;
   using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
   using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
-  // Views contiguous inputs without allocation; other expressions may be materialized.
+  // Views contiguous inputs without allocation; other expressions may be
+  // materialized.
   using VectorInput = Eigen::Ref<const Vector>;
   using Quat = Eigen::Quaternion<Scalar>;
   using MatrixDynamic = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;

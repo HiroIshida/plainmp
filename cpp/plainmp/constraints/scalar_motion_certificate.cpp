@@ -18,16 +18,20 @@ namespace {
 // already certified. Retain squared distances until a smaller interval must be
 // computed; plane/face cases need no square root at all.
 double analytic_clearance(const collision::PrimitiveSDFBase& sdf,
-                          const Eigen::Vector3d& point, double radius,
-                          double required, int kind) {
+                          const Eigen::Vector3d& point,
+                          double radius,
+                          double required,
+                          int kind) {
   const double target = radius + required;
   const double infinity = std::numeric_limits<double>::infinity();
   if (kind == collision::BOX) {
     const auto& box = static_cast<const collision::BoxSDF&>(sdf);
     Eigen::Vector3d p = point - box.pose.position_;
-    if (!box.pose.axis_aligned_) p = (box.pose.rot_inv_ * p).eval();
+    if (!box.pose.axis_aligned_)
+      p = (box.pose.rot_inv_ * p).eval();
     const Eigen::Vector3d d = p.cwiseAbs() - box.get_width() * .5;
-    if (d.maxCoeff() > target) return infinity;
+    if (d.maxCoeff() > target)
+      return infinity;
     double squared = 0, single = 0;
     unsigned count = 0;
     for (int k = 0; k < 3; ++k) {
@@ -37,26 +41,35 @@ double analytic_clearance(const collision::PrimitiveSDFBase& sdf,
         ++count;
       }
     }
-    if (count == 0) return -radius;
-    if (count == 1) return single - radius;
-    if (squared > target * target) return infinity;
+    if (count == 0)
+      return -radius;
+    if (count == 1)
+      return single - radius;
+    if (squared > target * target)
+      return infinity;
     return std::sqrt(squared) - radius;
   }
   if (kind == collision::CYLINDER) {
     const auto& cylinder = static_cast<const collision::CylinderSDF&>(sdf);
     Eigen::Vector3d p = point - cylinder.pose.position_;
-    if (!cylinder.pose.z_axis_aligned_) p = (cylinder.pose.rot_inv_ * p).eval();
+    if (!cylinder.pose.z_axis_aligned_)
+      p = (cylinder.pose.rot_inv_ * p).eval();
     const double z = std::abs(p.z()) - cylinder.get_half_height();
-    if (z > target) return infinity;
+    if (z > target)
+      return infinity;
     const double squared = p.x() * p.x() + p.y() * p.y();
     const double r = cylinder.get_radius();
     const double expanded = r + target;
-    if (squared > expanded * expanded) return infinity;
-    if (squared <= r * r) return std::max(z, 0.0) - radius;
+    if (squared > expanded * expanded)
+      return infinity;
+    if (squared <= r * r)
+      return std::max(z, 0.0) - radius;
     const double radial = std::sqrt(squared) - r;
-    if (z <= 0) return radial - radius;
+    if (z <= 0)
+      return radial - radius;
     const double corner = radial * radial + z * z;
-    if (corner > target * target) return infinity;
+    if (corner > target * target)
+      return infinity;
     return std::sqrt(corner) - radius;
   }
   if (kind == collision::SPHERE) {
@@ -64,7 +77,8 @@ double analytic_clearance(const collision::PrimitiveSDFBase& sdf,
     const double squared = (point - sphere.pose.position_).squaredNorm();
     const double r = sphere.get_radius();
     const double expanded = r + target;
-    if (squared > expanded * expanded) return infinity;
+    if (squared > expanded * expanded)
+      return infinity;
     return std::sqrt(squared) - r - radius;
   }
   return sdf.evaluate(point) - radius;
@@ -94,19 +108,23 @@ struct ScalarMotionBounds {
         pair_margin(pairs.size()),
         absolute_delta(joints) {
     for (bool rotate : model.link_consider_rotation_)
-      if (!rotate) return;
+      if (!rotate)
+        return;
     std::vector<int> incoming(links, -1),
         controlled(model.joint_types_.size(), -1);
-    for (size_t j = 0; j < controls.size(); ++j) controlled[controls[j]] = j;
+    for (size_t j = 0; j < controls.size(); ++j)
+      controlled[controls[j]] = j;
     for (size_t j = 0; j < model.joint_types_.size(); ++j) {
       incoming[model.joint_child_link_ids_[j]] = j;
-      if (controlled[j] < 0) uncontrolled_joints.push_back(j);
+      if (controlled[j] < 0)
+        uncontrolled_joints.push_back(j);
       if (!(std::abs(model.joint_axes_[j].squaredNorm() - 1) <= 1e-12) ||
           !(std::abs(model.joint_orientations_[j].squaredNorm() - 1) <= 1e-12))
         return;
     }
     for (const auto& f : model.tf_plink_to_hlink_cache_)
-      if (!f.trans().allFinite() || !f.quat().coeffs().allFinite()) return;
+      if (!f.trans().allFinite() || !f.quat().coeffs().allFinite())
+        return;
     std::vector<std::vector<bool>> relevant(groups.size(),
                                             std::vector<bool>(joints));
     for (size_t g = 0; g < groups.size(); ++g) {
@@ -122,7 +140,8 @@ struct ScalarMotionBounds {
       }
       size_t link = groups[g].parent_link_id, depth = 0;
       while (link != model.root_link_id_) {
-        if (++depth > 64) return;
+        if (++depth > 64)
+          return;
         const int j = incoming[link];
         if (j >= 0) {
           const int c = controlled[j];
@@ -137,12 +156,14 @@ struct ScalarMotionBounds {
             const auto limits = model.joint_position_limits_[j];
             const double bound =
                 std::max(std::abs(limits.first), std::abs(limits.second));
-            if (!std::isfinite(bound)) return;
+            if (!std::isfinite(bound))
+              return;
             reach += model.joint_axes_[j].norm() * bound;
           }
         } else {
           const auto& f = model.tf_plink_to_hlink_cache_[link];
-          if (std::abs(f.quat().squaredNorm() - 1) > 1e-12) return;
+          if (std::abs(f.quat().squaredNorm() - 1) > 1e-12)
+            return;
           reach += f.trans().norm();
         }
         link = model.link_parent_link_ids_[link];
@@ -152,7 +173,8 @@ struct ScalarMotionBounds {
       // For Eigen's unnormalized quaternion rotation, ||R(q)-R(u)|| <= 4e+2e^2.
       const double e = std::pow(1.00004, depth) - 1;
       error[g] = (4 * e + 2 * e * e) * reach + 1e-10 * (1 + reach);
-      if (!std::isfinite(error[g])) return;
+      if (!std::isfinite(error[g]))
+        return;
     }
     for (size_t p = 0; p < pairs.size(); ++p) {
       const auto [a, b] = pairs[p];
@@ -202,7 +224,8 @@ bool SphereCollisionCst::prepare_motion_certificate(const VectorInput& start,
     } else if (type == typeid(collision::SphereSDF)) {
       const auto& p =
           static_cast<const collision::SphereSDF&>(*sdf).pose.position_;
-      if (!p.allFinite()) return false;
+      if (!p.allFinite())
+        return false;
       scene_scale = std::max(scene_scale, p.cwiseAbs().maxCoeff());
     }
   }
@@ -211,7 +234,8 @@ bool SphereCollisionCst::prepare_motion_certificate(const VectorInput& start,
     motion_bounds_ = std::make_shared<ScalarMotionBounds>(
         *kin_, control_joint_ids_, sphere_groups_, selcol_group_id_pairs_);
   auto& bounds = *motion_bounds_;
-  if (!bounds.supported) return false;
+  if (!bounds.supported)
+    return false;
   if (bounds.kinds.size() != all_sdfs_cache_.size()) {
     bounds.kinds.clear();
     for (const auto& sdf : all_sdfs_cache_) {
@@ -242,14 +266,17 @@ bool SphereCollisionCst::prepare_motion_certificate(const VectorInput& start,
   }
   for (size_t j : bounds.uncontrolled_joints) {
     const double value = kin_->joint_angles_[j];
-    if (!(std::abs(value) <= 1000)) return false;
+    if (!(std::abs(value) <= 1000))
+      return false;
     if (kin_->joint_types_[j] == urdf::Joint::PRISMATIC) {
       const auto limits = kin_->joint_position_limits_[j];
-      if (value < limits.first || value > limits.second) return false;
+      if (value < limits.first || value > limits.second)
+        return false;
     }
   }
   for (size_t c = 0; c < q_dim(); ++c) {
-    if (!(std::abs(start[c]) <= 1000 && std::abs(end[c]) <= 1000)) return false;
+    if (!(std::abs(start[c]) <= 1000 && std::abs(end[c]) <= 1000))
+      return false;
     bounds.absolute_delta[c] = std::abs(end[c] - start[c]);
     const size_t j = control_joint_ids_[c];
     if (kin_->joint_types_[j] == urdf::Joint::PRISMATIC) {
@@ -280,7 +307,8 @@ bool SphereCollisionCst::prepare_motion_certificate(const VectorInput& start,
 }
 
 bool SphereCollisionCst::is_valid_with_motion_certificate(
-    const VectorInput& q, double& certified_radius) {
+    const VectorInput& q,
+    double& certified_radius) {
   update_kintree(q, false);
   post_update_kintree();
   certified_radius = motion_bounds_ ? motion_bounds_->maximum_rate : 0;
@@ -296,7 +324,8 @@ bool SphereCollisionCst::check_motion_envelope(double& rate) {
   const auto& bounds = *motion_bounds_;
   for (size_t g = 0; g < sphere_groups_.size(); ++g) {
     auto& group = sphere_groups_[g];
-    if (group.only_self_collision || all_sdfs_cache_.empty()) continue;
+    if (group.only_self_collision || all_sdfs_cache_.empty())
+      continue;
     group.create_group_sphere_position_cache(kin_);
     const double speed = bounds.group_margin[g];
     const double error = 2 * bounds.error[g] + bounds.rounding;
@@ -315,7 +344,8 @@ bool SphereCollisionCst::check_motion_envelope(double& rate) {
               analytic_clearance(*sdf, point, group.radii[i],
                                  speed * rate + error, bounds.kinds[o]) -
               error;
-          if (clearance > speed * rate) continue;
+          if (clearance > speed * rate)
+            continue;
           if (!(clearance > 0) || speed == 0) {
             rate = 0;
             return finish_point_check(g, o, i, 0, 0, 0);
@@ -342,7 +372,8 @@ bool SphereCollisionCst::check_motion_envelope(double& rate) {
     const double distance_sq =
         (x.group_sphere_position_cache - y.group_sphere_position_cache)
             .squaredNorm();
-    if (distance_sq > outer * outer) continue;
+    if (distance_sq > outer * outer)
+      continue;
     x.create_sphere_position_cache(kin_);
     y.create_sphere_position_cache(kin_);
     for (size_t i = 0; i < x.radii.size(); ++i)
@@ -372,13 +403,15 @@ bool SphereCollisionCst::check_motion_envelope(double& rate) {
 bool SphereCollisionCst::finish_point_check(size_t start_group,
                                             size_t start_sdf,
                                             size_t start_sphere,
-                                            size_t start_pair, size_t start_row,
+                                            size_t start_pair,
+                                            size_t start_row,
                                             size_t start_column) {
   // Earlier pairs were already certified free. Resume at the unresolved pair
   // instead of restarting the original point query and traversing them again.
   for (size_t g = start_group; g < sphere_groups_.size(); ++g) {
     auto& group = sphere_groups_[g];
-    if (group.only_self_collision) continue;
+    if (group.only_self_collision)
+      continue;
     group.create_group_sphere_position_cache(kin_);
     for (size_t o = g == start_group ? start_sdf : 0;
          o < all_sdfs_cache_.size(); ++o) {
