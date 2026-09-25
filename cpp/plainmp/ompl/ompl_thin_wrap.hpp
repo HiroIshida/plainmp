@@ -57,6 +57,7 @@ struct ValidatorConfig {
   // and EUCLIDEAN => double is expected
   double resolution;
   std::vector<double> box_width;
+  bool enable_interval_pruning = false;
 };
 
 struct CollisionAwareSpaceInformation {
@@ -90,28 +91,37 @@ struct CollisionAwareSpaceInformation {
     } else {
       throw std::runtime_error("unknown validator type");
     }
-#ifdef PLAINMP_ENABLE_INTERVAL_PRUNING
-    if (auto sphere = std::dynamic_pointer_cast<constraint::SphereCollisionCst>(ineq_cst_)) {
-      CustomValidatorBase::MotionCertificate certificate;
-      certificate.prepare = [sphere, dim](const ob::State* a, const ob::State* b, double radius) {
-        const Eigen::Map<const Eigen::VectorXd> start(a->as<ob::RealVectorStateSpace::StateType>()->values, dim);
-        const Eigen::Map<const Eigen::VectorXd> end(b->as<ob::RealVectorStateSpace::StateType>()->values, dim);
-        return sphere->prepare_motion_certificate(start, end, radius);
-      };
-      certificate.check = [this, sphere, dim](const ob::State* state, double& certified) {
-        ++is_valid_call_count_;
-        const Eigen::Map<const Eigen::VectorXd> q(state->as<ob::RealVectorStateSpace::StateType>()->values, dim);
-        return sphere->is_valid_with_motion_certificate(q, certified);
-      };
-      certificate.skip = [this]() { ++is_valid_call_count_; };
-      certificate.restore = [sphere, dim](const ob::State* state) {
-        const Eigen::Map<const Eigen::VectorXd> q(state->as<ob::RealVectorStateSpace::StateType>()->values, dim);
-        sphere->update_kintree(q, false);
-        sphere->post_update_kintree();
-      };
-      std::static_pointer_cast<CustomValidatorBase>(si_->getMotionValidator())->set_motion_certificate(std::move(certificate));
+    if (vconfig.enable_interval_pruning) {
+      if (auto sphere =
+              std::dynamic_pointer_cast<constraint::SphereCollisionCst>(
+                  ineq_cst_)) {
+        CustomValidatorBase::MotionCertificate certificate;
+        certificate.prepare = [sphere, dim](const ob::State* a,
+                                            const ob::State* b, double radius) {
+          const Eigen::Map<const Eigen::VectorXd> start(
+              a->as<ob::RealVectorStateSpace::StateType>()->values, dim);
+          const Eigen::Map<const Eigen::VectorXd> end(
+              b->as<ob::RealVectorStateSpace::StateType>()->values, dim);
+          return sphere->prepare_motion_certificate(start, end, radius);
+        };
+        certificate.check = [this, sphere, dim](const ob::State* state,
+                                                double& certified) {
+          ++is_valid_call_count_;
+          const Eigen::Map<const Eigen::VectorXd> q(
+              state->as<ob::RealVectorStateSpace::StateType>()->values, dim);
+          return sphere->is_valid_with_motion_certificate(q, certified);
+        };
+        certificate.skip = [this]() { ++is_valid_call_count_; };
+        certificate.restore = [sphere, dim](const ob::State* state) {
+          const Eigen::Map<const Eigen::VectorXd> q(
+              state->as<ob::RealVectorStateSpace::StateType>()->values, dim);
+          sphere->update_kintree(q, false);
+          sphere->post_update_kintree();
+        };
+        std::static_pointer_cast<CustomValidatorBase>(si_->getMotionValidator())
+            ->set_motion_certificate(std::move(certificate));
+      }
     }
-#endif
     // si_->setup();
   }
 
