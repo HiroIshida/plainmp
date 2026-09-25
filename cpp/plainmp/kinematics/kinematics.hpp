@@ -30,7 +30,7 @@ namespace plainmp::kinematics {
 
 struct RelevancePredicateTable {
   std::vector<std::vector<bool>> table_;
-  RelevancePredicateTable() : RelevancePredicateTable(0, 0) {};
+  RelevancePredicateTable() : RelevancePredicateTable(0, 0) {}
   RelevancePredicateTable(int N_link, int N_joint) {
     // Jacobian computation typically iterates over all joint fixing a link,
     // and does not iterate over all links fixing a joint.
