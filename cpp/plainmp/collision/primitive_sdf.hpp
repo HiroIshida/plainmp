@@ -12,6 +12,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <limits>
@@ -326,43 +327,43 @@ struct BoxSDF : public TransformableSDFBase {
 
     double x_signed_dist, y_signed_dist, z_signed_dist;
     if (pose.axis_aligned_) {
-      x_signed_dist = abs(p(0) - pose.position_(0)) - half_width_(0);
+      x_signed_dist = std::abs(p(0) - pose.position_(0)) - half_width_(0);
       if (x_signed_dist > radius) {
         return true;
       }
-      y_signed_dist = abs(p(1) - pose.position_(1)) - half_width_(1);
+      y_signed_dist = std::abs(p(1) - pose.position_(1)) - half_width_(1);
       if (y_signed_dist > radius) {
         return true;
       }
-      z_signed_dist = abs(p(2) - pose.position_(2)) - half_width_(2);
+      z_signed_dist = std::abs(p(2) - pose.position_(2)) - half_width_(2);
       if (z_signed_dist > radius) {
         return true;
       }
     } else if (pose.z_axis_aligned_) {
-      z_signed_dist = abs(p(2) - pose.position_(2)) - half_width_(2);
+      z_signed_dist = std::abs(p(2) - pose.position_(2)) - half_width_(2);
       if (z_signed_dist > radius) {
         return true;
       }
       auto p_from_center = p - pose.position_;
-      x_signed_dist = abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
+      x_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
       if (x_signed_dist > radius) {
         return true;
       }
-      y_signed_dist = abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
+      y_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
       if (y_signed_dist > radius) {
         return true;
       }
     } else {
       auto p_from_center = p - pose.position_;
-      x_signed_dist = abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
+      x_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(0))) - half_width_(0);
       if (x_signed_dist > radius) {
         return true;
       }
-      y_signed_dist = abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
+      y_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(1))) - half_width_(1);
       if (y_signed_dist > radius) {
         return true;
       }
-      z_signed_dist = abs(p_from_center.dot(pose.rot_.col(2))) - half_width_(2);
+      z_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(2))) - half_width_(2);
       if (z_signed_dist > radius) {
         return true;
       }
@@ -428,6 +429,8 @@ struct BoxSDF : public TransformableSDFBase {
 struct CylinderSDF : public TransformableSDFBase {
   using Ptr = std::shared_ptr<CylinderSDF>;
   SDFType get_type() const override { return SDFType::CYLINDER; }
+  double get_radius() const { return r_cylinder_; }
+  double get_half_height() const { return half_height_; }
   CylinderSDF(double radius, double height, const Pose& pose)
       : TransformableSDFBase(pose),
         r_cylinder_(radius),
@@ -444,14 +447,14 @@ struct CylinderSDF : public TransformableSDFBase {
   double evaluate(const Point& p) const override {
     double z_signed_dist, xdot_abs, ydot_abs;
     if (pose.z_axis_aligned_) {
-      z_signed_dist = abs(p(2) - pose.position_(2)) - half_height_;
-      xdot_abs = abs(p(0) - pose.position_(0));
-      ydot_abs = abs(p(1) - pose.position_(1));
+      z_signed_dist = std::abs(p(2) - pose.position_(2)) - half_height_;
+      xdot_abs = std::abs(p(0) - pose.position_(0));
+      ydot_abs = std::abs(p(1) - pose.position_(1));
     } else {
       auto p_from_center = p - pose.position_;
-      z_signed_dist = abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
-      xdot_abs = abs(p_from_center.dot(pose.rot_.col(0)));
-      ydot_abs = abs(p_from_center.dot(pose.rot_.col(1)));
+      z_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
+      xdot_abs = std::abs(p_from_center.dot(pose.rot_.col(0)));
+      ydot_abs = std::abs(p_from_center.dot(pose.rot_.col(1)));
     }
     double r_signed_dist =
         sqrt(xdot_abs * xdot_abs + ydot_abs * ydot_abs) - r_cylinder_;
@@ -464,20 +467,20 @@ struct CylinderSDF : public TransformableSDFBase {
   bool is_outside(const Point& p, double radius) const override {
     double z_signed_dist, xdot_abs, ydot_abs;
     if (pose.z_axis_aligned_) {
-      z_signed_dist = abs(p(2) - pose.position_(2)) - half_height_;
+      z_signed_dist = std::abs(p(2) - pose.position_(2)) - half_height_;
       if (z_signed_dist > radius) {
         return true;
       }
-      xdot_abs = abs(p(0) - pose.position_(0));
-      ydot_abs = abs(p(1) - pose.position_(1));
+      xdot_abs = std::abs(p(0) - pose.position_(0));
+      ydot_abs = std::abs(p(1) - pose.position_(1));
     } else {
       auto p_from_center = p - pose.position_;
-      z_signed_dist = abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
+      z_signed_dist = std::abs(p_from_center.dot(pose.rot_.col(2))) - half_height_;
       if (z_signed_dist > radius) {
         return true;
       }
-      xdot_abs = abs(p_from_center.dot(pose.rot_.col(0)));
-      ydot_abs = abs(p_from_center.dot(pose.rot_.col(1)));
+      xdot_abs = std::abs(p_from_center.dot(pose.rot_.col(0)));
+      ydot_abs = std::abs(p_from_center.dot(pose.rot_.col(1)));
     }
     double dist_sq = xdot_abs * xdot_abs + ydot_abs * ydot_abs;
     if (radius < 1e-6) {
@@ -530,6 +533,7 @@ struct CylinderSDF : public TransformableSDFBase {
 struct SphereSDF : public TransformableSDFBase {
   using Ptr = std::shared_ptr<SphereSDF>;
   SDFType get_type() const override { return SDFType::SPHERE; }
+  double get_radius() const { return r_sphere_; }
   SphereSDF(double radius, const Pose& pose)
       : TransformableSDFBase(pose),
         r_sphere_(radius),
