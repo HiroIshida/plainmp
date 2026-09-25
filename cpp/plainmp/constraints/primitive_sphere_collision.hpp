@@ -8,10 +8,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#pragma once
+
 #include "plainmp/collision/primitive_sdf.hpp"
 #include "plainmp/constraints/primitive.hpp"
 
 namespace plainmp::constraint {
+
+struct ScalarMotionBounds;
 
 struct SphereAttachmentSpec {
   std::string parent_link_name;
@@ -82,6 +86,13 @@ class SphereCollisionCst : public IneqConstraintBase {
   bool check_self_collision();
   void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
                            Eigen::Ref<Eigen::MatrixXd> jacobian) override;
+  // The anchor must lie on the prepared segment. Keep the robot structure,
+  // uncontrolled joints, base, and SDFs fixed while checking that segment.
+  // The returned radius uses the segment's normalized interpolation parameter.
+  bool prepare_motion_certificate(const VectorInput& start, const VectorInput& end,
+                                  double rate_radius);
+  bool is_valid_with_motion_certificate(const VectorInput& q,
+                                        double& certified_radius);
   // Accept a strided row of the caller's Jacobian buffer.
   double evaluate_ext_collision(
       Eigen::Ref<Eigen::RowVectorXd, 0, Eigen::InnerStride<Eigen::Dynamic>>
@@ -107,6 +118,11 @@ class SphereCollisionCst : public IneqConstraintBase {
   std::vector<std::pair<Eigen::Vector3d, double>> get_all_spheres();
 
  private:
+  bool check_motion_envelope(double& radius);
+  bool finish_point_check(size_t group, size_t sdf, size_t sphere,
+                          size_t pair, size_t row, size_t column);
+  std::shared_ptr<ScalarMotionBounds> motion_bounds_;
+  bool motion_certificate_prepared_ = false;
   void set_all_sdfs();
   void set_all_sdfs_inner(plainmp::collision::SDFBase::Ptr sdf);
 

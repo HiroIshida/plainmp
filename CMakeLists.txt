@@ -78,6 +78,10 @@ find_package(nanobind CONFIG REQUIRED)
 # the statically linked ERTConnect planner with OMPL 1.6 and GCC 9.
 nanobind_add_module(_plainmp NOMINSIZE LTO ${SRC_FILES})
 target_include_directories(_plainmp PRIVATE third)
+option(PLAINMP_ENABLE_INTERVAL_PRUNING "Experimental scalar motion-interval pruning" OFF)
+if(PLAINMP_ENABLE_INTERVAL_PRUNING)
+    target_compile_definitions(_plainmp PRIVATE PLAINMP_ENABLE_INTERVAL_PRUNING)
+endif()
 add_dependencies(_plainmp generate_sequence_table)
 
 if (TARGET ompl::ompl)
