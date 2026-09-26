@@ -1,5 +1,8 @@
 球グループ AABB の生成処理最適化（2026-09-26）
 
+続きの [perf 計測・AVX 最適化・生成費用の上限推定](aabb_cache_perf.md) は別記した。
+以下は `bc98f85` に至る段階の記録。
+
 生成処理をさらに最適化した。座標変換と AABB 生成を合わせた単体測定では
 約26〜35%短縮。`example/bench` の計画全体でも前回の AABB 版に対し
 Panda 0.9%、Panda difficult 1.8%、Fetch 4.7%短縮した。

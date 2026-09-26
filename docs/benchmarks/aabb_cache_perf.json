@@ -1,0 +1,2946 @@
+{
+  "date": "2026-09-27",
+  "reference_revisions": {
+    "baseline": "7574426caf41b9964f3acb47cc89f05728f05288",
+    "committed": "bc98f85"
+  },
+  "environment": {
+    "cpu": "AMD Ryzen 7 7840HS",
+    "affinity": 2,
+    "turbo": true,
+    "governor": "ondemand",
+    "compiler": "GCC 9.4.0",
+    "flags": "-O3 -DNDEBUG -flto -DEIGEN_DONT_VECTORIZE -DEIGEN_NO_DEBUG",
+    "python": "3.8.10",
+    "ompl": "1.6",
+    "nanobind": "2.9.2",
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1"
+  },
+  "measurement": {
+    "seeds": [
+      601,
+      602,
+      603,
+      604,
+      605,
+      606
+    ],
+    "warmup": 300,
+    "samples_per_seed": 8400,
+    "orders": "six lexicographic permutations of baseline,committed,optimized",
+    "bootstrap": {
+      "blocks": "paired seed",
+      "repetitions": 20000,
+      "rng_seed": 73
+    },
+    "perf_gate": "after warmup until after final measured solve; includes Python loop/hash overhead"
+  },
+  "module_sha256": {
+    "baseline": "f805ae9b86445dac921baa07be2af74607069be5e079912ea419589cfc2c41c7",
+    "committed": "24fec82911051848250d65e4b7193f768996b8b5aff55437b6ccc834aace5daf",
+    "optimized": "c67bc5a7096a4278a371253a9e8259117eff3c694de48022866424b36430a037"
+  },
+  "planning": {
+    "panda": {
+      "versions": {
+        "baseline": {
+          "count": 50400,
+          "mean_ms": 0.21956251254157413,
+          "median_ms": 0.1971721649169922,
+          "internal_mean_ms": 0.20185409277777777,
+          "mean_queries": 527.5282341269841,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.2150034052985055,
+              "internal_mean_ms": 0.19748099630952382,
+              "perf": {
+                "cycles:u": {
+                  "count": 8664206635.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25795350162.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2888110658.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 32285804.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1881.38,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 206.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.22149091675167992,
+              "internal_mean_ms": 0.20275474142857142,
+              "perf": {
+                "cycles:u": {
+                  "count": 8907090292.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25941423921.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2903334584.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 32630828.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1939.54,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 233.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.2202067772547404,
+              "internal_mean_ms": 0.20235668785714286,
+              "perf": {
+                "cycles:u": {
+                  "count": 8860416104.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25827745665.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2891325060.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 33352864.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1929.17,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 251.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.21960491225832984,
+              "internal_mean_ms": 0.20138792511904763,
+              "perf": {
+                "cycles:u": {
+                  "count": 8838680685.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25598832611.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2867501836.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 32982322.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1926.86,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 215.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.22029675188518705,
+              "internal_mean_ms": 0.20346205988095237,
+              "perf": {
+                "cycles:u": {
+                  "count": 8797572943.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25936265949.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2902080440.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31843942.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1925.43,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 200.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.22077231180100215,
+              "internal_mean_ms": 0.20368214607142857,
+              "perf": {
+                "cycles:u": {
+                  "count": 8795661630.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25787943671.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2886621361.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 32110635.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1933.09,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 207.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 1048881.513670635,
+            "instructions:u": 3073165.912281746,
+            "branches:u": 344027.26069444447,
+            "branch-misses:u": 3873.142757936508,
+            "task-clock": 0.228878373015873,
+            "context-switches": 0.02603174603174603
+          }
+        },
+        "committed": {
+          "count": 50400,
+          "mean_ms": 0.22323121627171835,
+          "median_ms": 0.19979476928710938,
+          "internal_mean_ms": 0.2058678734722222,
+          "mean_queries": 527.5282341269841,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.218305956749689,
+              "internal_mean_ms": 0.2016674205952381,
+              "perf": {
+                "cycles:u": {
+                  "count": 8791104534.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 26162075820.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 3011361866.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 32702336.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1912.65,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 210.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.22310986405327207,
+              "internal_mean_ms": 0.20587540773809523,
+              "perf": {
+                "cycles:u": {
+                  "count": 8951595782.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 26315278909.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 3027667157.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31632118.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1948.67,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 213.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.22467746621086485,
+              "internal_mean_ms": 0.2062149730952381,
+              "perf": {
+                "cycles:u": {
+                  "count": 9033112223.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 26196224654.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 3014562168.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 32620889.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1969.01,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 264.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.2220612196695237,
+              "internal_mean_ms": 0.20484343714285713,
+              "perf": {
+                "cycles:u": {
+                  "count": 8920346212.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25968873403.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2990206573.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31974710.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1942.25,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 225.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.22551505338577998,
+              "internal_mean_ms": 0.20827336904761906,
+              "perf": {
+                "cycles:u": {
+                  "count": 8922393543.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 26324193546.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 3028721772.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31885904.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1970.57,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 201.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.22571773756118046,
+              "internal_mean_ms": 0.20833263321428572,
+              "perf": {
+                "cycles:u": {
+                  "count": 8990623029.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 26159652075.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 3011202471.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 32897845.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1977.15,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 212.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 1063674.1135515873,
+            "instructions:u": 3117585.2858531745,
+            "branches:u": 358804.0080753968,
+            "branch-misses:u": 3843.5278174603172,
+            "task-clock": 0.2325456349206349,
+            "context-switches": 0.02628968253968254
+          }
+        },
+        "optimized": {
+          "count": 50400,
+          "mean_ms": 0.22145599599868532,
+          "median_ms": 0.19860267639160156,
+          "internal_mean_ms": 0.20414528615079366,
+          "mean_queries": 527.5282341269841,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.21899430524735225,
+              "internal_mean_ms": 0.20060950523809523,
+              "perf": {
+                "cycles:u": {
+                  "count": 8814872524.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25711331661.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2968937319.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31948503.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1918.8,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 215.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.21962480885641916,
+              "internal_mean_ms": 0.20279765547619047,
+              "perf": {
+                "cycles:u": {
+                  "count": 8828170528.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25847737521.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2983091900.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 30555883.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1920.93,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 222.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.21720769859495617,
+              "internal_mean_ms": 0.20007659583333334,
+              "perf": {
+                "cycles:u": {
+                  "count": 8723888690.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25737460610.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2970998062.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31005851.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1900.86,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 213.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.23243447144826254,
+              "internal_mean_ms": 0.2150210842857143,
+              "perf": {
+                "cycles:u": {
+                  "count": 9329094722.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25512828652.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2946912637.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31602800.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 2030.07,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 240.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.22053866159348262,
+              "internal_mean_ms": 0.2031740730952381,
+              "perf": {
+                "cycles:u": {
+                  "count": 8813578302.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25851527124.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2983532943.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31722294.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1929.41,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 214.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.21993603025163924,
+              "internal_mean_ms": 0.20319280297619047,
+              "perf": {
+                "cycles:u": {
+                  "count": 8716870858.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 25703535346.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 2967838823.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 31270644.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 1925.39,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 200.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 1056080.8655555556,
+            "instructions:u": 3062786.129246032,
+            "branches:u": 353597.4540476191,
+            "branch-misses:u": 3732.2614087301586,
+            "task-clock": 0.23066388888888886,
+            "context-switches": 0.025873015873015874
+          }
+        }
+      },
+      "optimized_vs": {
+        "baseline": {
+          "time_change_percent": 0.8623892281031775,
+          "paired_seed_bootstrap_95_percent": [
+            -0.779541114743576,
+            3.0223958002760565
+          ],
+          "faster_seed_count": 3,
+          "seed_time_change_percent": [
+            1.8562031346926133,
+            -0.8425211844478975,
+            -1.3619374921938987,
+            5.842109385440697,
+            0.109810837529567,
+            -0.37879820279126397
+          ],
+          "perf_change_percent": {
+            "cycles:u": 0.6863837136118489,
+            "instructions:u": -0.33775537448961224,
+            "branches:u": 2.781812503420933,
+            "branch-misses:u": -3.6373910803485843,
+            "task-clock": 0.7801155913023106,
+            "context-switches": -0.609756097560965
+          }
+        },
+        "committed": {
+          "time_change_percent": -0.7952383643657579,
+          "paired_seed_bootstrap_95_percent": [
+            -2.5910774979887474,
+            1.5759266016929452
+          ],
+          "faster_seed_count": 4,
+          "seed_time_change_percent": [
+            0.31531365791017674,
+            -1.5620354625023536,
+            -3.3246625671388585,
+            4.671347745534571,
+            -2.206678320397726,
+            -2.561476723987677
+          ],
+          "perf_change_percent": {
+            "cycles:u": -0.7138697745193823,
+            "instructions:u": -1.75774362471518,
+            "branches:u": -1.451085804672414,
+            "branch-misses:u": -2.8949031726711927,
+            "task-clock": -0.8091943039000737,
+            "context-switches": -1.584905660377356
+          }
+        }
+      },
+      "exact_query_and_path_match": true
+    },
+    "panda_difficult": {
+      "versions": {
+        "baseline": {
+          "count": 50400,
+          "mean_ms": 0.7898902987676953,
+          "median_ms": 0.6909370422363281,
+          "internal_mean_ms": 0.7675064247222222,
+          "mean_queries": 1947.3161706349206,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.7783716065543038,
+              "internal_mean_ms": 0.7559395485714285,
+              "perf": {
+                "cycles:u": {
+                  "count": 30282621842.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 97675503839.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 10926050289.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 107159890.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6657.16,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 749.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.7986363058998471,
+              "internal_mean_ms": 0.7751185152380953,
+              "perf": {
+                "cycles:u": {
+                  "count": 30975106038.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 98721603816.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11051639301.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 107521260.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6834.4,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 856.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.7785428138006301,
+              "internal_mean_ms": 0.7576615414285715,
+              "perf": {
+                "cycles:u": {
+                  "count": 30006419928.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 97404297356.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 10899024900.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 105449241.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6649.97,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 784.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.7885521650314331,
+              "internal_mean_ms": 0.7671832586904762,
+              "perf": {
+                "cycles:u": {
+                  "count": 30356987504.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 97986111244.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 10967258581.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 105744636.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6739.43,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 796.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.7945835022699266,
+              "internal_mean_ms": 0.7715930325,
+              "perf": {
+                "cycles:u": {
+                  "count": 30682029252.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 98634372241.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11039664381.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 109096977.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6794.75,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 819.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.8006553990500314,
+              "internal_mean_ms": 0.7775426519047619,
+              "perf": {
+                "cycles:u": {
+                  "count": 30984863897.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 98699985699.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11044998957.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 108462272.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6849.76,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 788.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 3636667.2313690474,
+            "instructions:u": 11688926.075297618,
+            "branches:u": 1308107.8652579365,
+            "branch-misses:u": 12766.553095238096,
+            "task-clock": 0.8040767857142858,
+            "context-switches": 0.09507936507936508
+          }
+        },
+        "committed": {
+          "count": 50400,
+          "mean_ms": 0.8237033325528341,
+          "median_ms": 0.7200241088867188,
+          "internal_mean_ms": 0.799659529781746,
+          "mean_queries": 1947.3161706349206,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.8330568245479039,
+              "internal_mean_ms": 0.8089406883333333,
+              "perf": {
+                "cycles:u": {
+                  "count": 32361167841.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 100032351742.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11513537907.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 111565298.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 7114.78,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 794.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.8581719512031192,
+              "internal_mean_ms": 0.8277857258333333,
+              "perf": {
+                "cycles:u": {
+                  "count": 33246535426.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 101098197348.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11643175531.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 116790034.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 7365.78,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 845.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.8142037051064628,
+              "internal_mean_ms": 0.7908945048809524,
+              "perf": {
+                "cycles:u": {
+                  "count": 31497963085.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 99747122033.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11484476171.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 111749227.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6962.48,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 824.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.8118271260034471,
+              "internal_mean_ms": 0.7898345826190476,
+              "perf": {
+                "cycles:u": {
+                  "count": 31262701302.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 100346823805.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11555639708.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 111075108.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6936.76,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 829.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.8087178071339926,
+              "internal_mean_ms": 0.7874009551190476,
+              "perf": {
+                "cycles:u": {
+                  "count": 31180326260.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 101018962996.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11632116477.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 110329218.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6905.96,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 839.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.8162425813220796,
+              "internal_mean_ms": 0.7931007219047619,
+              "perf": {
+                "cycles:u": {
+                  "count": 31570130580.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 101086143134.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11639432256.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 114982730.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6977.84,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 810.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 3792040.168531746,
+            "instructions:u": 11970825.41781746,
+            "branches:u": 1378340.834325397,
+            "branch-misses:u": 13422.452678571428,
+            "task-clock": 0.8385634920634922,
+            "context-switches": 0.09803571428571428
+          }
+        },
+        "optimized": {
+          "count": 50400,
+          "mean_ms": 0.8137617650486174,
+          "median_ms": 0.7119178771972656,
+          "internal_mean_ms": 0.7885234773809524,
+          "mean_queries": 1947.3161706349206,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.7860085226240612,
+              "internal_mean_ms": 0.7632913896428571,
+              "perf": {
+                "cycles:u": {
+                  "count": 30559478914.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 97140255634.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11304676477.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 107530183.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6728.63,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 768.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.9110864003499349,
+              "internal_mean_ms": 0.8672930932142857,
+              "perf": {
+                "cycles:u": {
+                  "count": 35355563634.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 98171388945.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11431687303.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 114051256.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 7866.19,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 899.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.7740132865451631,
+              "internal_mean_ms": 0.7535257838095238,
+              "perf": {
+                "cycles:u": {
+                  "count": 29908177905.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 96870745718.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11275614639.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 103588083.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6618.83,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 802.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.833791522752671,
+              "internal_mean_ms": 0.8110212761904761,
+              "perf": {
+                "cycles:u": {
+                  "count": 32164011486.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 97444410956.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11345683848.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 119617279.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 7130.95,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 858.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.7875876767294747,
+              "internal_mean_ms": 0.7669886876190476,
+              "perf": {
+                "cycles:u": {
+                  "count": 30289080573.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 98082890338.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11419539085.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 103849712.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6732.39,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 783.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.7900831812903994,
+              "internal_mean_ms": 0.7690206338095238,
+              "perf": {
+                "cycles:u": {
+                  "count": 30549089051.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 98156570962.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11427519977.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 107482891.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6756.16,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 800.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 3746535.745297619,
+            "instructions:u": 11624330.606210317,
+            "branches:u": 1353268.2803373015,
+            "branch-misses:u": 13018.242142857143,
+            "task-clock": 0.8300228174603176,
+            "context-switches": 0.09742063492063492
+          }
+        }
+      },
+      "optimized_vs": {
+        "baseline": {
+          "time_change_percent": 3.0221242517048275,
+          "paired_seed_bootstrap_95_percent": [
+            -0.6746587659376413,
+            7.877821508045302
+          ],
+          "faster_seed_count": 3,
+          "seed_time_change_percent": [
+            0.9811401142398424,
+            14.0802632712004,
+            -0.5817955255864593,
+            5.737015219460417,
+            -0.8804393144919986,
+            -1.3204454465898463
+          ],
+          "perf_change_percent": {
+            "cycles:u": 3.021131902882712,
+            "instructions:u": -0.5526210763177941,
+            "branches:u": 3.4523464217883992,
+            "branch-misses:u": 1.9714722191765954,
+            "task-clock": 3.226810201090835,
+            "context-switches": 2.4624373956594336
+          }
+        },
+        "committed": {
+          "time_change_percent": -1.206935447669688,
+          "paired_seed_bootstrap_95_percent": [
+            -4.481081846419199,
+            2.449219320951568
+          ],
+          "faster_seed_count": 4,
+          "seed_time_change_percent": [
+            -5.647670187369947,
+            6.1659495014527055,
+            -4.936162573227854,
+            2.7055509782424547,
+            -2.612794007764052,
+            -3.204856084487706
+          ],
+          "perf_change_percent": {
+            "cycles:u": -1.1999984496932736,
+            "instructions:u": -2.8944939009086013,
+            "branches:u": -1.819038757591962,
+            "branch-misses:u": -3.011450629731749,
+            "task-clock": -1.0184887231565742,
+            "context-switches": -0.6274033596437967
+          }
+        }
+      },
+      "exact_query_and_path_match": true
+    },
+    "fetch": {
+      "versions": {
+        "baseline": {
+          "count": 50400,
+          "mean_ms": 0.7940919484410968,
+          "median_ms": 0.6527900695800781,
+          "internal_mean_ms": 0.7709809989285714,
+          "mean_queries": 1613.252757936508,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.7917266800290063,
+              "internal_mean_ms": 0.7685681589285714,
+              "perf": {
+                "cycles:u": {
+                  "count": 30682844012.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 102364090552.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12278292216.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 89757050.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6780.64,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 786.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.8033678077516102,
+              "internal_mean_ms": 0.7794832396428572,
+              "perf": {
+                "cycles:u": {
+                  "count": 30972718799.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 101734459019.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12203230773.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 115729447.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6883.09,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 803.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.7967997448784965,
+              "internal_mean_ms": 0.7726734776190476,
+              "perf": {
+                "cycles:u": {
+                  "count": 30884572688.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 103331377686.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12392701002.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 90384606.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6826.22,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 809.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.803980515116737,
+              "internal_mean_ms": 0.7813021032142857,
+              "perf": {
+                "cycles:u": {
+                  "count": 31172484183.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 102402313798.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12282673173.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 86907631.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6879.92,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 773.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.7985206161226545,
+              "internal_mean_ms": 0.7746021860714286,
+              "perf": {
+                "cycles:u": {
+                  "count": 30871493457.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 103079188884.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12363088141.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 92515182.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6842.82,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 803.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.770156326748076,
+              "internal_mean_ms": 0.7492568280952381,
+              "perf": {
+                "cycles:u": {
+                  "count": 29820753009.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 100680171397.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12077806955.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 84073993.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6587.64,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 770.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 3658826.709285714,
+            "instructions:u": 12174436.534444444,
+            "branches:u": 1460273.655952381,
+            "branch-misses:u": 11098.569623015874,
+            "task-clock": 0.8095303571428571,
+            "context-switches": 0.09412698412698413
+          }
+        },
+        "committed": {
+          "count": 50400,
+          "mean_ms": 0.8096674368495033,
+          "median_ms": 0.6666183471679688,
+          "internal_mean_ms": 0.7872619298611111,
+          "mean_queries": 1613.252757936508,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.8104399556205386,
+              "internal_mean_ms": 0.7882495989285714,
+              "perf": {
+                "cycles:u": {
+                  "count": 31311920209.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 99822130999.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12057640056.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 89921262.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6930.77,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 814.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.7963065874008906,
+              "internal_mean_ms": 0.7741799392857143,
+              "perf": {
+                "cycles:u": {
+                  "count": 30868395799.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 99205371840.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11983179061.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 88858273.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6813.39,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 772.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.8264918838228498,
+              "internal_mean_ms": 0.8030171854761905,
+              "perf": {
+                "cycles:u": {
+                  "count": 32021456745.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 100750150398.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12167035939.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 92992395.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 7074.55,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 832.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.8083325056802659,
+              "internal_mean_ms": 0.7868720017857143,
+              "perf": {
+                "cycles:u": {
+                  "count": 31426314846.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 99843605809.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12060545542.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 88337796.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6910.8,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 715.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.8135841573987689,
+              "internal_mean_ms": 0.7914131816666666,
+              "perf": {
+                "cycles:u": {
+                  "count": 31485411058.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 100503512441.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 12137391508.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 89259212.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6957.28,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 823.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.802849531173706,
+              "internal_mean_ms": 0.7798396720238095,
+              "perf": {
+                "cycles:u": {
+                  "count": 31104764410.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 98164572753.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11856937684.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 89885501.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6872.96,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 820.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 3734489.3465674603,
+            "instructions:u": 11870820.322222222,
+            "branches:u": 1433784.3212301587,
+            "branch-misses:u": 10699.492837301586,
+            "task-clock": 0.8245982142857143,
+            "context-switches": 0.09476190476190476
+          }
+        },
+        "optimized": {
+          "count": 50400,
+          "mean_ms": 0.7528032717250642,
+          "median_ms": 0.6163120269775391,
+          "internal_mean_ms": 0.7305079539484127,
+          "mean_queries": 1613.252757936508,
+          "seed_blocks": [
+            {
+              "seed": 601,
+              "mean_ms": 0.7497862974802653,
+              "internal_mean_ms": 0.7269723320238095,
+              "perf": {
+                "cycles:u": {
+                  "count": 28918121725.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 93029620960.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11538795175.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 88740351.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6426.37,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 763.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 602,
+              "mean_ms": 0.7355972414924985,
+              "internal_mean_ms": 0.7130969441666667,
+              "perf": {
+                "cycles:u": {
+                  "count": 28470779713.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 92452534918.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11468181312.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 85260060.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6303.87,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 709.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 603,
+              "mean_ms": 0.8194097734632946,
+              "internal_mean_ms": 0.7951941967857142,
+              "perf": {
+                "cycles:u": {
+                  "count": 31723912706.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 93907417631.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11645638375.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 87583677.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 7017.42,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 842.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 604,
+              "mean_ms": 0.7360479093733288,
+              "internal_mean_ms": 0.7149631796428572,
+              "perf": {
+                "cycles:u": {
+                  "count": 28598974285.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 93067613204.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11545114413.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 85448613.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6302.79,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 655.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 605,
+              "mean_ms": 0.7509271587644305,
+              "internal_mean_ms": 0.729099375952381,
+              "perf": {
+                "cycles:u": {
+                  "count": 28950250500.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 93679544176.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11618033992.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 87815647.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6432.64,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 750.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            },
+            {
+              "seed": 606,
+              "mean_ms": 0.7250512497765678,
+              "internal_mean_ms": 0.7037216951190476,
+              "perf": {
+                "cycles:u": {
+                  "count": 28117379258.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "instructions:u": {
+                  "count": 91484025166.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branches:u": {
+                  "count": 11348239664.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "branch-misses:u": {
+                  "count": 84470760.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                },
+                "task-clock": {
+                  "count": 6214.36,
+                  "unit": "msec",
+                  "running_percent": 100.0
+                },
+                "context-switches": {
+                  "count": 719.0,
+                  "unit": "",
+                  "running_percent": 100.0
+                }
+              }
+            }
+          ],
+          "perf_per_solve": {
+            "cycles:u": 3467845.5989484126,
+            "instructions:u": 11063903.889980158,
+            "branches:u": 1372301.6454563492,
+            "branch-misses:u": 10303.950555555555,
+            "task-clock": 0.7678065476190475,
+            "context-switches": 0.08805555555555555
+          }
+        }
+      },
+      "optimized_vs": {
+        "baseline": {
+          "time_change_percent": -5.19948310735141,
+          "paired_seed_bootstrap_95_percent": [
+            -7.611884616371212,
+            -1.829107254017892
+          ],
+          "faster_seed_count": 5,
+          "seed_time_change_percent": [
+            -5.297330961134772,
+            -8.435808057679283,
+            2.8376048976077373,
+            -8.44953384641971,
+            -5.96020395682727,
+            -5.8566131842298645
+          ],
+          "perf_change_percent": {
+            "cycles:u": -5.219736421312648,
+            "instructions:u": -9.121840188022823,
+            "branches:u": -6.02435099321551,
+            "branch-misses:u": -7.15965295034472,
+            "task-clock": -5.15407595967975,
+            "context-switches": -6.450252951096125
+          }
+        },
+        "committed": {
+          "time_change_percent": -7.023150806916889,
+          "paired_seed_bootstrap_95_percent": [
+            -8.853138679465511,
+            -4.404325048642399
+          ],
+          "faster_seed_count": 6,
+          "seed_time_change_percent": [
+            -7.484040948330584,
+            -7.623865841238942,
+            -0.8568880709145854,
+            -8.942433441558173,
+            -7.701354317747333,
+            -9.690269269187091
+          ],
+          "perf_change_percent": {
+            "cycles:u": -7.140032354467207,
+            "instructions:u": -6.797478273102264,
+            "branches:u": -4.288139775517874,
+            "branch-misses:u": -3.696832062610056,
+            "task-clock": -6.887192536047515,
+            "context-switches": -7.07705192629815
+          }
+        }
+      },
+      "exact_query_and_path_match": true
+    }
+  },
+  "cost_model": {
+    "reference": "bc98f85",
+    "seeds": [
+      501,
+      502,
+      503
+    ],
+    "samples": 3000,
+    "warmup": 300,
+    "extra_repetitions": [
+      0,
+      4,
+      8
+    ],
+    "summary": {
+      "panda": {
+        "full_cost_ms": 0.0043049454689025905,
+        "extra_aabb_cost_ms": 0.0027742319636874743,
+        "positions_cost_ms": 0.0015307135052151162,
+        "extra_free_time_saving_percent_of_committed": 1.2673685109897204,
+        "full_free_time_saving_percent_of_committed": 1.9666532576328035,
+        "extra_free_projected_time_change_percent_vs_no_aabb": 1.8192264803100544,
+        "full_free_projected_time_change_percent_vs_no_aabb": 1.098080584379968,
+        "seed_blocks": [
+          {
+            "seed": 501,
+            "means_ms": {
+              "probe_0_0": 0.2162660757700602,
+              "probe_4_0": 0.23324879010518393,
+              "probe_8_0": 0.2509913444519043,
+              "probe_4_1": 0.22094345092773438,
+              "probe_8_1": 0.22883892059326172,
+              "baseline_0_0": 0.2134110927581787,
+              "committed_0_0": 0.21966449419657388
+            },
+            "full_cache_cost_ms": 0.004340658585230511,
+            "positions_cost_ms": 0.0015716056029001883,
+            "aabb_extra_cost_ms": 0.0027690529823303223,
+            "extra_percent_of_committed": 1.2605828686416412,
+            "full_percent_of_committed": 1.9760401429946763,
+            "midpoint_residual_full_ms": -0.0003799200057983121,
+            "midpoint_residual_positions_ms": -0.0016090472539265765
+          },
+          {
+            "seed": 502,
+            "means_ms": {
+              "probe_0_0": 0.21639863650004068,
+              "probe_4_0": 0.23248871167500815,
+              "probe_8_0": 0.249676783879598,
+              "probe_4_1": 0.2227631409962972,
+              "probe_8_1": 0.22845101356506348,
+              "baseline_0_0": 0.2121733824412028,
+              "committed_0_0": 0.21787587801615396
+            },
+            "full_cache_cost_ms": 0.004159768422444664,
+            "positions_cost_ms": 0.0015065471331278495,
+            "aabb_extra_cost_ms": 0.0026532212893168143,
+            "extra_percent_of_committed": 1.217767342339796,
+            "full_percent_of_committed": 1.9092377092503312,
+            "midpoint_residual_full_ms": -0.0005489985148111887,
+            "midpoint_residual_positions_ms": 0.00033831596374514494
+          },
+          {
+            "seed": 503,
+            "means_ms": {
+              "probe_0_0": 0.21675960222880045,
+              "probe_4_0": 0.23405098915100098,
+              "probe_8_0": 0.2520748774210612,
+              "probe_4_1": 0.2217565377553304,
+              "probe_8_1": 0.22887150446573892,
+              "baseline_0_0": 0.21119936307271323,
+              "committed_0_0": 0.21915070215861002
+            },
+            "full_cache_cost_ms": 0.004414409399032596,
+            "positions_cost_ms": 0.0015139877796173096,
+            "aabb_extra_cost_ms": 0.0029004216194152867,
+            "extra_percent_of_committed": 1.323482695171157,
+            "full_percent_of_committed": 2.014325920725398,
+            "midpoint_residual_full_ms": -0.00036625067392986876,
+            "midpoint_residual_positions_ms": -0.0010590155919392719
+          }
+        ]
+      },
+      "panda_difficult": {
+        "full_cost_ms": 0.024765070941713124,
+        "extra_aabb_cost_ms": 0.015330712000528976,
+        "positions_cost_ms": 0.009434358941184148,
+        "extra_free_time_saving_percent_of_committed": 1.9214519385509905,
+        "full_free_time_saving_percent_of_committed": 3.103893254772877,
+        "extra_free_projected_time_change_percent_vs_no_aabb": 1.38500414001399,
+        "full_free_projected_time_change_percent_vs_no_aabb": 0.16269997554603233,
+        "seed_blocks": [
+          {
+            "seed": 501,
+            "means_ms": {
+              "probe_0_0": 0.7919766108194987,
+              "probe_4_0": 0.8932658036549886,
+              "probe_8_0": 0.9902556737263998,
+              "probe_4_1": 0.8286898136138916,
+              "probe_8_1": 0.865185022354126,
+              "baseline_0_0": 0.773663600285848,
+              "committed_0_0": 0.8026596705118815
+            },
+            "full_cache_cost_ms": 0.02478488286336264,
+            "positions_cost_ms": 0.009151051441828414,
+            "aabb_extra_cost_ms": 0.015633831421534225,
+            "extra_percent_of_committed": 1.9477534496736375,
+            "full_percent_of_committed": 3.08784454656312,
+            "midpoint_residual_full_ms": 0.002149661382039425,
+            "midpoint_residual_positions_ms": 0.00010899702707933834
+          },
+          {
+            "seed": 502,
+            "means_ms": {
+              "probe_0_0": 0.7880229949951172,
+              "probe_4_0": 0.8880136013031006,
+              "probe_8_0": 0.9854231675465902,
+              "probe_4_1": 0.832778533299764,
+              "probe_8_1": 0.87001633644104,
+              "baseline_0_0": 0.7672374248504639,
+              "committed_0_0": 0.7920707861582438
+            },
+            "full_cache_cost_ms": 0.024675021568934127,
+            "positions_cost_ms": 0.010249167680740356,
+            "aabb_extra_cost_ms": 0.014425853888193771,
+            "extra_percent_of_committed": 1.8212834181352704,
+            "full_percent_of_committed": 3.11525459594522,
+            "midpoint_residual_full_ms": 0.0012905200322468335,
+            "midpoint_residual_positions_ms": 0.003758867581685421
+          },
+          {
+            "seed": 503,
+            "means_ms": {
+              "probe_0_0": 0.7937942345937093,
+              "probe_4_0": 0.8936637242635092,
+              "probe_8_0": 0.9924767017364502,
+              "probe_4_1": 0.8296016852060953,
+              "probe_8_1": 0.8650170962015787,
+              "baseline_0_0": 0.7746500174204508,
+              "committed_0_0": 0.7988831996917725
+            },
+            "full_cache_cost_ms": 0.024835308392842606,
+            "positions_cost_ms": 0.008902857700983674,
+            "aabb_extra_cost_ms": 0.015932450691858932,
+            "extra_percent_of_committed": 1.994340436500109,
+            "full_percent_of_committed": 3.1087533700076104,
+            "midpoint_residual_full_ms": 0.000528256098429325,
+            "midpoint_residual_positions_ms": 0.00019601980845129763
+          }
+        ]
+      },
+      "fetch": {
+        "full_cost_ms": 0.06333011719915602,
+        "extra_aabb_cost_ms": 0.037256456083721586,
+        "positions_cost_ms": 0.02607366111543443,
+        "extra_free_time_saving_percent_of_committed": 4.838154691697291,
+        "full_free_time_saving_percent_of_committed": 8.224102232490955,
+        "extra_free_projected_time_change_percent_vs_no_aabb": -4.650319606035469,
+        "full_free_projected_time_change_percent_vs_no_aabb": -8.042950495016754,
+        "seed_blocks": [
+          {
+            "seed": 501,
+            "means_ms": {
+              "probe_0_0": 0.7526809374491373,
+              "probe_4_0": 1.0042810440063477,
+              "probe_8_0": 1.2556323210398357,
+              "probe_4_1": 0.8535506725311279,
+              "probe_8_1": 0.9642380873362223,
+              "baseline_0_0": 0.7528439362843832,
+              "committed_0_0": 0.765578826268514
+            },
+            "full_cache_cost_ms": 0.0628689229488373,
+            "positions_cost_ms": 0.02644464373588562,
+            "aabb_extra_cost_ms": 0.036424279212951674,
+            "extra_percent_of_committed": 4.757743809411006,
+            "full_percent_of_committed": 8.211946411222595,
+            "midpoint_residual_full_ms": 0.00012441476186109135,
+            "midpoint_residual_positions_ms": -0.0049088398615518836
+          },
+          {
+            "seed": 502,
+            "means_ms": {
+              "probe_0_0": 0.7602623303731283,
+              "probe_4_0": 1.0128410657246907,
+              "probe_8_0": 1.2623271147410076,
+              "probe_4_1": 0.8606979846954346,
+              "probe_8_1": 0.9629256725311279,
+              "baseline_0_0": 0.7596941788991293,
+              "committed_0_0": 0.7592987219492594
+            },
+            "full_cache_cost_ms": 0.06275809804598491,
+            "positions_cost_ms": 0.025332917769749955,
+            "aabb_extra_cost_ms": 0.037425180276234954,
+            "extra_percent_of_committed": 4.92891390362908,
+            "full_percent_of_committed": 8.265271128716421,
+            "midpoint_residual_full_ms": 0.00154634316762281,
+            "midpoint_residual_positions_ms": -0.0008960167566935962
+          },
+          {
+            "seed": 503,
+            "means_ms": {
+              "probe_0_0": 0.7874124844868978,
+              "probe_4_0": 1.0459134578704834,
+              "probe_8_0": 1.3023191293080647,
+              "probe_4_1": 0.8908348878224691,
+              "probe_8_1": 0.9989598592122396,
+              "baseline_0_0": 0.7930761973063151,
+              "committed_0_0": 0.7852876981099447
+            },
+            "full_cache_cost_ms": 0.06436333060264586,
+            "positions_cost_ms": 0.026443421840667725,
+            "aabb_extra_cost_ms": 0.037919908761978136,
+            "extra_percent_of_committed": 4.828791900502831,
+            "full_percent_of_committed": 8.196146553366054,
+            "midpoint_residual_full_ms": 0.00104765097300219,
+            "midpoint_residual_positions_ms": -0.0023512840270996094
+          }
+        ]
+      }
+    },
+    "limitation": "Work amplification uses warm data/branch history; fixed generation timing and pruning order. Estimates, not strict algorithm-independent bounds."
+  },
+  "committed_create_aabb_cache_profile_cycle_share_percent": {
+    "panda": 2.52,
+    "panda_difficult": 4.48,
+    "fetch": 9.74
+  },
+  "microbenchmark_ns_all_passes": {
+    "committed_aabb_1": [
+      7.55902,
+      7.62068,
+      7.53907,
+      7.54498,
+      7.55028
+    ],
+    "avx_compact_aabb_1": [
+      6.03214,
+      6.05785,
+      5.96055,
+      6.024,
+      6.15446
+    ],
+    "avx_hoist_aabb_1": [
+      4.69381,
+      4.70907,
+      4.69208,
+      4.69123,
+      4.71875
+    ],
+    "avx_restrict_aabb_1": [
+      4.76513,
+      4.70367,
+      4.69072,
+      4.78833,
+      4.67592
+    ],
+    "committed_aabb_8": [
+      27.8549,
+      27.891,
+      27.8149,
+      27.677,
+      28.4185
+    ],
+    "avx_compact_aabb_8": [
+      21.9946,
+      22.0053,
+      22.1119,
+      21.8481,
+      21.8491
+    ],
+    "avx_hoist_aabb_8": [
+      12.3052,
+      12.2995,
+      12.2644,
+      12.3416,
+      12.2738
+    ],
+    "avx_restrict_aabb_8": [
+      12.2808,
+      12.2781,
+      12.2738,
+      12.2948,
+      12.3208
+    ],
+    "committed_aabb_16": [
+      50.621,
+      50.6302,
+      50.6791,
+      50.6157,
+      51.9093
+    ],
+    "avx_compact_aabb_16": [
+      40.1886,
+      40.6372,
+      40.5996,
+      40.2247,
+      40.3238
+    ],
+    "avx_hoist_aabb_16": [
+      21.2739,
+      21.4377,
+      21.3752,
+      21.3396,
+      21.3955
+    ],
+    "avx_restrict_aabb_16": [
+      21.431,
+      21.3701,
+      21.4138,
+      21.3857,
+      21.463
+    ],
+    "committed_aabb_128": [
+      369.787,
+      378.046,
+      378.852,
+      370.054,
+      370.75
+    ],
+    "avx_compact_aabb_128": [
+      299.103,
+      300.82,
+      300.802,
+      309.649,
+      299.535
+    ],
+    "avx_hoist_aabb_128": [
+      133.941,
+      134.122,
+      134.568,
+      134.232,
+      134.721
+    ],
+    "avx_restrict_aabb_128": [
+      149.14,
+      134.742,
+      134.473,
+      135.149,
+      134.68
+    ],
+    "committed_aabb_uniform_1": [
+      7.61358,
+      7.55404,
+      7.61637,
+      7.55182,
+      7.5599
+    ],
+    "avx_compact_aabb_uniform_1": [
+      5.82744,
+      5.83186,
+      5.85121,
+      5.76864,
+      5.75262
+    ],
+    "avx_hoist_aabb_uniform_1": [
+      4.69138,
+      4.69239,
+      4.6817,
+      4.78735,
+      4.72546
+    ],
+    "avx_restrict_aabb_uniform_1": [
+      4.82219,
+      4.83547,
+      4.88299,
+      4.79218,
+      4.79719
+    ],
+    "committed_aabb_uniform_8": [
+      24.5418,
+      25.1226,
+      24.5162,
+      24.5093,
+      24.5541
+    ],
+    "avx_compact_aabb_uniform_8": [
+      22.9582,
+      23.0147,
+      22.4027,
+      22.3981,
+      22.4426
+    ],
+    "avx_hoist_aabb_uniform_8": [
+      11.0069,
+      11.0046,
+      10.9512,
+      11.024,
+      10.9981
+    ],
+    "avx_restrict_aabb_uniform_8": [
+      11.0288,
+      11.0541,
+      11.02,
+      11.0157,
+      11.0409
+    ],
+    "committed_aabb_uniform_16": [
+      45.385,
+      45.3687,
+      45.3412,
+      45.3597,
+      45.3674
+    ],
+    "avx_compact_aabb_uniform_16": [
+      40.9525,
+      41.0145,
+      42.2009,
+      40.7895,
+      40.9797
+    ],
+    "avx_hoist_aabb_uniform_16": [
+      19.1038,
+      19.2534,
+      19.3391,
+      19.275,
+      19.191
+    ],
+    "avx_restrict_aabb_uniform_16": [
+      20.316,
+      19.2993,
+      19.301,
+      19.2342,
+      19.2936
+    ],
+    "committed_aabb_uniform_128": [
+      340.127,
+      340.229,
+      340.166,
+      339.957,
+      339.644
+    ],
+    "avx_compact_aabb_uniform_128": [
+      309.562,
+      303.011,
+      311.535,
+      302.413,
+      301.221
+    ],
+    "avx_hoist_aabb_uniform_128": [
+      109.066,
+      108.911,
+      109.264,
+      108.712,
+      119.614
+    ],
+    "avx_restrict_aabb_uniform_128": [
+      108.514,
+      109.738,
+      109.741,
+      109.852,
+      109.458
+    ]
+  },
+  "validation": {
+    "python_tests_avx_passed": 144,
+    "python_tests_scalar_fallback_passed": 144,
+    "native_random_pose_exact_matches": 20000,
+    "planning_exact_matched_input_groups": 151200
+  },
+  "investigation_decision": {
+    "status": "closed",
+    "reason": "User chose to stop this AABB investigation after reviewing the limited estimated benefit and uncertainty around exceeding a 5% whole-planning improvement.",
+    "disposition": "Preserve implementation and benchmark documents on the investigation branch."
+  },
+  "optimized_cache_creation_profile": {
+    "seed": 511,
+    "samples": 10000,
+    "warmup": 300,
+    "event": "cycles:u",
+    "frequency_hz": 3999,
+    "results": {
+      "panda": {
+        "cycle_share_percent": 1.3,
+        "symbols": [
+          "1.28%; unstripped.so; [.] plainmp::constraint::create_bounds_avx<false>; -      -",
+          "0.02%; unstripped.so; [.] plainmp::constraint::create_bounds_avx<true>; -      -"
+        ]
+      },
+      "panda_difficult": {
+        "cycle_share_percent": 2.0599999999999996,
+        "symbols": [
+          "1.98%; unstripped.so; [.] plainmp::constraint::create_bounds_avx<false>; -      -",
+          "0.07%; unstripped.so; [.] plainmp::constraint::SphereGroup::create_aabb_cache; -      -",
+          "0.01%; unstripped.so; [.] plainmp::constraint::create_bounds_avx<true>; -      -"
+        ]
+      },
+      "fetch": {
+        "cycle_share_percent": 7.53,
+        "symbols": [
+          "6.16%; unstripped.so; [.] plainmp::constraint::create_bounds_avx<true>; -      -",
+          "0.73%; unstripped.so; [.] plainmp::constraint::create_bounds_avx<false>; -      -",
+          "0.64%; unstripped.so; [.] plainmp::constraint::SphereGroup::create_aabb_cache; -      -"
+        ]
+      }
+    }
+  },
+  "microbenchmark_perf": {
+    "sphere_count": 8,
+    "passes_including_warmup": 6,
+    "updates_per_pass": 2500000,
+    "scope": "Whole native benchmark process, including warmup and startup",
+    "events": {
+      "selected_micro_aabb_committed": {
+        "cycles:u": {
+          "count": 1997060775,
+          "running_percent": 100.0
+        },
+        "instructions:u": {
+          "count": 10607929572,
+          "running_percent": 100.0
+        },
+        "branches:u": {
+          "count": 585496918,
+          "running_percent": 100.0
+        },
+        "branch-misses:u": {
+          "count": 32109,
+          "running_percent": 100.0
+        }
+      },
+      "selected_micro_aabb_optimized": {
+        "cycles:u": {
+          "count": 880901978,
+          "running_percent": 100.0
+        },
+        "instructions:u": {
+          "count": 4037930108,
+          "running_percent": 100.0
+        },
+        "branches:u": {
+          "count": 270496955,
+          "running_percent": 100.0
+        },
+        "branch-misses:u": {
+          "count": 24783,
+          "running_percent": 100.0
+        }
+      },
+      "selected_micro_aabb_uniform_committed": {
+        "cycles:u": {
+          "count": 1760651394,
+          "running_percent": 100.0
+        },
+        "instructions:u": {
+          "count": 8867930018,
+          "running_percent": 100.0
+        },
+        "branches:u": {
+          "count": 585496829,
+          "running_percent": 100.0
+        },
+        "branch-misses:u": {
+          "count": 31110,
+          "running_percent": 100.0
+        }
+      },
+      "selected_micro_aabb_uniform_optimized": {
+        "cycles:u": {
+          "count": 793750028,
+          "running_percent": 100.0
+        },
+        "instructions:u": {
+          "count": 3602930223,
+          "running_percent": 100.0
+        },
+        "branches:u": {
+          "count": 270496790,
+          "running_percent": 100.0
+        },
+        "branch-misses:u": {
+          "count": 24248,
+          "running_percent": 100.0
+        }
+      }
+    }
+  },
+  "binary_consistency": {
+    "module_sha256": {
+      "selected": "c67bc5a7096a4278a371253a9e8259117eff3c694de48022866424b36430a037",
+      "cmake_build": "c67bc5a7096a4278a371253a9e8259117eff3c694de48022866424b36430a037",
+      "profile": "f02d727828dcf26da8082676aa425baf18e6a91393c4ee44040c81ad10c8f21c"
+    },
+    "identical_text_sha256": "1cd9004240df5503bff17d469863fe7f3b40c008e07a31848476037f02c586f3"
+  }
+}

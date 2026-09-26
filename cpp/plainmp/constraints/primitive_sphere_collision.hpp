@@ -33,17 +33,19 @@ struct SphereGroup {
 
   // group sphere position
   Eigen::Vector3d group_sphere_position_cache;
-  bool is_group_sphere_position_dirty;
 
   // sphere positions cache
   Eigen::Matrix3Xd sphere_positions_cache;
-  bool is_sphere_positions_dirty;
+
+  // These pose-dependent flags are reset together for every query.
+  bool is_group_sphere_position_dirty = true;
+  bool is_sphere_positions_dirty = true;
+  bool is_aabb_dirty = true;
+  bool is_aabb_valid = false;
 
   // Bounds include the radii, and are computed only for external collision.
   Eigen::Vector3d aabb_lb_cache;
   Eigen::Vector3d aabb_ub_cache;
-  bool is_aabb_dirty = true;
-  bool is_aabb_valid = false;
   // Radius metadata is independent of the pose. A negative maximum disables
   // AABB pruning for invalid or empty sphere sets.
   double max_sphere_radius = -1.0;

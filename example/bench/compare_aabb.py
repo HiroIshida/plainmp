@@ -61,7 +61,11 @@ def main():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--cpu", type=int)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--perf-control", help="perf stat --control command FIFO")
+    parser.add_argument("--perf-ack", help="perf stat --control acknowledgement FIFO")
     args = parser.parse_args()
+    if bool(args.perf_control) != bool(args.perf_ack):
+        parser.error("--perf-control and --perf-ack must be provided together")
     if args.cpu is not None:
         os.sched_setaffinity(0, {args.cpu})
     load_extension(args.module.resolve())
@@ -73,7 +77,12 @@ def main():
     problem = make_problem(args.case)
     solver = OMPLSolver()
     rows = []
+    control = open(args.perf_control, "w", buffering=1) if args.perf_control else None
+    ack = open(args.perf_ack) if args.perf_ack else None
     for i in range(args.warmup + args.samples):
+        if control is not None and i == args.warmup:
+            control.write("enable\n")
+            assert ack.readline().lstrip("\0") == "ack\n"
         result = solver.solve(problem)
         assert result.success, (args.case, args.seed, i)
         if i >= args.warmup:
@@ -86,6 +95,11 @@ def main():
                     hashlib.sha256(path.tobytes()).hexdigest(),
                 )
             )
+    if control is not None:
+        control.write("disable\n")
+        assert ack.readline().lstrip("\0") == "ack\n"
+        control.close()
+        ack.close()
     data = vars(args).copy()
     data.update(module=str(args.module.resolve()), output=str(args.output))
     data["columns"] = ["wall_ms", "internal_ms", "n_call", "path_sha256"]

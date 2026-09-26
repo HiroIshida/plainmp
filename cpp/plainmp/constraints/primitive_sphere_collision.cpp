@@ -10,6 +10,9 @@
 
 #include "plainmp/constraints/primitive_sphere_collision.hpp"
 #include <cmath>
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
+#include <immintrin.h>
+#endif
 #include <numeric>
 #include <type_traits>
 #include <unordered_set>
@@ -61,6 +64,93 @@ void SphereGroup::initialize_radius_cache() {
   }
 }
 
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
+// Keep xyz in three lanes of one vector, so the transform, reductions and
+// validity checks do not compete for separate scalar registers. AVX is
+// selected at runtime; the build's baseline ISA and Eigen settings stay intact.
+template <bool Uniform>
+__attribute__((target("avx"))) static void create_bounds_avx(
+    SphereGroup& group,
+    const Eigen::Vector3d& translation) {
+  const auto& rotation = group.rot_mat_cache;
+  const auto& relative = group.sphere_relative_positions;
+  const auto& radii = group.radii;
+  // Intrinsic stores may alias Eigen's owning objects in the compiler's
+  // analysis. Capture their pointers and size before writing any positions,
+  // so the loop does not reload those fields after every store.
+  double* const positions = group.sphere_positions_cache.data();
+  const double* const relative_data = relative.data();
+  const double* const radius_data = radii.data();
+  const Eigen::Index count = radii.size();
+  const __m256d rx =
+      _mm256_set_pd(0.0, rotation(2, 0), rotation(1, 0), rotation(0, 0));
+  const __m256d ry =
+      _mm256_set_pd(0.0, rotation(2, 1), rotation(1, 1), rotation(0, 1));
+  const __m256d rz =
+      _mm256_set_pd(0.0, rotation(2, 2), rotation(1, 2), rotation(0, 2));
+  const __m256d t =
+      _mm256_set_pd(0.0, translation[2], translation[1], translation[0]);
+  __m256d lower = _mm256_set1_pd(std::numeric_limits<double>::infinity());
+  __m256d upper = _mm256_set1_pd(-std::numeric_limits<double>::infinity());
+  __m256d sum = _mm256_setzero_pd();
+  for (Eigen::Index i = 0; i < count; ++i) {
+    const double* p = relative_data + 3 * i;
+    const __m256d px = _mm256_broadcast_sd(p);
+    const __m256d py = _mm256_broadcast_sd(p + 1);
+    const __m256d pz = _mm256_broadcast_sd(p + 2);
+    // Match Eigen's scalar product order: (Ry*y + Rz*z) + Rx*x + t.
+    // Store exactly three doubles; the unused lane must not overwrite the
+    // next sphere, or access beyond the final column.
+    const __m256d position = _mm256_add_pd(
+        _mm256_add_pd(
+            _mm256_add_pd(_mm256_mul_pd(ry, py), _mm256_mul_pd(rz, pz)),
+            _mm256_mul_pd(rx, px)),
+        t);
+    _mm_storeu_pd(positions + 3 * i, _mm256_castpd256_pd128(position));
+    _mm_store_sd(positions + 3 * i + 2, _mm256_extractf128_pd(position, 1));
+    // NaN/Inf must survive later min/max operations. A finite-input
+    // overflow also disables pruning, conservatively.
+    sum = _mm256_add_pd(sum, position);
+    if constexpr (Uniform) {
+      lower = _mm256_min_pd(lower, position);
+      upper = _mm256_max_pd(upper, position);
+    } else {
+      const __m256d radius = _mm256_broadcast_sd(radius_data + i);
+      lower = _mm256_min_pd(lower, _mm256_sub_pd(position, radius));
+      upper = _mm256_max_pd(upper, _mm256_add_pd(position, radius));
+    }
+  }
+  if constexpr (Uniform) {
+    const __m256d radius = _mm256_broadcast_sd(radius_data);
+    lower = _mm256_sub_pd(lower, radius);
+    upper = _mm256_add_pd(upper, radius);
+  }
+  // Use the same outward margin as the scalar path, including cancellation.
+  const __m256d sign = _mm256_set1_pd(-0.0);
+  const __m256d magnitude = _mm256_max_pd(_mm256_andnot_pd(sign, lower),
+                                          _mm256_andnot_pd(sign, upper));
+  const __m256d rounding = _mm256_add_pd(
+      _mm256_mul_pd(
+          _mm256_set1_pd(4.0 * std::numeric_limits<double>::epsilon()),
+          magnitude),
+      _mm256_set1_pd(std::numeric_limits<double>::denorm_min()));
+  lower = _mm256_sub_pd(lower, rounding);
+  upper = _mm256_add_pd(upper, rounding);
+  const __m256d inf = _mm256_set1_pd(std::numeric_limits<double>::infinity());
+  const __m256d finite = _mm256_and_pd(
+      _mm256_cmp_pd(_mm256_andnot_pd(sign, sum), inf, _CMP_LT_OQ),
+      _mm256_and_pd(
+          _mm256_cmp_pd(_mm256_andnot_pd(sign, lower), inf, _CMP_LT_OQ),
+          _mm256_cmp_pd(_mm256_andnot_pd(sign, upper), inf, _CMP_LT_OQ)));
+  _mm_storeu_pd(group.aabb_lb_cache.data(), _mm256_castpd256_pd128(lower));
+  _mm_store_sd(group.aabb_lb_cache.data() + 2, _mm256_extractf128_pd(lower, 1));
+  _mm_storeu_pd(group.aabb_ub_cache.data(), _mm256_castpd256_pd128(upper));
+  _mm_store_sd(group.aabb_ub_cache.data() + 2, _mm256_extractf128_pd(upper, 1));
+  group.is_sphere_positions_dirty = false;
+  group.is_aabb_valid = (_mm256_movemask_pd(finite) & 7) == 7;
+}
+#endif
+
 void SphereGroup::create_aabb_cache(
     const std::shared_ptr<kin::KinematicModel<double>>& kin) {
   if (!is_aabb_dirty) {
@@ -73,68 +163,82 @@ void SphereGroup::create_aabb_cache(
     return;
   }
 
-  // Keep the reductions scalar and materialize Eigen bounds only once below.
-  const double inf = std::numeric_limits<double>::infinity();
-  double lx = inf, ly = inf, lz = inf;
-  double ux = -inf, uy = -inf, uz = -inf;
-  // A non-finite center poisons this sum permanently, even if min/max
-  // discard its NaNs. Check once after the loop instead of branching on
-  // every coordinate. Overflow of otherwise finite centers also falls back.
-  double coordinate_sum = 0.0;
-  const auto extend_bounds = [&](const Eigen::Vector3d& p, Eigen::Index i,
-                                 auto uniform) {
-    coordinate_sum += p.sum();
-    // These specializations keep the radius branch outside the hot loop.
-    if constexpr (decltype(uniform)::value) {
-      lx = std::min(p.x(), lx);
-      ly = std::min(p.y(), ly);
-      lz = std::min(p.z(), lz);
-      ux = std::max(p.x(), ux);
-      uy = std::max(p.y(), uy);
-      uz = std::max(p.z(), uz);
+  Eigen::Vector3d lower, upper;
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
+  if (is_sphere_positions_dirty && __builtin_cpu_supports("avx")) {
+    const auto& trans = kin->transform_cache_.data_[parent_link_id].trans();
+    if (uniform_radii) {
+      create_bounds_avx<true>(*this, trans);
     } else {
-      const double r = radii[i];
-      lx = std::min(p.x() - r, lx);
-      ly = std::min(p.y() - r, ly);
-      lz = std::min(p.z() - r, lz);
-      ux = std::max(p.x() + r, ux);
-      uy = std::max(p.y() + r, uy);
-      uz = std::max(p.z() + r, uz);
+      create_bounds_avx<false>(*this, trans);
     }
-  };
-  const auto create_bounds = [&](auto uniform) {
-    if (is_sphere_positions_dirty) {
-      const auto& trans = kin->transform_cache_.data_[parent_link_id].trans();
-      for (Eigen::Index i = 0; i < radii.size(); ++i) {
-        const Eigen::Vector3d position =
-            rot_mat_cache * sphere_relative_positions.col(i) + trans;
-        sphere_positions_cache.col(i) = position;
-        extend_bounds(position, i, uniform);
-      }
-      is_sphere_positions_dirty = false;
-    } else {
-      for (Eigen::Index i = 0; i < radii.size(); ++i) {
-        extend_bounds(sphere_positions_cache.col(i), i, uniform);
-      }
-    }
-  };
-  // For a common radius, monotonicity of subtraction/addition lets us
-  // inflate once after reducing the centers, without loosening the bounds.
-  if (uniform_radii) {
-    create_bounds(std::true_type{});
-    lx -= max_sphere_radius;
-    ly -= max_sphere_radius;
-    lz -= max_sphere_radius;
-    ux += max_sphere_radius;
-    uy += max_sphere_radius;
-    uz += max_sphere_radius;
-  } else {
-    create_bounds(std::false_type{});
-  }
-  const Eigen::Vector3d lower(lx, ly, lz);
-  const Eigen::Vector3d upper(ux, uy, uz);
-  if (!std::isfinite(coordinate_sum)) {
     return;
+  } else
+#endif
+  {
+    // Keep the reductions scalar and materialize Eigen bounds only once below.
+    const double inf = std::numeric_limits<double>::infinity();
+    double lx = inf, ly = inf, lz = inf;
+    double ux = -inf, uy = -inf, uz = -inf;
+    // A non-finite center poisons this sum permanently, even if min/max
+    // discard its NaNs. Check once after the loop instead of branching on
+    // every coordinate. Overflow of otherwise finite centers also falls back.
+    double coordinate_sum = 0.0;
+    const auto extend_bounds = [&](const Eigen::Vector3d& p, Eigen::Index i,
+                                   auto uniform) {
+      coordinate_sum += p.sum();
+      // These specializations keep the radius branch outside the hot loop.
+      if constexpr (decltype(uniform)::value) {
+        lx = std::min(p.x(), lx);
+        ly = std::min(p.y(), ly);
+        lz = std::min(p.z(), lz);
+        ux = std::max(p.x(), ux);
+        uy = std::max(p.y(), uy);
+        uz = std::max(p.z(), uz);
+      } else {
+        const double r = radii[i];
+        lx = std::min(p.x() - r, lx);
+        ly = std::min(p.y() - r, ly);
+        lz = std::min(p.z() - r, lz);
+        ux = std::max(p.x() + r, ux);
+        uy = std::max(p.y() + r, uy);
+        uz = std::max(p.z() + r, uz);
+      }
+    };
+    const auto create_bounds = [&](auto uniform) {
+      if (is_sphere_positions_dirty) {
+        const auto& trans = kin->transform_cache_.data_[parent_link_id].trans();
+        for (Eigen::Index i = 0; i < radii.size(); ++i) {
+          const Eigen::Vector3d position =
+              rot_mat_cache * sphere_relative_positions.col(i) + trans;
+          sphere_positions_cache.col(i) = position;
+          extend_bounds(position, i, uniform);
+        }
+        is_sphere_positions_dirty = false;
+      } else {
+        for (Eigen::Index i = 0; i < radii.size(); ++i) {
+          extend_bounds(sphere_positions_cache.col(i), i, uniform);
+        }
+      }
+    };
+    // For a common radius, monotonicity of subtraction/addition lets us
+    // inflate once after reducing the centers, without loosening the bounds.
+    if (uniform_radii) {
+      create_bounds(std::true_type{});
+      lx -= max_sphere_radius;
+      ly -= max_sphere_radius;
+      lz -= max_sphere_radius;
+      ux += max_sphere_radius;
+      uy += max_sphere_radius;
+      uz += max_sphere_radius;
+    } else {
+      create_bounds(std::false_type{});
+    }
+    lower = Eigen::Vector3d(lx, ly, lz);
+    upper = Eigen::Vector3d(ux, uy, uz);
+    if (!std::isfinite(coordinate_sum)) {
+      return;
+    }
   }
 
   // Allow for both p +/- r above and the reversed object_bound +/- r
@@ -246,7 +350,7 @@ SphereCollisionCst::SphereCollisionCst(
                               group_radius, spec.only_self_collision,
                               spec.relative_positions, group_center,
                               Eigen::Matrix3d::Zero(), Eigen::Vector3d::Zero(),
-                              true, sphere_position_cache, true});
+                              sphere_position_cache});
     sphere_groups_.back().initialize_radius_cache();
 
     // 2024/12/16: This optimization is likely improve the performance of
