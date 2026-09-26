@@ -87,7 +87,6 @@ void ComInPolytopeCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
     grad[i] = (val_perturbed - val) / 1e-6;
   }
   jac.row(0) = com_jaco.transpose() * grad;
-
 }
 
 }  // namespace plainmp::constraint

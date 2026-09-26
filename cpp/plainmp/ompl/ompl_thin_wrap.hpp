@@ -264,7 +264,9 @@ struct PlannerBase {
     return trajectory.transpose();
   }
 
-  size_t getCallCount() const { return csi_->is_valid_call_count_; }
+  size_t getCallCount() const {
+    return csi_->is_valid_call_count_;
+  }
   size_t get_ns_internal() const {
     // for benchmarking with other libraries using internal measurement
     return ns_internal_measurement_;

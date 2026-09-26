@@ -49,7 +49,8 @@ LinkPositionBoundCst::evaluate_dirty() {
 }
 
 void LinkPositionBoundCst::evaluate_dirty_into(
-    Eigen::Ref<Eigen::VectorXd> vals, Eigen::Ref<Eigen::MatrixXd> jac) {
+    Eigen::Ref<Eigen::VectorXd> vals,
+    Eigen::Ref<Eigen::MatrixXd> jac) {
   const auto& pose = kin_->get_link_pose(link_id_);
   const auto& pos = pose.trans();
 
