@@ -183,6 +183,14 @@ struct PrimitiveSDFBase : public SDFBase {
            p(2) < lb(2) - radius || p(2) > ub(2) + radius;
   }
 
+  // The caller supplies conservative, already cached bounds. Strict
+  // inequalities keep touching boxes in the narrow phase.
+  inline bool is_outside_aabb(const Point& other_lb,
+                              const Point& other_ub) const {
+    return other_ub(0) < lb(0) || other_lb(0) > ub(0) || other_ub(1) < lb(1) ||
+           other_lb(1) > ub(1) || other_ub(2) < lb(2) || other_lb(2) > ub(2);
+  }
+
   inline bool is_outside_aabb_batch(const Points& ps,
                                     const Eigen::VectorXd& radii) const {
     // this is much faster than loop-based implementation

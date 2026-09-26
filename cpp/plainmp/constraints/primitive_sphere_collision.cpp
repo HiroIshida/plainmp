@@ -9,7 +9,9 @@
  */
 
 #include "plainmp/constraints/primitive_sphere_collision.hpp"
+#include <cmath>
 #include <numeric>
+#include <type_traits>
 #include <unordered_set>
 #include "plainmp/kinematics/kinematics.hpp"
 
@@ -48,6 +50,103 @@ void SphereGroup::create_sphere_position_cache(
         this->rot_mat_cache * sphere_relative_positions.col(i) + plink_trans;
   }
   this->is_sphere_positions_dirty = false;
+}
+
+void SphereGroup::initialize_radius_cache() {
+  max_sphere_radius = -1.0;
+  uniform_radii = false;
+  if (radii.size() > 0 && radii.allFinite() && radii.minCoeff() >= 0.0) {
+    max_sphere_radius = radii.maxCoeff();
+    uniform_radii = (radii.array() == max_sphere_radius).all();
+  }
+}
+
+void SphereGroup::create_aabb_cache(
+    const std::shared_ptr<kin::KinematicModel<double>>& kin) {
+  if (!is_aabb_dirty) {
+    return;
+  }
+  is_aabb_dirty = false;
+  is_aabb_valid = false;
+  if (max_sphere_radius < 0.0) {
+    create_sphere_position_cache(kin);
+    return;
+  }
+
+  // Keep the reductions scalar and materialize Eigen bounds only once below.
+  const double inf = std::numeric_limits<double>::infinity();
+  double lx = inf, ly = inf, lz = inf;
+  double ux = -inf, uy = -inf, uz = -inf;
+  // A non-finite center poisons this sum permanently, even if min/max
+  // discard its NaNs. Check once after the loop instead of branching on
+  // every coordinate. Overflow of otherwise finite centers also falls back.
+  double coordinate_sum = 0.0;
+  const auto extend_bounds = [&](const Eigen::Vector3d& p, Eigen::Index i,
+                                 auto uniform) {
+    coordinate_sum += p.sum();
+    // These specializations keep the radius branch outside the hot loop.
+    if constexpr (decltype(uniform)::value) {
+      lx = std::min(p.x(), lx);
+      ly = std::min(p.y(), ly);
+      lz = std::min(p.z(), lz);
+      ux = std::max(p.x(), ux);
+      uy = std::max(p.y(), uy);
+      uz = std::max(p.z(), uz);
+    } else {
+      const double r = radii[i];
+      lx = std::min(p.x() - r, lx);
+      ly = std::min(p.y() - r, ly);
+      lz = std::min(p.z() - r, lz);
+      ux = std::max(p.x() + r, ux);
+      uy = std::max(p.y() + r, uy);
+      uz = std::max(p.z() + r, uz);
+    }
+  };
+  const auto create_bounds = [&](auto uniform) {
+    if (is_sphere_positions_dirty) {
+      const auto& trans = kin->transform_cache_.data_[parent_link_id].trans();
+      for (Eigen::Index i = 0; i < radii.size(); ++i) {
+        const Eigen::Vector3d position =
+            rot_mat_cache * sphere_relative_positions.col(i) + trans;
+        sphere_positions_cache.col(i) = position;
+        extend_bounds(position, i, uniform);
+      }
+      is_sphere_positions_dirty = false;
+    } else {
+      for (Eigen::Index i = 0; i < radii.size(); ++i) {
+        extend_bounds(sphere_positions_cache.col(i), i, uniform);
+      }
+    }
+  };
+  // For a common radius, monotonicity of subtraction/addition lets us
+  // inflate once after reducing the centers, without loosening the bounds.
+  if (uniform_radii) {
+    create_bounds(std::true_type{});
+    lx -= max_sphere_radius;
+    ly -= max_sphere_radius;
+    lz -= max_sphere_radius;
+    ux += max_sphere_radius;
+    uy += max_sphere_radius;
+    uz += max_sphere_radius;
+  } else {
+    create_bounds(std::false_type{});
+  }
+  const Eigen::Vector3d lower(lx, ly, lz);
+  const Eigen::Vector3d upper(ux, uy, uz);
+  if (!std::isfinite(coordinate_sum)) {
+    return;
+  }
+
+  // Allow for both p +/- r above and the reversed object_bound +/- r
+  // comparison in the original sphere broad phase. Scale by BOTH endpoints:
+  // nextafter(p + r) alone is insufficient when p and r nearly cancel.
+  const Eigen::Vector3d rounding =
+      (4.0 * std::numeric_limits<double>::epsilon() *
+       lower.cwiseAbs().cwiseMax(upper.cwiseAbs()).array()) +
+      std::numeric_limits<double>::denorm_min();
+  aabb_lb_cache = lower - rounding;
+  aabb_ub_cache = upper + rounding;
+  is_aabb_valid = aabb_lb_cache.allFinite() && aabb_ub_cache.allFinite();
 }
 
 std::vector<size_t> reorder_spheres_for_informative_collision_check(
@@ -148,6 +247,7 @@ SphereCollisionCst::SphereCollisionCst(
                               spec.relative_positions, group_center,
                               Eigen::Matrix3d::Zero(), Eigen::Vector3d::Zero(),
                               true, sphere_position_cache, true});
+    sphere_groups_.back().initialize_radius_cache();
 
     // 2024/12/16: This optimization is likely improve the performance of
     // collision checking and probably never make it worse. However, currently,
@@ -197,21 +297,31 @@ bool SphereCollisionCst::check_ext_collision() {
 
     // check against all SDFs
     for (auto& sdf : all_sdfs_cache_) {
-      if (!sdf->is_outside_aabb(group.group_sphere_position_cache,
-                                group.group_radius)) {
-        if (!sdf->is_outside(group.group_sphere_position_cache,
-                             group.group_radius)) {
-          // now narrow phase collision checking
-          group.create_sphere_position_cache(kin_);
-          for (size_t i = 0; i < group.radii.size(); i++) {
-            if (!sdf->is_outside_aabb(group.sphere_positions_cache.col(i),
-                                      group.radii[i])) {
-              if (!sdf->is_outside(group.sphere_positions_cache.col(i),
-                                   group.radii[i])) {
-                return false;
-              }
-            }
-          }
+      if (group.is_aabb_valid
+              ? sdf->is_outside_aabb(group.aabb_lb_cache, group.aabb_ub_cache)
+              : sdf->is_outside_aabb(group.group_sphere_position_cache,
+                                     group.group_radius)) {
+        continue;
+      }
+      if (sdf->is_outside(group.group_sphere_position_cache,
+                          group.group_radius)) {
+        continue;
+      }
+      if (group.is_aabb_dirty) {
+        group.create_aabb_cache(kin_);
+        if (group.is_aabb_valid &&
+            sdf->is_outside_aabb(group.aabb_lb_cache, group.aabb_ub_cache)) {
+          continue;
+        }
+      }
+      // Positions were prepared along with the AABB, even if its bounds
+      // were non-finite. Keep the original order and early collision exit.
+      for (size_t i = 0; i < group.radii.size(); i++) {
+        if (!sdf->is_outside_aabb(group.sphere_positions_cache.col(i),
+                                  group.radii[i]) &&
+            !sdf->is_outside(group.sphere_positions_cache.col(i),
+                             group.radii[i])) {
+          return false;
         }
       }
     }

@@ -39,16 +39,31 @@ struct SphereGroup {
   Eigen::Matrix3Xd sphere_positions_cache;
   bool is_sphere_positions_dirty;
 
+  // Bounds include the radii, and are computed only for external collision.
+  Eigen::Vector3d aabb_lb_cache;
+  Eigen::Vector3d aabb_ub_cache;
+  bool is_aabb_dirty = true;
+  bool is_aabb_valid = false;
+  // Radius metadata is independent of the pose. A negative maximum disables
+  // AABB pruning for invalid or empty sphere sets.
+  double max_sphere_radius = -1.0;
+  bool uniform_radii = false;
+
   void max_distance_reorder();
+  void initialize_radius_cache();
 
   inline void clear_cache() {
     is_group_sphere_position_dirty = true;
     is_sphere_positions_dirty = true;
+    is_aabb_dirty = true;
+    is_aabb_valid = false;
   }
 
   void create_group_sphere_position_cache(
       const std::shared_ptr<kin::KinematicModel<double>>& kin);
   void create_sphere_position_cache(
+      const std::shared_ptr<kin::KinematicModel<double>>& kin);
+  void create_aabb_cache(
       const std::shared_ptr<kin::KinematicModel<double>>& kin);
 };
 
