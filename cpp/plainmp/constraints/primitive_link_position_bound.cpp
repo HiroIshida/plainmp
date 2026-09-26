@@ -42,13 +42,16 @@ LinkPositionBoundCst::LinkPositionBoundCst(
 
 std::pair<Eigen::VectorXd, Eigen::MatrixXd>
 LinkPositionBoundCst::evaluate_dirty() {
+  Eigen::VectorXd vals(cst_dim());
+  Eigen::MatrixXd jac(cst_dim(), q_dim());
+  evaluate_dirty_into(vals, jac);
+  return {vals, jac};
+}
+
+void LinkPositionBoundCst::evaluate_dirty_into(
+    Eigen::Ref<Eigen::VectorXd> vals, Eigen::Ref<Eigen::MatrixXd> jac) {
   const auto& pose = kin_->get_link_pose(link_id_);
   const auto& pos = pose.trans();
-
-  size_t n_constraints =
-      (lower_bound_.has_value() ? 1 : 0) + (upper_bound_.has_value() ? 1 : 0);
-  Eigen::VectorXd vals(n_constraints);
-  Eigen::MatrixXd jac(n_constraints, q_dim());
 
   Eigen::MatrixXd pos_jac = kin_->get_jacobian(
       link_id_, control_joint_ids_, kin::RotationType::IGNORE, base_type_);
@@ -63,7 +66,6 @@ LinkPositionBoundCst::evaluate_dirty() {
     jac.row(row) = -pos_jac.row(axis_);
     row++;
   }
-  return {vals, jac};
 }
 
 bool LinkPositionBoundCst::is_valid_dirty() {

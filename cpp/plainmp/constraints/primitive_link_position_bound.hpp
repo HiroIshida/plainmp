@@ -36,6 +36,8 @@ class LinkPositionBoundCst : public IneqConstraintBase {
                        const std::optional<double>& ub);
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
+  void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
+                           Eigen::Ref<Eigen::MatrixXd> jacobian) override;
   bool is_valid_dirty() override;
   size_t cst_dim() const override;
   std::string get_name() const override;

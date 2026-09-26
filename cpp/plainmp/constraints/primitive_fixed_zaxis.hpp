@@ -21,6 +21,8 @@ class FixedZAxisCst : public EqConstraintBase {
                 const std::string& link_name);
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
+  void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
+                           Eigen::Ref<Eigen::MatrixXd> jacobian) override;
   size_t cst_dim() const override { return 2; }
   std::string get_name() const override { return "FixedZAxisCst"; }
 

@@ -30,34 +30,42 @@ ConfigPointCst::ConfigPointCst(
 
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> ConfigPointCst::evaluate_dirty() {
   size_t dof = q_dim();
+  Eigen::VectorXd vals(dof);
+  Eigen::MatrixXd jac(dof, dof);
+  evaluate_dirty_into(vals, jac);
+  return {vals, jac};
+}
+
+void ConfigPointCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
+                                         Eigen::Ref<Eigen::MatrixXd> jac) {
   std::vector<double> q_now_joint_std =
       kin_->get_joint_angles(control_joint_ids_);
 
-  Eigen::VectorXd q_now(dof);
   for (size_t i = 0; i < control_joint_ids_.size(); i++) {
-    q_now[i] = q_now_joint_std[i];
+    vals[i] = q_now_joint_std[i];
   }
 
   if (base_type_ == kin::BaseType::FLOATING) {
     size_t head = control_joint_ids_.size();
     auto base_pose = kin_->get_base_pose();
-    q_now(head) = base_pose.trans().x();
-    q_now(head + 1) = base_pose.trans().y();
-    q_now(head + 2) = base_pose.trans().z();
+    vals(head) = base_pose.trans().x();
+    vals(head + 1) = base_pose.trans().y();
+    vals(head + 2) = base_pose.trans().z();
     auto base_rpy = base_pose.getRPY();
-    q_now(head + 3) = base_rpy.x();
-    q_now(head + 4) = base_rpy.y();
-    q_now(head + 5) = base_rpy.z();
+    vals(head + 3) = base_rpy.x();
+    vals(head + 4) = base_rpy.y();
+    vals(head + 5) = base_rpy.z();
   }
   if (base_type_ == kin::BaseType::PLANAR) {
     size_t head = control_joint_ids_.size();
     auto base_pose = kin_->get_base_pose();
-    q_now(head) = base_pose.trans().x();
-    q_now(head + 1) = base_pose.trans().y();
+    vals(head) = base_pose.trans().x();
+    vals(head + 1) = base_pose.trans().y();
     auto base_rpy = base_pose.getRPY();
-    q_now(head + 2) = base_rpy.z();
+    vals(head + 2) = base_rpy.z();
   }
-  return {q_now - q_, Eigen::MatrixXd::Identity(dof, dof)};
+  vals -= q_;
+  jac.setIdentity();
 }
 
 }  // namespace plainmp::constraint

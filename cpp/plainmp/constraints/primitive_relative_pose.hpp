@@ -23,6 +23,8 @@ class RelativePoseCst : public EqConstraintBase {
                   const std::string& link_name2,
                   const Eigen::Vector3d& relative_pose);
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
+  void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
+                           Eigen::Ref<Eigen::MatrixXd> jacobian) override;
   size_t cst_dim() const { return 7; }
   std::string get_name() const override { return "RelativePoseCst"; }
 

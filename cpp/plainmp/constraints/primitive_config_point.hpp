@@ -21,6 +21,8 @@ class ConfigPointCst : public EqConstraintBase {
                  kin::BaseType base_type,
                  const Eigen::VectorXd& q);
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
+  void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
+                           Eigen::Ref<Eigen::MatrixXd> jacobian) override;
   size_t cst_dim() const { return q_.size(); }
   std::string get_name() const override { return "ConfigPointCst"; }
 

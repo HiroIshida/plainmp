@@ -33,6 +33,12 @@ RelativePoseCst::RelativePoseCst(
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
   Eigen::VectorXd vals(cst_dim());
   Eigen::MatrixXd jac(cst_dim(), q_dim());
+  evaluate_dirty_into(vals, jac);
+  return {vals, jac};
+}
+
+void RelativePoseCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
+                                          Eigen::Ref<Eigen::MatrixXd> jac) {
   const auto& pose_dummy = kin_->get_link_pose(dummy_link_id_);
   const auto& pose2 = kin_->get_link_pose(link_id2_);
   vals.head(3) = pose_dummy.trans() - pose2.trans();
@@ -41,7 +47,6 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
                            kin::RotationType::XYZW, base_type_) -
         kin_->get_jacobian(link_id2_, control_joint_ids_,
                            kin::RotationType::XYZW, base_type_);
-  return {vals, jac};
 }
 
 }  // namespace plainmp::constraint

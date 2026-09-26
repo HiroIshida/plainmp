@@ -52,7 +52,12 @@ bool ComInPolytopeCst::is_valid_dirty() {
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
   Eigen::VectorXd vals(cst_dim());
   Eigen::MatrixXd jac(cst_dim(), q_dim());
+  evaluate_dirty_into(vals, jac);
+  return {vals, jac};
+}
 
+void ComInPolytopeCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
+                                           Eigen::Ref<Eigen::MatrixXd> jac) {
   auto com = kin_->get_com();
   auto com_jaco = kin_->get_com_jacobian(control_joint_ids_, base_type_);
   if (force_link_ids_.size() > 0) {
@@ -83,7 +88,6 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> ComInPolytopeCst::evaluate_dirty() {
   }
   jac.row(0) = com_jaco.transpose() * grad;
 
-  return {vals, jac};
-};
+}
 
 }  // namespace plainmp::constraint

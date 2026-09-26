@@ -37,10 +37,17 @@ FixedZAxisCst::FixedZAxisCst(
 }
 
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
+  Eigen::VectorXd vals(cst_dim());
+  Eigen::MatrixXd jac(cst_dim(), q_dim());
+  evaluate_dirty_into(vals, jac);
+  return {vals, jac};
+}
+
+void FixedZAxisCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
+                                        Eigen::Ref<Eigen::MatrixXd> jac) {
   const auto& pose_here = kin_->get_link_pose(link_id_);
   const auto& pose_plus1_x = kin_->get_link_pose(aux_link_ids_[0]);
   const auto& pose_plus1_y = kin_->get_link_pose(aux_link_ids_[1]);
-  Eigen::VectorXd vals(2);
   double diff_plus1_x_z = pose_plus1_x.trans().z() - pose_here.trans().z();
   double diff_plus1_y_z = pose_plus1_y.trans().z() - pose_here.trans().z();
   vals << diff_plus1_x_z, diff_plus1_y_z;
@@ -55,10 +62,8 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
                                    kin::RotationType::IGNORE, base_type_);
   jac_plus1_y = kin_->get_jacobian(aux_link_ids_[1], control_joint_ids_,
                                    kin::RotationType::IGNORE, base_type_);
-  Eigen::MatrixXd jac(2, q_dim());
   jac.row(0) = jac_plus1_x.row(2) - jac_here.row(2);
   jac.row(1) = jac_plus1_y.row(2) - jac_here.row(2);
-  return {vals, jac};
-};
+}
 
 }  // namespace plainmp::constraint

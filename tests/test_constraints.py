@@ -251,12 +251,25 @@ def test_evaluate_into_reuses_output_arrays():
     q = fs.q_reset_pose()
     pose_cst = fs.create_gripper_pose_const([0.7, 0.2, 0.8])
     config_cst = fs.create_config_point_const(q)
+    relative_cst = fs.create_relative_pose_const("head_pan_link", "gripper_link", np.ones(3))
+    fixed_z_cst = fs.create_fixed_zaxis_const("gripper_link")
     collision_cst = fs.create_collision_const(True)
+    sdf = BoxSDF([0.3, 0.3, 0], Pose([0.0, 0.0, 0.0], np.eye(3)))
+    com_cst = ComInPolytopeCst(
+        fs.get_kin(), fs.control_joint_names, BaseType.FIXED, sdf,
+        [AppliedForceSpec("gripper_link", 2.0)],
+    )
+    bound_cst = fs.create_position_bound_const("gripper_link", 2, 0.0, 1.0)
     constraints = [
         pose_cst,
+        config_cst,
+        relative_cst,
+        fixed_z_cst,
         collision_cst,
-        EqCompositeCst([pose_cst, config_cst]),
-        IneqCompositeCst([collision_cst]),
+        com_cst,
+        bound_cst,
+        EqCompositeCst([pose_cst, config_cst, relative_cst, fixed_z_cst]),
+        IneqCompositeCst([collision_cst, com_cst, bound_cst]),
     ]
 
     for cst in constraints:
