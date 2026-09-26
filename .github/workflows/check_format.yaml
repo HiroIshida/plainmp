@@ -28,9 +28,11 @@ jobs:
           run: |
               sudo apt-get update
               sudo apt-get install clang-format-14
-              clang-format --version
+              clang-format-14 --version
 
         - name: check
+          env:
+            CLANG_FORMAT: clang-format-14
           run: |
             bash format.sh
 

@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
-find cpp -type f \( -name "*.cpp" -o -name "*.hpp" \) | xargs clang-format -i -style=Chromium
+clang_format=${CLANG_FORMAT:-clang-format}
+if [[ "$("$clang_format" --version)" != *"version 14."* ]]; then
+    echo "format.sh requires clang-format 14 (selected: $clang_format)" >&2
+    exit 1
+fi
+find cpp -type f \( -name "*.cpp" -o -name "*.hpp" \) | xargs "$clang_format" -i -style=Chromium
 
 find . -name "*py"|xargs python3 -m autoflake -i --remove-all-unused-imports --remove-unused-variables --ignore-init-module-imports
 for module in "src/plainmp tests example"; do
