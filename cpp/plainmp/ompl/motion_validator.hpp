@@ -11,6 +11,7 @@
 #include <ompl/base/MotionValidator.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
+#include <functional>
 #include <vector>
 
 namespace plainmp::ompl_wrapper {
@@ -35,7 +36,19 @@ class CustomValidatorBase : public ob::MotionValidator {
   virtual double determine_step_ratio(const ob::State* s1,
                                       const ob::State* s2) const = 0;
 
+  struct MotionCertificate {
+    double radius_steps = 6;
+    std::function<bool(const ob::State*, const ob::State*, double)> prepare;
+    std::function<bool(const ob::State*, double&)> check;
+    std::function<void()> skip;
+    std::function<void(const ob::State*)> restore;
+  };
+  void set_motion_certificate(MotionCertificate certificate) {
+    certificate_ = std::move(certificate);
+  }
+
  private:
+  MotionCertificate certificate_;
   ob::RealVectorStateSpace::StateType* s_test_;  // pre-allocated memory
 };
 
