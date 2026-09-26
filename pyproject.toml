@@ -5,6 +5,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "plainmp"
 version = "0.3.5"
+requires-python = ">=3.8"
 description = "Very fast motion planning for articulated robot, through a bit of premature-optimization (C++ core with Python bindings) *less than 1ms for moderate problems"
 authors = [{name = "Hirokazu Ishida"}]
 license = {text = "MPL2.0 for C++ core and BSD3 for Python bindings"}
@@ -18,6 +19,10 @@ dependencies = [
     "osqp<1.0.0",
     "tyro"
 ]
+
+[dependency-groups]
+dev = ["pytest"]
+lint = ["autoflake", "black==22.6.0", "codespell", "flake8", "isort"]
 
 [tool.scikit-build]
 # see: https://scikit-build-core.readthedocs.io/en/latest/configuration/index.html#customizing-the-built-wheel

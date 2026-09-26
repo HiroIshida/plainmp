@@ -14,13 +14,13 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.x'
-    - name: Install publishing dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install wheel twine scikit-build build
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
 
     - name: Build and publish
+      env:
+        UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
       run: |
         git submodule update --init
-        python -m build . --sdist
-        twine upload --skip-existing -u __token__ -p ${{ secrets.PYPI_TOKEN }} dist/*
+        uv build --sdist
+        uv publish --check-url https://pypi.org/simple dist/*.tar.gz

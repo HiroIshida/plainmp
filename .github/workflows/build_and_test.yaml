@@ -17,6 +17,8 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -30,6 +32,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+
       - name: Update Submodules
         run: git submodule update --init --recursive
 
@@ -38,37 +45,32 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libspatialindex-dev freeglut3-dev libsuitesparse-dev libblas-dev liblapack-dev
-          pip install scikit-robot
 
       - name: Install scikit-robot (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew install spatialindex suite-sparse openblas lapack
-          pip install scikit-robot
 
       - name: Install This Package (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install libeigen3-dev libboost-all-dev libompl-dev
-          python3 -m pip install --upgrade pip
-          python3 -m pip install build
-          python3 -m build . --sdist  # install sdist version to detect packaging-related issues
-          MAKEFLAGS="-j$(nproc)" pip install dist/*.tar.gz
 
       - name: Install This Package (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew install eigen boost ompl
-          python3 -m pip install --upgrade pip
-          python3 -m pip install build
-          python3 -m build . --sdist  # install sdist version to detect packaging-related issues
-          MAKEFLAGS="-j$(sysctl -n hw.ncpu)" pip install dist/*.tar.gz
+
+      - name: Build and install source distribution
+        run: |
+          uv build --sdist
+          uv sync --locked --no-install-project
+          uv pip install --python .venv/bin/python dist/*.tar.gz
 
       - name: Test
         run: |
-          pip install pytest
           for i in {1..3}; do
-            if pytest tests; then
+            if uv run --no-sync pytest tests; then
               exit 0
             fi
             echo "Test failed... retrying ($i)"
@@ -81,7 +83,7 @@ jobs:
         run: |
           run_example() {
             for i in {1..3}; do
-              if python3 "$1" $2; then
+              if uv run --no-sync python "$1" $2; then
                 return 0
               fi
               echo "$1 failed... retrying ($i)"
