@@ -25,7 +25,6 @@ class ComInPolytopeCst : public IneqConstraintBase {
                    plainmp::collision::BoxSDF::Ptr polytope_sdf,
                    const std::vector<AppliedForceSpec> applied_forces);
   bool is_valid_dirty() override;
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
                            Eigen::Ref<Eigen::MatrixXd> jacobian) override;
   size_t cst_dim() const { return 1; }

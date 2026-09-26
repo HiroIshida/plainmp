@@ -80,7 +80,6 @@ class SphereCollisionCst : public IneqConstraintBase {
   bool is_valid_dirty() override;
   bool check_ext_collision();
   bool check_self_collision();
-  std::pair<Eigen::VectorXd, Eigen::MatrixXd> evaluate_dirty() override;
   void evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> values,
                            Eigen::Ref<Eigen::MatrixXd> jacobian) override;
   // Accept a strided row of the caller's Jacobian buffer.

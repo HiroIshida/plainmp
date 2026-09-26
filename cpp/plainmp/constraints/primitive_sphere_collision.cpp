@@ -384,14 +384,6 @@ double SphereCollisionCst::evaluate_self_collision(
   }
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd>
-SphereCollisionCst::evaluate_dirty() {
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-  Eigen::VectorXd vals(cst_dim());
-  evaluate_dirty_into(vals, jac);
-  return {vals, jac};
-}
-
 void SphereCollisionCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
                                              Eigen::Ref<Eigen::MatrixXd> jac) {
   size_t head = 0;

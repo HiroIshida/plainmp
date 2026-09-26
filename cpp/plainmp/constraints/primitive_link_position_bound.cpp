@@ -40,14 +40,6 @@ LinkPositionBoundCst::LinkPositionBoundCst(
   link_id_ = link_ids[0];
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd>
-LinkPositionBoundCst::evaluate_dirty() {
-  Eigen::VectorXd vals(cst_dim());
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-  evaluate_dirty_into(vals, jac);
-  return {vals, jac};
-}
-
 void LinkPositionBoundCst::evaluate_dirty_into(
     Eigen::Ref<Eigen::VectorXd> vals,
     Eigen::Ref<Eigen::MatrixXd> jac) {

@@ -28,13 +28,6 @@ LinkPoseCst::LinkPoseCst(std::shared_ptr<kin::KinematicModel<double>> kin,
   }
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> LinkPoseCst::evaluate_dirty() {
-  Eigen::VectorXd vals(cst_dim());
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-  evaluate_dirty_into(vals, jac);
-  return {vals, jac};
-}
-
 void LinkPoseCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
                                       Eigen::Ref<Eigen::MatrixXd> jac) {
   size_t head = 0;

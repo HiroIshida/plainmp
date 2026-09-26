@@ -30,13 +30,6 @@ RelativePoseCst::RelativePoseCst(
   dummy_link_id_ = kin_->add_new_link(link_id1_, pose, true);
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> RelativePoseCst::evaluate_dirty() {
-  Eigen::VectorXd vals(cst_dim());
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-  evaluate_dirty_into(vals, jac);
-  return {vals, jac};
-}
-
 void RelativePoseCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
                                           Eigen::Ref<Eigen::MatrixXd> jac) {
   const auto& pose_dummy = kin_->get_link_pose(dummy_link_id_);

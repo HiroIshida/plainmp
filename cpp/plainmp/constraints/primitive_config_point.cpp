@@ -28,14 +28,6 @@ ConfigPointCst::ConfigPointCst(
   }
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> ConfigPointCst::evaluate_dirty() {
-  size_t dof = q_dim();
-  Eigen::VectorXd vals(dof);
-  Eigen::MatrixXd jac(dof, dof);
-  evaluate_dirty_into(vals, jac);
-  return {vals, jac};
-}
-
 void ConfigPointCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
                                          Eigen::Ref<Eigen::MatrixXd> jac) {
   std::vector<double> q_now_joint_std =

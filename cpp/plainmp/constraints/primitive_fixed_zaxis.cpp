@@ -36,13 +36,6 @@ FixedZAxisCst::FixedZAxisCst(
   }
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> FixedZAxisCst::evaluate_dirty() {
-  Eigen::VectorXd vals(cst_dim());
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-  evaluate_dirty_into(vals, jac);
-  return {vals, jac};
-}
-
 void FixedZAxisCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
                                         Eigen::Ref<Eigen::MatrixXd> jac) {
   const auto& pose_here = kin_->get_link_pose(link_id_);
