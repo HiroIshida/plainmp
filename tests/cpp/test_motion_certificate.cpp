@@ -371,6 +371,7 @@ EdgeResult check_edge(bool enabled,
   config.resolution = resolution;
   config.box_width = {resolution, resolution};
   config.enable_interval_pruning = enabled;
+  config.interval_pruning_min_test_count = 4;
   planner::CollisionAwareSpaceInformation csi({-3, -2}, {3, 2}, cst, 3, config);
   size_t ordinary = 0;
   csi.si_->setStateValidityChecker([&](const ob::State* state) {
@@ -444,6 +445,7 @@ TEST(MotionValidator, CoveredSamplesAreSkippedButCountedInOriginalOrder) {
     size_t calls = 0, checks = 0, skips = 0, restores = 0;
     double final_rate = -1;
     planner::CustomValidatorBase::MotionCertificate certificate;
+    certificate.min_test_count = 4;
     certificate.prepare = [](const ob::State*, const ob::State*, double) {
       return true;
     };

@@ -34,7 +34,9 @@ void bind_ompl_wrapper_submodule(nb::module_& m) {
       .def_rw("resolution", &ValidatorConfig::resolution)
       .def_rw("box_width", &ValidatorConfig::box_width)
       .def_rw("enable_interval_pruning",
-              &ValidatorConfig::enable_interval_pruning);
+              &ValidatorConfig::enable_interval_pruning)
+      .def_rw("interval_pruning_min_test_count",
+              &ValidatorConfig::interval_pruning_min_test_count);
 
   nb::enum_<RefineType>(ompl_m, "RefineType")
       .value("SHORTCUT", RefineType::SHORTCUT)

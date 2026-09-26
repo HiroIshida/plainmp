@@ -61,6 +61,7 @@ class OMPLSolverConfig:
     plainmp_rrtc_settings: Optional[PlainmpRRTCSettings] = None
     # Experimental; only applies to supported SphereCollisionCst motion checks.
     enable_interval_pruning: bool = False
+    interval_pruning_min_test_count: int = 16
 
     def __post_init__(self):
         if len(self.refine_seq) > 0:
@@ -228,6 +229,7 @@ class OMPLSolver:
 
         vconfig = ValidatorConfig()
         vconfig.enable_interval_pruning = self.config.enable_interval_pruning
+        vconfig.interval_pruning_min_test_count = self.config.interval_pruning_min_test_count
         if problem.validator_type == "box":
             vconfig.type = ValidatorType.BOX
             vconfig.box_width = problem.resolution

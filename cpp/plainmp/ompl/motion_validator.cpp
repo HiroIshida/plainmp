@@ -44,7 +44,8 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
 
   const auto space = si_->getStateSpace();
   size_t n_test = std::floor(1 / step_ratio) + 2;  // including start and end
-  if (n_test > 3 && n_test <= 128 && n_test < SEQUENCE_TABLE.size() + 1 &&
+  if (n_test >= certificate_.min_test_count && n_test <= 128 &&
+      n_test < SEQUENCE_TABLE.size() + 1 &&
       certificate_.prepare) {
     const double rate_radius =
         std::min(1.0, certificate_.radius_steps * step_ratio);

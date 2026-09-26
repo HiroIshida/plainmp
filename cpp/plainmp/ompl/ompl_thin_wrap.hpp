@@ -58,6 +58,7 @@ struct ValidatorConfig {
   double resolution;
   std::vector<double> box_width;
   bool enable_interval_pruning = false;
+  size_t interval_pruning_min_test_count = 16;
 };
 
 struct CollisionAwareSpaceInformation {
@@ -96,6 +97,7 @@ struct CollisionAwareSpaceInformation {
               std::dynamic_pointer_cast<constraint::SphereCollisionCst>(
                   ineq_cst_)) {
         CustomValidatorBase::MotionCertificate certificate;
+        certificate.min_test_count = vconfig.interval_pruning_min_test_count;
         certificate.prepare = [sphere, dim](const ob::State* a,
                                             const ob::State* b, double radius) {
           const Eigen::Map<const Eigen::VectorXd> start(

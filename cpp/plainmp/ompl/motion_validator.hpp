@@ -38,6 +38,7 @@ class CustomValidatorBase : public ob::MotionValidator {
 
   struct MotionCertificate {
     double radius_steps = 6;
+    size_t min_test_count = 16;
     std::function<bool(const ob::State*, const ob::State*, double)> prepare;
     std::function<bool(const ob::State*, double&)> check;
     std::function<void()> skip;
