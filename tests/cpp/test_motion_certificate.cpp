@@ -409,9 +409,8 @@ TEST(MotionValidator, RuntimeSwitchPreservesResultBudgetAndFinalState) {
         EXPECT_EQ(on.terminated, off.terminated);
         EXPECT_TRUE(on.final_joints.isApprox(off.final_joints, 1e-14));
         if (resolution == 0.05) {
-          // Prove the runtime flag actually installs the certificate path.
-          EXPECT_EQ(on.ordinary_checks, 0);
-          EXPECT_GT(off.ordinary_checks, 0);
+          // End and midpoint are ordinary probes, even with certificates ON.
+          EXPECT_EQ(on.ordinary_checks, std::min<size_t>(2, off.calls));
         } else {
           // Very short and very long edges take the ordinary path.
           EXPECT_EQ(on.ordinary_checks, off.ordinary_checks);
@@ -442,11 +441,20 @@ TEST(MotionValidator, CoveredSamplesAreSkippedButCountedInOriginalOrder) {
   end[0] = 1;
   ASSERT_TRUE(si->checkMotion(start.get(), end.get()));
   for (double requested_radius : {0.26, 1.0}) {
-    size_t calls = 0, checks = 0, skips = 0, restores = 0;
+    size_t calls = 0, probes = 0, checks = 0, skips = 0, restores = 0;
     double final_rate = -1;
+    si->setStateValidityChecker([&](const ob::State* state) {
+      const double rate =
+          state->as<ob::RealVectorStateSpace::StateType>()->values[0];
+      EXPECT_DOUBLE_EQ(rate, baseline.at(calls));
+      ++calls;
+      ++probes;
+      return true;
+    });
     planner::CustomValidatorBase::MotionCertificate certificate;
     certificate.min_test_count = 4;
-    certificate.prepare = [](const ob::State*, const ob::State*, double) {
+    certificate.prepare = [&](const ob::State*, const ob::State*, double) {
+      EXPECT_EQ(probes, 2);
       return true;
     };
     certificate.check = [&](const ob::State* state, double& radius) {
@@ -468,12 +476,87 @@ TEST(MotionValidator, CoveredSamplesAreSkippedButCountedInOriginalOrder) {
     };
     validator->set_motion_certificate(std::move(certificate));
     ASSERT_TRUE(si->checkMotion(start.get(), end.get()));
-    EXPECT_EQ(checks, requested_radius == 1.0 ? 1 : 3);
+    EXPECT_EQ(probes, 2);
+    EXPECT_GT(checks, 0);
+    if (requested_radius == 1.0)
+      EXPECT_EQ(checks, 1);
     EXPECT_GT(skips, 0);
     EXPECT_EQ(calls, baseline.size());
-    EXPECT_EQ(checks + skips, calls);
+    EXPECT_EQ(probes + checks + skips, calls);
     EXPECT_EQ(restores, 1);
     EXPECT_DOUBLE_EQ(final_rate, baseline.back());
+  }
+}
+
+TEST(MotionValidator, EarlyCollisionAvoidsPreparationAndFallbackDoesNotRepeatProbes) {
+  // Include short motions with no points left after probing and motions too
+  // long for the certificate table. A zero threshold exercises both limits.
+  for (double resolution : {0.1, 0.75, 1.5, 0.005}) {
+    SCOPED_TRACE(resolution);
+    auto space = std::make_shared<ob::RealVectorStateSpace>(1);
+    ob::RealVectorBounds bounds(1);
+    bounds.setLow(0);
+    bounds.setHigh(1);
+    space->setBounds(bounds);
+    auto si = std::make_shared<ob::SpaceInformation>(space);
+    auto validator =
+        std::make_shared<planner::EuclideanMotionValidator>(si, resolution);
+    si->setMotionValidator(validator);
+    std::vector<double> queries;
+    double collision_at = -1;
+    auto point_check = [&](const ob::State* state) {
+      const double rate =
+          state->as<ob::RealVectorStateSpace::StateType>()->values[0];
+      queries.push_back(rate);
+      return std::abs(rate - collision_at) > 1e-12;
+    };
+    si->setStateValidityChecker(point_check);
+    si->setup();
+    ob::ScopedState<> start(si), end(si);
+    start[0] = 0;
+    end[0] = 1;
+    ASSERT_TRUE(si->checkMotion(start.get(), end.get()));
+    const auto all_samples = queries;
+    std::vector<double> collisions = {-1, all_samples.front()};
+    if (all_samples.size() > 1)
+      collisions.push_back(all_samples[1]);
+    if (all_samples.size() > 2)
+      collisions.push_back(all_samples[2]);
+    for (double collision : collisions) {
+      SCOPED_TRACE(collision);
+      collision_at = collision;
+      validator->set_motion_certificate({});
+      queries.clear();
+      const bool expected = si->checkMotion(start.get(), end.get());
+      const auto baseline = queries;
+      for (bool supported : {false, true}) {
+        SCOPED_TRACE(supported);
+        queries.clear();
+        size_t prepares = 0, checks = 0;
+        planner::CustomValidatorBase::MotionCertificate certificate;
+        certificate.min_test_count = 0;
+        certificate.prepare = [&](const ob::State*, const ob::State*, double) {
+          ++prepares;
+          EXPECT_EQ(queries.size(), 2);
+          return supported;
+        };
+        certificate.check = [&](const ob::State* state, double& radius) {
+          ++checks;
+          radius = 0;  // No interval is certified; visit every remaining point.
+          return point_check(state);
+        };
+        certificate.skip = []() { ADD_FAILURE() << "No certified samples"; };
+        certificate.restore = [](const ob::State*) {
+          ADD_FAILURE() << "No skipped samples to restore";
+        };
+        validator->set_motion_certificate(std::move(certificate));
+        EXPECT_EQ(si->checkMotion(start.get(), end.get()), expected);
+        EXPECT_EQ(queries, baseline);
+        const bool should_prepare = resolution == 0.1 && baseline.size() > 2;
+        EXPECT_EQ(prepares, should_prepare ? 1 : 0);
+        EXPECT_EQ(checks, should_prepare && supported ? baseline.size() - 2 : 0);
+      }
+    }
   }
 }
 }  // namespace
