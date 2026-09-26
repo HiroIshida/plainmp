@@ -65,11 +65,6 @@ if(plainmp_ipo_supported)
     set_property(TARGET plainmp_core PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 endif()
 
-option(PLAINMP_ENABLE_INTERVAL_PRUNING "Experimental scalar motion-interval pruning" OFF)
-if(PLAINMP_ENABLE_INTERVAL_PRUNING)
-    target_compile_definitions(plainmp_core PUBLIC PLAINMP_ENABLE_INTERVAL_PRUNING)
-endif()
-
 if (TARGET ompl::ompl)
     set(_ompl_target ompl::ompl)
 else()
