@@ -13,6 +13,8 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.8"
     steps:
         - name: Checkout Code
           uses: actions/checkout@v2
@@ -20,9 +22,13 @@ jobs:
           uses: actions/setup-python@v5
           with:
               python-version: 3.8
-        - name: pip install formatters
-          run: |
-              pip3 install black==22.6.0 isort flake8 autoflake codespell
+        - name: Install the latest version of uv
+          uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+          with:
+              enable-cache: true
+
+        - name: Install formatters
+          run: uv sync --locked --only-group lint
 
         - name: install clang-format
           run: |
@@ -34,7 +40,7 @@ jobs:
           env:
             CLANG_FORMAT: clang-format-14
           run: |
-            bash format.sh
+            uv run --no-sync bash format.sh
 
         - name: Fail if format.sh modified files
           run: |

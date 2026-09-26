@@ -1,0 +1,2 @@
+# Keep the lockfile in Git without expanding thousands of lines in diffs.
+uv.lock -diff

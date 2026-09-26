@@ -17,6 +17,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -24,17 +29,16 @@ jobs:
 
       - name: Install plainmp from PyPI
         run: |
-          python3 -m pip install --upgrade pip
-          pip install plainmp
+          uv venv --python "${{ matrix.python-version }}" "$RUNNER_TEMP/plainmp-pypi-venv"
+          uv pip install --python "$RUNNER_TEMP/plainmp-pypi-venv/bin/python" plainmp pytest
 
       - name: Checkout Code (for examples and tests)
         uses: actions/checkout@v3
 
       - name: Test
         run: |
-          pip install pytest
           for i in {1..3}; do
-            if pytest tests; then
+            if "$RUNNER_TEMP/plainmp-pypi-venv/bin/python" -m pytest tests; then
               exit 0
             fi
             echo "Test failed... retrying ($i)"
