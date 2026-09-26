@@ -8,7 +8,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include <pybind11/functional.h>
 #include <optional>
 #include "plainmp/bindings/bindings.hpp"
 #include "plainmp/constraints/primitive.hpp"
@@ -18,51 +17,56 @@ namespace plainmp::bindings {
 
 using namespace plainmp::ompl_wrapper;
 
-void bind_ompl_wrapper_submodule(py::module& m) {
+void bind_ompl_wrapper_submodule(nb::module_& m) {
   auto ompl_m = m.def_submodule("ompl");
   ompl_m.def("set_random_seed", &setGlobalSeed);
   ompl_m.def("set_log_level_none", &setLogLevelNone);
 
-  py::enum_<ValidatorConfig::Type>(ompl_m, "ValidatorType")
+  nb::enum_<ValidatorConfig::Type>(ompl_m, "ValidatorType")
       .value("BOX", ValidatorConfig::Type::BOX)
       .value("EUCLIDEAN", ValidatorConfig::Type::EUCLIDEAN)
       .export_values();
 
-  py::class_<ValidatorConfig>(ompl_m, "ValidatorConfig")
-      .def(py::init<>())
-      .def_readwrite("type", &ValidatorConfig::type)
-      .def_readwrite("resolution", &ValidatorConfig::resolution)
-      .def_readwrite("box_width", &ValidatorConfig::box_width);
+  nb::class_<ValidatorConfig>(ompl_m, "ValidatorConfig")
+      .def(nb::init<>())
+      .def_rw("type", &ValidatorConfig::type)
+      .def_rw("resolution", &ValidatorConfig::resolution)
+      .def_rw("box_width", &ValidatorConfig::box_width);
 
-  py::enum_<RefineType>(ompl_m, "RefineType")
+  nb::enum_<RefineType>(ompl_m, "RefineType")
       .value("SHORTCUT", RefineType::SHORTCUT)
       .value("BSPLINE", RefineType::BSPLINE)
       .export_values();
 
   ompl_m.def("simplify", &simplify);
 
-  py::class_<OMPLPlanner>(ompl_m, "OMPLPlanner", py::module_local())
-      .def(py::init<std::vector<double>&, std::vector<double>&,
+  nb::class_<OMPLPlanner>(ompl_m, "OMPLPlanner")
+      .def(nb::init<std::vector<double>&, std::vector<double>&,
                     constraint::IneqConstraintBase::Ptr, size_t,
-                    ValidatorConfig, std::string, std::optional<double>>())
+                    ValidatorConfig, std::string, std::optional<double>>(),
+           nb::arg("lower_bound"), nb::arg("upper_bound"),
+           nb::arg("constraint"), nb::arg("max_is_valid_call"),
+           nb::arg("validator_config"), nb::arg("algorithm"),
+           nb::arg("range").none())
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("get_ns_internal", &OMPLPlanner::get_ns_internal)
-      .def("solve", &OMPLPlanner::solve, py::arg("start"), py::arg("goal"),
-           py::arg("refine_seq"), py::arg("timeout") = py::none(),
-           py::arg("goal_sampler") = py::none(),
-           py::arg("max_goal_sample_count") = py::none());
+      .def("solve", &OMPLPlanner::solve, nb::arg("start"),
+           nb::arg("goal").none(), nb::arg("refine_seq"),
+           nb::arg("timeout") = nb::none(),
+           nb::arg("goal_sampler") = nb::none(),
+           nb::arg("max_goal_sample_count") = nb::none());
 
-  py::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner", py::module_local())
-      .def(py::init<std::vector<double>, std::vector<double>,
+  nb::class_<ERTConnectPlanner>(ompl_m, "ERTConnectPlanner")
+      .def(nb::init<const std::vector<double>&, const std::vector<double>&,
                     constraint::IneqConstraintBase::Ptr, size_t,
-                    ValidatorConfig>())
+                    const ValidatorConfig&>())
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("get_ns_internal", &OMPLPlanner::get_ns_internal)
-      .def("solve", &ERTConnectPlanner::solve, py::arg("start"),
-           py::arg("goal"), py::arg("refine_seq"),
-           py::arg("timeout") = py::none(),
-           py::arg("goal_sampler") = py::none(),
-           py::arg("max_goal_sample_count") = py::none())
+      .def("solve", &ERTConnectPlanner::solve, nb::arg("start"),
+           nb::arg("goal").none(), nb::arg("refine_seq"),
+           nb::arg("timeout") = nb::none(),
+           nb::arg("goal_sampler") = nb::none(),
+           nb::arg("max_goal_sample_count") = nb::none())
       .def("set_parameters", &ERTConnectPlanner::set_parameters)
       .def("set_heuristic", &ERTConnectPlanner::set_heuristic);
 }

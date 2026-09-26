@@ -50,7 +50,7 @@ og::PathGeometric points_to_pathgeometric(const Points& points,
 struct ValidatorConfig {
   enum class Type { BOX, EUCLIDEAN };
   Type type;
-  // cannot use std::variant to work with pybind11
+  // Keep the validator parameters as explicit Python-facing fields.
   // but either double or vector<double> is expected
   // and BOX => vector<double> is expected
   // and EUCLIDEAN => double is expected

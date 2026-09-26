@@ -8,12 +8,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include <pybind11/eigen.h>
-#include <pybind11/pybind11.h>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <memory>
+#include <numeric>
 #include <sstream>
 #include <utility>
 #include "plainmp/constraints/primitive.hpp"

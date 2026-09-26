@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
+project(plainmp LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -45,8 +46,25 @@ add_custom_target(generate_sequence_table
 
 file(GLOB_RECURSE SRC_FILES cpp/*.cpp)
 include_directories(cpp)
-add_subdirectory(pybind11)
-pybind11_add_module(_plainmp ${SRC_FILES})
+if(CMAKE_VERSION VERSION_LESS 3.18)
+    set(DEV_MODULE Development)
+else()
+    set(DEV_MODULE Development.Module)
+endif()
+find_package(Python 3.8 COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
+execute_process(
+    COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE nanobind_ROOT
+    RESULT_VARIABLE nanobind_result
+)
+if(NOT nanobind_result EQUAL 0)
+    message(FATAL_ERROR "Could not locate nanobind for ${Python_EXECUTABLE}")
+endif()
+find_package(nanobind CONFIG REQUIRED)
+# Match the optimization of the former pybind11 target. LTO is also needed by
+# the statically linked ERTConnect planner with OMPL 1.6 and GCC 9.
+nanobind_add_module(_plainmp NOMINSIZE LTO ${SRC_FILES})
 add_dependencies(_plainmp generate_sequence_table)
 
 if (TARGET ompl::ompl)

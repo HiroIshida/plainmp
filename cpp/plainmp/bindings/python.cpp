@@ -12,7 +12,7 @@
 
 namespace pb = plainmp::bindings;
 
-PYBIND11_MODULE(_plainmp, m) {
+NB_MODULE(_plainmp, m) {
   pb::bind_kdtree_submodule(m);
   pb::bind_primitive_submodule(m);
   pb::bind_constraint_submodule(m);

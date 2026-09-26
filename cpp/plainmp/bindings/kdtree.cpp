@@ -15,10 +15,10 @@
 using namespace plainmp::collision;
 
 namespace plainmp::bindings {
-void bind_kdtree_submodule(py::module& m) {
+void bind_kdtree_submodule(nb::module_& m) {
   auto m_kdtree = m.def_submodule("kdtree");
-  py::class_<KDTree>(m_kdtree, "KDTree")
-      .def(py::init<const std::vector<Eigen::Vector3d>&>())
+  nb::class_<KDTree>(m_kdtree, "KDTree")
+      .def(nb::init<const std::vector<Eigen::Vector3d>&>())
       .def("query", &KDTree::query)
       .def("sqdist", &KDTree::sqdist);
 }
