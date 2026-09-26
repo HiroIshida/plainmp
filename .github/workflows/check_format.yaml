@@ -28,7 +28,7 @@ jobs:
               enable-cache: true
 
         - name: Install formatters
-          run: uv sync --locked --only-group lint
+          run: uv sync --only-group lint
 
         - name: install clang-format
           run: |

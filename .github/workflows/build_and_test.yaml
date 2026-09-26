@@ -64,7 +64,7 @@ jobs:
       - name: Build and install source distribution
         run: |
           uv build --sdist
-          uv sync --locked --no-install-project
+          uv sync --no-install-project
           uv pip install --python .venv/bin/python dist/*.tar.gz
 
       - name: Test
