@@ -256,7 +256,10 @@ def test_evaluate_into_reuses_output_arrays():
     collision_cst = fs.create_collision_const(True)
     sdf = BoxSDF([0.3, 0.3, 0], Pose([0.0, 0.0, 0.0], np.eye(3)))
     com_cst = ComInPolytopeCst(
-        fs.get_kin(), fs.control_joint_names, BaseType.FIXED, sdf,
+        fs.get_kin(),
+        fs.control_joint_names,
+        BaseType.FIXED,
+        sdf,
         [AppliedForceSpec("gripper_link", 2.0)],
     )
     bound_cst = fs.create_position_bound_const("gripper_link", 2, 0.0, 1.0)
