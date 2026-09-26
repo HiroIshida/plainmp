@@ -254,7 +254,8 @@ bool SphereCollisionCst::check_self_collision() {
 }
 
 double SphereCollisionCst::evaluate_ext_collision(
-    Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad_out) {
+    Eigen::Ref<Eigen::RowVectorXd, 0, Eigen::InnerStride<Eigen::Dynamic>>
+        grad_out) {
   double min_val_other = cutoff_dist_;
   std::optional<size_t> min_sphere_idx = std::nullopt;
   std::optional<size_t> min_group_idx = std::nullopt;
@@ -322,7 +323,8 @@ double SphereCollisionCst::evaluate_ext_collision(
 }
 
 double SphereCollisionCst::evaluate_self_collision(
-    Eigen::Block<Eigen::MatrixXd, 1, Eigen::Dynamic> grad) {
+    Eigen::Ref<Eigen::RowVectorXd, 0, Eigen::InnerStride<Eigen::Dynamic>>
+        grad) {
   std::optional<std::array<size_t, 4>> min_pairs =
       std::nullopt;  // (group_i, sphere_i, group_j, sphere_j)
   double dist_min = cutoff_dist_;
@@ -382,11 +384,8 @@ double SphereCollisionCst::evaluate_self_collision(
   }
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXd>
-SphereCollisionCst::evaluate_dirty() {
-  Eigen::MatrixXd jac(cst_dim(), q_dim());
-  Eigen::VectorXd vals(cst_dim());
-
+void SphereCollisionCst::evaluate_dirty_into(Eigen::Ref<Eigen::VectorXd> vals,
+                                             Eigen::Ref<Eigen::MatrixXd> jac) {
   size_t head = 0;
   if (ext_colliision_enabled()) {
     vals[head] = evaluate_ext_collision(jac.row(head));
@@ -395,7 +394,6 @@ SphereCollisionCst::evaluate_dirty() {
   if (self_collision_enabled()) {
     vals[head] = evaluate_self_collision(jac.row(head));
   }
-  return {vals, jac};
 }
 
 std::vector<std::pair<Eigen::Vector3d, double>>

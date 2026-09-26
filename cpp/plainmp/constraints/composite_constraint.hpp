@@ -60,6 +60,19 @@ class CompositeConstraintBase {
     return {vals, jac};
   }
 
+  void evaluate_into(const Eigen::VectorXd& q,
+                     Eigen::Ref<Eigen::VectorXd> vals,
+                     Eigen::Ref<Eigen::MatrixXd> jac) {
+    update_kintree(q);
+    size_t head = 0;
+    for (const auto& cst : constraints_) {
+      size_t dim = cst->cst_dim();
+      cst->evaluate_dirty_into(vals.segment(head, dim),
+                               jac.block(head, 0, dim, q_dim()));
+      head += dim;
+    }
+  }
+
   size_t q_dim() const { return constraints_.front()->q_dim(); }
 
   size_t cst_dim() const {
@@ -85,7 +98,7 @@ class EqCompositeCst : public CompositeConstraintBase<EqConstraintBase::Ptr> {
  public:
   using Ptr = std::shared_ptr<EqCompositeCst>;
   using CompositeConstraintBase::CompositeConstraintBase;
-  size_t cst_dim() const;
+  size_t cst_dim() const { return CompositeConstraintBase::cst_dim(); }
   bool is_equality() const { return true; }
 };
 
@@ -102,7 +115,7 @@ class IneqCompositeCst
     }
     return true;
   }
-  size_t cst_dim() const;
+  size_t cst_dim() const { return CompositeConstraintBase::cst_dim(); }
   bool is_equality() const { return false; }
 };
 }  // namespace plainmp::constraint
