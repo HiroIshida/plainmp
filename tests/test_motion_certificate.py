@@ -1,5 +1,6 @@
 """Integration tests use an inline URDF and need no downloaded robot assets."""
 
+import inspect
 import json
 import subprocess
 import sys
@@ -44,6 +45,15 @@ def create_problem(validator_type):
         None,
         resolution,
         validator_type,
+    )
+
+
+def test_interval_pruning_defaults_enabled():
+    assert ompl_solver.OMPLSolverConfig().enable_interval_pruning
+    assert ompl_solver.ValidatorConfig().enable_interval_pruning
+    assert (
+        inspect.signature(ompl_solver.simplify_path).parameters["enable_interval_pruning"].default
+        is True
     )
 
 

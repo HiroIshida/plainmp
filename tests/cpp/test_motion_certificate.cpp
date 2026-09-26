@@ -393,7 +393,7 @@ EdgeResult check_edge(bool enabled,
 }
 
 TEST(MotionValidator, RuntimeSwitchPreservesResultBudgetAndFinalState) {
-  EXPECT_FALSE(planner::ValidatorConfig{}.enable_interval_pruning);
+  EXPECT_TRUE(planner::ValidatorConfig{}.enable_interval_pruning);
   for (auto type : {planner::ValidatorConfig::Type::BOX,
                     planner::ValidatorConfig::Type::EUCLIDEAN}) {
     for (double resolution : {0.005, 0.05, 1.0}) {

@@ -18,14 +18,14 @@ queries, contact boundaries, self collision, invalidation, and fallback.
 Motion-validator tests require actual skipping and compare results, logical
 query counts, and final joint state.
 
-Interval pruning is an experimental **runtime** option, OFF by default:
+Interval pruning is a **runtime** option, ON by default:
 
 ```python
-config = OMPLSolverConfig(enable_interval_pruning=True)
+config = OMPLSolverConfig(enable_interval_pruning=False)
 ```
 
 The lower-level C++/Python `ValidatorConfig` has the same field.
-`simplify_path(..., enable_interval_pruning=True)` enables it for standalone
+`simplify_path(..., enable_interval_pruning=False)` disables it for standalone
 simplification. Settings are read when constructing a planner/validator.
 The previous `PLAINMP_ENABLE_INTERVAL_PRUNING` CMake option has been removed.
 

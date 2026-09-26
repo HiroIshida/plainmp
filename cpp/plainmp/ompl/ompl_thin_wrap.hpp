@@ -57,7 +57,7 @@ struct ValidatorConfig {
   // and EUCLIDEAN => double is expected
   double resolution;
   std::vector<double> box_width;
-  bool enable_interval_pruning = false;
+  bool enable_interval_pruning = true;
   size_t interval_pruning_min_test_count = 16;
 };
 
