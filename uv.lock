@@ -2180,7 +2180,7 @@ wheels = [
 
 [[package]]
 name = "plainmp"
-version = "0.3.5"
+version = "0.3.6.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "numpy", version = "1.24.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
