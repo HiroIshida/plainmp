@@ -48,6 +48,9 @@ uv run python example/bench/fetch_plan.py  # fetch table
 
 VAMP-inspired RRTC is available with `OMPLSolverConfig(algorithm=Algorithm.VampRRTC)`.
 Its default range is 2.0. See [the implementation and benchmark notes](docs/vamp_rrtc.md)
+
+An optional `plainmp_rrtc` planner preserves the default RRTConnect search with
+constructor-allocated pools and a KD-tree. See [usage and measurements](docs/plainmp_rrtc.md).
 for heuristics, memory management, settings, and usage.
 
 ## Installation and development (Ubuntu/macOS)

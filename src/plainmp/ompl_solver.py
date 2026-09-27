@@ -13,6 +13,8 @@ from plainmp.trajectory import Trajectory
 from ._plainmp.ompl import (  # noqa: F401
     ERTConnectPlanner,
     OMPLPlanner,
+    PlainmpRRTCPlanner,
+    PlainmpRRTCSettings,
     RefineType,
     ValidatorConfig,
     ValidatorType,
@@ -30,6 +32,7 @@ class Algorithm(Enum):
     LBKPIECE1 = "LBKPIECE1"
     RRTConnect = "RRTConnect"
     VampRRTC = "vamp_rrtc"
+    PlainmpRRTC = "plainmp_rrtc"
     RRT = "RRT"
     RRTstar = "RRTstar"
     EST = "EST"
@@ -59,6 +62,7 @@ class OMPLSolverConfig:
     )
     max_goal_sampler_count: int = 100
     vamp_rrtc_settings: Optional[VampRRTCSettings] = None
+    plainmp_rrtc_settings: Optional[PlainmpRRTCSettings] = None
 
     def __post_init__(self):
         if len(self.refine_seq) > 0:
@@ -259,6 +263,16 @@ class OMPLSolver:
                 vconfig,
                 self.config.algorithm_range,
                 self.config.vamp_rrtc_settings,
+            )
+        elif self.config.algorithm == Algorithm.PlainmpRRTC:
+            planner = PlainmpRRTCPlanner(
+                problem.lb,
+                problem.ub,
+                problem.global_ineq_const,
+                self.config.n_max_call,
+                vconfig,
+                self.config.algorithm_range,
+                self.config.plainmp_rrtc_settings,
             )
         else:
             planner = OMPLPlanner(

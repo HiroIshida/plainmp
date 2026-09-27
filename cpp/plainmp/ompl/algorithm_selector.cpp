@@ -17,6 +17,7 @@
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <optional>
 #include "plainmp/ompl/unidirectional_modified.hpp"
+#include "plainmp/ompl/plainmp_rrtc.hpp"
 #include "plainmp/ompl/vamp_rrtc.hpp"
 
 namespace plainmp::ompl_wrapper {
@@ -46,6 +47,7 @@ std::shared_ptr<ompl::base::Planner> get_algorithm(
     if (name == "RRT") return create_with_range<ocustom::RRTModified>(si, range);
     if (name == "RRTConnect") return create_with_range<og::RRTConnect>(si, range);
     if (name == "vamp_rrtc") return create_with_range<VampRRTC>(si, range);
+    if (name == "plainmp_rrtc") return create_with_range<PlainmpRRTC>(si, range);
     if (name == "RRTstar") return create_with_range<og::RRTstar>(si, range);
     if (name == "EST") return create_with_range<og::EST>(si, range);
     if (name == "BiEST") return create_with_range<og::BiEST>(si, range);
