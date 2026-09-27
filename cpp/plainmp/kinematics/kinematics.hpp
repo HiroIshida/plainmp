@@ -30,7 +30,7 @@ namespace plainmp::kinematics {
 
 struct RelevancePredicateTable {
   std::vector<std::vector<bool>> table_;
-  RelevancePredicateTable() : RelevancePredicateTable(0, 0){};
+  RelevancePredicateTable() : RelevancePredicateTable(0, 0) {}
   RelevancePredicateTable(int N_link, int N_joint) {
     // Jacobian computation typically iterates over all joint fixing a link,
     // and does not iterate over all links fixing a joint.
@@ -54,6 +54,9 @@ class KinematicModel {
   using Transform = QuatTrans<Scalar>;
   using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
   using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+  // Views contiguous inputs without allocation; other expressions may be
+  // materialized.
+  using VectorInput = Eigen::Ref<const Vector>;
   using Quat = Eigen::Quaternion<Scalar>;
   using MatrixDynamic = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   using Bound = std::pair<Scalar, Scalar>;
@@ -99,12 +102,12 @@ class KinematicModel {
   virtual ~KinematicModel() {}
 
   void set_joint_angles(const std::vector<size_t>& joint_ids,
-                        const Vector& joint_angles,
+                        const VectorInput& joint_angles,
                         bool high_accuracy = true);
 
   template <bool approx, bool all_quat_identity>
   void set_joint_angles_impl(const std::vector<size_t>& joint_ids,
-                             const Vector& joint_angles);
+                             const VectorInput& joint_angles);
 
   inline Transform get_base_pose() const { return base_pose_; }
 

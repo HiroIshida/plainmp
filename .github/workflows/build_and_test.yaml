@@ -67,6 +67,12 @@ jobs:
           uv sync --no-install-project
           uv pip install --python .venv/bin/python dist/*.tar.gz
 
+      - name: C++ tests
+        run: |
+          cmake -S . -B build-cpp-tests -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DPLAINMP_BUILD_PYTHON=OFF
+          cmake --build build-cpp-tests --parallel 2
+          ctest --test-dir build-cpp-tests --output-on-failure
+
       - name: Test
         run: |
           for i in {1..3}; do

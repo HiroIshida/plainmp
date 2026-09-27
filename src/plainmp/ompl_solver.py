@@ -59,6 +59,9 @@ class OMPLSolverConfig:
     )
     max_goal_sampler_count: int = 100
     plainmp_rrtc_settings: Optional[PlainmpRRTCSettings] = None
+    # Only applies to supported SphereCollisionCst motion checks.
+    enable_interval_pruning: bool = True
+    interval_pruning_min_test_count: int = 16
 
     def __post_init__(self):
         if len(self.refine_seq) > 0:
@@ -225,6 +228,8 @@ class OMPLSolver:
             goal_sampler = None
 
         vconfig = ValidatorConfig()
+        vconfig.enable_interval_pruning = self.config.enable_interval_pruning
+        vconfig.interval_pruning_min_test_count = self.config.interval_pruning_min_test_count
         if problem.validator_type == "box":
             vconfig.type = ValidatorType.BOX
             vconfig.box_width = problem.resolution
@@ -305,6 +310,7 @@ def simplify_path(
     validator_type: Literal["euclidean", "box"] = "box",  # see problem.Problem for definition
     n_max_call: int = 1000000,
     refine_seq: Sequence[RefineType] = (RefineType.SHORTCUT, RefineType.BSPLINE),
+    enable_interval_pruning: bool = True,
 ) -> Trajectory:
     """Simplify and optimize a robot trajectory.
 
@@ -329,6 +335,8 @@ def simplify_path(
         Maximum number of optimization iterations.
     refine_seq : Sequence[RefineType], default=(SHORTCUT, BSPLINE)
         Sequence of refinement operations to apply.
+    enable_interval_pruning : bool, default=True
+        Use collision-free interval certificates when supported.
 
     Returns
     -------
@@ -345,6 +353,7 @@ def simplify_path(
     """
 
     vconfig = ValidatorConfig()
+    vconfig.enable_interval_pruning = enable_interval_pruning
     if validator_type == "box":
         vconfig.type = ValidatorType.BOX
         vconfig.box_width = resolution

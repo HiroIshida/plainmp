@@ -13,8 +13,8 @@
 #include <new>
 #include <random>
 #include <vector>
-#include "plainmp/ompl/motion_validator.hpp"
 #include "ompl_rrtc/plainmp_rrtc.hpp"
+#include "plainmp/ompl/motion_validator.hpp"
 
 static size_t allocations = 0, releases = 0;
 void* operator new(size_t n) {
