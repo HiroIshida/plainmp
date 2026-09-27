@@ -13,6 +13,8 @@ from plainmp.trajectory import Trajectory
 from ._plainmp.ompl import (  # noqa: F401
     ERTConnectPlanner,
     OMPLPlanner,
+    PlainmpRRTCPlanner,
+    PlainmpRRTCSettings,
     RefineType,
     ValidatorConfig,
     ValidatorType,
@@ -27,6 +29,7 @@ class Algorithm(Enum):
     KPIECE1 = "KPIECE1"
     LBKPIECE1 = "LBKPIECE1"
     RRTConnect = "RRTConnect"
+    PlainmpRRTC = "plainmp_rrtc"
     RRT = "RRT"
     RRTstar = "RRTstar"
     EST = "EST"
@@ -40,7 +43,7 @@ class Algorithm(Enum):
 class OMPLSolverConfig:
     n_max_call: int = 1000000
     n_max_ik_trial: int = 100
-    algorithm: Algorithm = Algorithm.RRTConnect
+    algorithm: Algorithm = Algorithm.PlainmpRRTC
     algorithm_range: Optional[float] = 2.0
     refine_seq: Sequence[RefineType] = tuple()
     shortcut: bool = False
@@ -55,6 +58,7 @@ class OMPLSolverConfig:
         False  # use goal sampler in unidirectional planner. Use only when the goal is not a point
     )
     max_goal_sampler_count: int = 100
+    plainmp_rrtc_settings: Optional[PlainmpRRTCSettings] = None
 
     def __post_init__(self):
         if len(self.refine_seq) > 0:
@@ -245,6 +249,16 @@ class OMPLSolver:
                 self.config.ertconnect_omega_min,
                 self.config.ertconnect_omega_max,
                 self.config.ertconnect_eps,
+            )
+        elif self.config.algorithm == Algorithm.PlainmpRRTC:
+            planner = PlainmpRRTCPlanner(
+                problem.lb,
+                problem.ub,
+                problem.global_ineq_const,
+                self.config.n_max_call,
+                vconfig,
+                self.config.algorithm_range,
+                self.config.plainmp_rrtc_settings,
             )
         else:
             planner = OMPLPlanner(

@@ -12,6 +12,7 @@
 #include "plainmp/bindings/bindings.hpp"
 #include "plainmp/constraints/primitive.hpp"
 #include "plainmp/ompl/ompl_thin_wrap.hpp"
+#include "plainmp/ompl/plainmp_rrtc_wrap.hpp"
 
 namespace plainmp::bindings {
 
@@ -51,6 +52,28 @@ void bind_ompl_wrapper_submodule(nb::module_& m) {
       .def("get_call_count", &OMPLPlanner::getCallCount)
       .def("get_ns_internal", &OMPLPlanner::get_ns_internal)
       .def("solve", &OMPLPlanner::solve, nb::arg("start"),
+           nb::arg("goal").none(), nb::arg("refine_seq"),
+           nb::arg("timeout") = nb::none(),
+           nb::arg("goal_sampler") = nb::none(),
+           nb::arg("max_goal_sample_count") = nb::none());
+
+  nb::class_<PlainmpRRTCSettings>(ompl_m, "PlainmpRRTCSettings")
+      .def(nb::init<>())
+      .def_rw("max_samples", &PlainmpRRTCSettings::max_samples);
+
+  nb::class_<PlainmpRRTCPlanner>(ompl_m, "PlainmpRRTCPlanner")
+      .def(nb::init<const std::vector<double>&, const std::vector<double>&,
+                    constraint::IneqConstraintBase::Ptr, size_t,
+                    const ValidatorConfig&, std::optional<double>,
+                    const std::optional<PlainmpRRTCSettings>&>(),
+           nb::arg("lower_bound"), nb::arg("upper_bound"),
+           nb::arg("constraint"), nb::arg("max_is_valid_call"),
+           nb::arg("validator_config"), nb::arg("range") = nb::none(),
+           nb::arg("settings") = nb::none())
+      .def("get_call_count", &PlainmpRRTCPlanner::getCallCount)
+      .def("get_node_count", &PlainmpRRTCPlanner::getNodeCount)
+      .def("get_ns_internal", &PlainmpRRTCPlanner::get_ns_internal)
+      .def("solve", &PlainmpRRTCPlanner::solve, nb::arg("start"),
            nb::arg("goal").none(), nb::arg("refine_seq"),
            nb::arg("timeout") = nb::none(),
            nb::arg("goal_sampler") = nb::none(),

@@ -28,3 +28,4 @@ lint = ["autoflake", "black==22.6.0", "codespell", "flake8", "isort"]
 [tool.scikit-build]
 # see: https://scikit-build-core.readthedocs.io/en/latest/configuration/index.html#customizing-the-built-wheel
 wheel.install-dir = "plainmp"
+wheel.license-files = ["LICENSE-BSD3", "cpp/LICENSE-MPL2", "third/ompl_rrtc/LICENSE"]

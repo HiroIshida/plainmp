@@ -56,6 +56,7 @@ add_custom_target(generate_sequence_table
 )
 
 file(GLOB_RECURSE SRC_FILES cpp/*.cpp)
+list(APPEND SRC_FILES third/ompl_rrtc/plainmp_rrtc.cpp)
 include_directories(cpp)
 if(CMAKE_VERSION VERSION_LESS 3.18)
     set(DEV_MODULE Development)
@@ -76,6 +77,7 @@ find_package(nanobind CONFIG REQUIRED)
 # Match the optimization of the former pybind11 target. LTO is also needed by
 # the statically linked ERTConnect planner with OMPL 1.6 and GCC 9.
 nanobind_add_module(_plainmp NOMINSIZE LTO ${SRC_FILES})
+target_include_directories(_plainmp PRIVATE third)
 add_dependencies(_plainmp generate_sequence_table)
 
 if (TARGET ompl::ompl)
@@ -88,3 +90,21 @@ if(ompl_VERSION VERSION_LESS "1.7.0")
     target_compile_definitions(_plainmp PRIVATE OMPL_OLD_VERSION)
 endif()
 install(TARGETS _plainmp DESTINATION .)
+
+option(PLAINMP_BUILD_TESTS "Build native planner tests" OFF)
+if(PLAINMP_BUILD_TESTS)
+    enable_testing()
+    add_executable(test_batch_nearest tests/cpp/test_batch_nearest.cpp)
+    target_include_directories(test_batch_nearest PRIVATE third)
+    add_test(NAME batch_nearest_native COMMAND test_batch_nearest)
+    add_executable(test_plainmp_rrtc tests/cpp/test_plainmp_rrtc.cpp
+        third/ompl_rrtc/plainmp_rrtc.cpp cpp/plainmp/ompl/motion_validator.cpp)
+    target_include_directories(test_plainmp_rrtc PRIVATE third)
+    add_dependencies(test_plainmp_rrtc generate_sequence_table)
+    if(TARGET ompl::ompl)
+        target_link_libraries(test_plainmp_rrtc PRIVATE ompl::ompl)
+    else()
+        target_link_libraries(test_plainmp_rrtc PRIVATE ${OMPL_LIBRARIES})
+    endif()
+    add_test(NAME plainmp_rrtc_native COMMAND test_plainmp_rrtc)
+endif()
