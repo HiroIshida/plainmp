@@ -46,12 +46,7 @@ uv run python example/bench/panda_plan.py --difficult  # panda ceiled dual bars
 uv run python example/bench/fetch_plan.py  # fetch table
 ```
 
-An optional `plainmp_rrtc` planner preserves the default RRTConnect search with
-constructor-allocated pools and a KD-tree. See [usage and measurements](docs/plainmp_rrtc.md)
-and the [historical OMPL/plainmp/VAMP comparison](docs/compare_rrtc.md).
-
 ## Installation and development (Ubuntu/macOS)
-
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) first. The C++ extension also needs system libraries.
 
 On Ubuntu:
