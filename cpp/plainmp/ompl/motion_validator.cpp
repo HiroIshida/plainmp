@@ -50,8 +50,7 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
     return false;
   size_t first_test = 2;
   if (n_test > 3 && n_test >= certificate_.min_test_count && n_test <= 128 &&
-      n_test < SEQUENCE_TABLE.size() + 1 &&
-      certificate_.prepare) {
+      n_test < SEQUENCE_TABLE.size() + 1 && certificate_.prepare) {
     const auto& sequence = SEQUENCE_TABLE[n_test - 1];
     // Probe the original midpoint sample before preparing certificates. Keep
     // the query set and order, and resume after this probe even if preparation

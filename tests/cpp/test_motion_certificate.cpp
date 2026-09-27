@@ -488,7 +488,8 @@ TEST(MotionValidator, CoveredSamplesAreSkippedButCountedInOriginalOrder) {
   }
 }
 
-TEST(MotionValidator, EarlyCollisionAvoidsPreparationAndFallbackDoesNotRepeatProbes) {
+TEST(MotionValidator,
+     EarlyCollisionAvoidsPreparationAndFallbackDoesNotRepeatProbes) {
   // Include short motions with no points left after probing and motions too
   // long for the certificate table. A zero threshold exercises both limits.
   for (double resolution : {0.1, 0.75, 1.5, 0.005}) {
@@ -554,7 +555,8 @@ TEST(MotionValidator, EarlyCollisionAvoidsPreparationAndFallbackDoesNotRepeatPro
         EXPECT_EQ(queries, baseline);
         const bool should_prepare = resolution == 0.1 && baseline.size() > 2;
         EXPECT_EQ(prepares, should_prepare ? 1 : 0);
-        EXPECT_EQ(checks, should_prepare && supported ? baseline.size() - 2 : 0);
+        EXPECT_EQ(checks,
+                  should_prepare && supported ? baseline.size() - 2 : 0);
       }
     }
   }
