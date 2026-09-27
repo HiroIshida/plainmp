@@ -1,5 +1,8 @@
 # PlainmpRRTC
 
+For the historical comparison against the removed `vamp_rrtc` planner, see
+[OMPL, PlainmpRRTC and VampRRTC](compare_rrtc.md).
+
 `plainmp_rrtc` reimplements the search used by plainmp's default OMPL
 [RRTConnect 1.6](https://github.com/ompl/ompl/blob/1.6.0/src/ompl/geometric/planners/rrt/src/RRTConnect.cpp).
 It uses exact Euclidean KD-tree queries and constructor-allocated pools.
@@ -36,7 +39,7 @@ The implementation preserves these RRTConnect choices:
 VAMP's direct initial connection, dynamic domains, balanced tree selection,
 Halton samples, and equal subdivisions during CONNECT are not used here.
 OMPL normally selects GNAT for its nearest-neighbor backend; this implementation
-uses the exact batch KD-tree shared with `vamp_rrtc`. Ties choose the earliest
+uses an independently implemented exact batch KD-tree. Ties choose the earliest
 inserted node, which need not be GNAT's tie order. The selected edge's distance
 and interpolation use OMPL arithmetic to preserve discrete validation grids.
 
@@ -104,8 +107,8 @@ wrapper for the allocation-conscious fixed-goal path.
   motion validators. Constructor and external robot constraints are outside
   that counter assertion.
 - Native tests cover capacity limits, multiple goals, the OMPL adapter, clear,
-  invalid starts, and immediate termination. The shared KD-tree has independent
-  brute-force correctness tests in `test_vamp_rrtc`.
+  invalid starts, and immediate termination. The KD-tree has independent
+  brute-force correctness tests in `test_batch_nearest`.
 - AddressSanitizer, UndefinedBehaviorSanitizer and LeakSanitizer pass the native tests.
 - Python tests cover robot collisions, range bounds, repeated solves, budgets,
   invalid input, fixed/IK goals, refinements, and both registration interfaces.
@@ -177,7 +180,7 @@ Reproduce the internal measurement with:
 ```
 
 The script uses the Fetch table and Panda easy/difficult scenes defined in
-[`make_problem`](../example/bench/vamp_rrtc.py), with fixed joint-space goals
+[`make_problem`](../example/bench/rrtc_scenes.py), with fixed joint-space goals
 and the same collision constraint for both planners. Box widths are 0.05 on
 every axis; Euclidean resolution is 0.05. The validity-call budget is 1,000,000,
 no timeout is specified, and the new planner's combined tree capacity is

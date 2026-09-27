@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from test_ompl_solver import create_test_problem
-from test_vamp_rrtc import check_path
 
 from plainmp.ompl_solver import (
     Algorithm,
@@ -14,6 +13,18 @@ from plainmp.ompl_solver import (
     ValidatorConfig,
     ValidatorType,
 )
+
+
+def check_path(path, problem, goal, resolution=0.01):
+    np.testing.assert_array_equal(path[0], problem.start)
+    np.testing.assert_array_equal(path[-1], goal)
+    assert np.all(path >= problem.lb)
+    assert np.all(path <= problem.ub)
+    # Independently recheck interiors much more densely than the planner.
+    for a, b in zip(path[:-1], path[1:]):
+        count = max(1, int(np.ceil(np.linalg.norm(b - a) / resolution)))
+        for t in np.linspace(0, 1, count + 1):
+            assert problem.global_ineq_const.is_valid(a + t * (b - a))
 
 
 @pytest.fixture

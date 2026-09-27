@@ -1,8 +1,9 @@
+/* Copyright (C) 2026 Hirokazu Ishida
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. See https://mozilla.org/MPL/2.0/.
+ */
 // Run through CMake with -DPLAINMP_BUILD_TESTS=ON, then ctest --test-dir
 // build/native.
-#include <ompl/base/ScopedState.h>
-#include <ompl/base/goals/GoalStates.h>
-#include <ompl/geometric/PathGeometric.h>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -11,7 +12,6 @@
 #include <stdexcept>
 #include <vector>
 #include "plainmp/ompl/batch_nearest.hpp"
-#include "plainmp/ompl/vamp_rrtc.hpp"
 
 static size_t allocations = 0;
 void* operator new(size_t size) {
@@ -93,68 +93,7 @@ void test_nearest() {
   }
 }
 
-void test_planner() {
-  namespace ob = ompl::base;
-  using State = ob::RealVectorStateSpace::StateType;
-  using namespace plainmp::ompl_wrapper;
-  auto space = std::make_shared<ob::RealVectorStateSpace>(2);
-  ob::RealVectorBounds bounds(2);
-  bounds.setLow(-1);
-  bounds.setHigh(1);
-  space->setBounds(bounds);
-  auto si = std::make_shared<ob::SpaceInformation>(space);
-  // A wall with a gap around either end; direct start-goal motion is blocked.
-  si->setStateValidityChecker([](const ob::State* s) {
-    auto q = s->as<State>()->values;
-    return std::abs(q[0]) > 0.1 || std::abs(q[1]) > 0.7;
-  });
-  si->setStateValidityCheckingResolution(0.001);
-  si->setup();
-  for (bool start_first : {true, false}) {
-    VampRRTCSettings settings;
-    settings.start_tree_first = start_first;
-    settings.max_samples = 4096;
-    settings.max_iterations = 10000;
-    auto planner = std::make_shared<VampRRTC>(si);
-    planner->setRange(0.2);
-    planner->setSettings(settings);
-    for (int trial = 0; trial < 4; ++trial) {
-      planner->clear();
-      // Also exercise changing the backend on an already allocated planner.
-      settings.use_kdtree = trial % 2 == 0;
-      planner->setSettings(settings);
-      auto problem = std::make_shared<ob::ProblemDefinition>(si);
-      ob::ScopedState<> start(space), goal(space);
-      start[0] = -0.8;
-      start[1] = 0;
-      goal[0] = 0.8;
-      goal[1] = 0;
-      problem->addStartState(start);
-      auto goals = std::make_shared<ob::GoalStates>(si);
-      goals->addState(goal);
-      goal[1] = 0.1;
-      goals->addState(goal);
-      problem->setGoal(goals);
-      planner->setProblemDefinition(problem);
-      planner->setup();
-      require(planner->solve(ob::timedPlannerTerminationCondition(2.0)) ==
-                  ob::PlannerStatus::EXACT_SOLUTION,
-              "wall planning failed");
-      auto path = std::dynamic_pointer_cast<ompl::geometric::PathGeometric>(
-          problem->getSolutionPath());
-      require(path->check(), "invalid wall path");
-      require(space->equalStates(path->getState(0), start.get()),
-              "wrong start");
-      const auto* last = path->getState(path->getStateCount() - 1)->as<State>();
-      require(last->values[0] == 0.8 &&
-                  (last->values[1] == 0 || last->values[1] == 0.1),
-              "wrong goal");
-    }
-  }
-}
-
 int main() {
   test_nearest();
-  test_planner();
-  std::cout << "VampRRTC native tests passed\n";
+  std::cout << "BatchNearest native tests passed\n";
 }

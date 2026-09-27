@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 import numpy as np
-from vamp_rrtc import make_problem
+from rrtc_scenes import make_problem
 
 from plainmp.ompl_solver import (
     Algorithm,
