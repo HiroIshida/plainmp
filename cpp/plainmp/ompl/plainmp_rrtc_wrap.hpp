@@ -4,8 +4,8 @@
  */
 #pragma once
 
-#include "plainmp/ompl/ompl_thin_wrap.hpp"
 #include "ompl_rrtc/plainmp_rrtc.hpp"
+#include "plainmp/ompl/ompl_thin_wrap.hpp"
 
 namespace plainmp::ompl_wrapper {
 
@@ -135,9 +135,15 @@ class PlainmpRRTCPlanner {
     return result;
   }
 
-  size_t getCallCount() const { return csi_->is_valid_call_count_; }
-  size_t get_ns_internal() const { return ns_internal_; }
-  size_t getNodeCount() const { return planner_->nodeCount(); }
+  size_t getCallCount() const {
+    return csi_->is_valid_call_count_;
+  }
+  size_t get_ns_internal() const {
+    return ns_internal_;
+  }
+  size_t getNodeCount() const {
+    return planner_->nodeCount();
+  }
 
  private:
   bool timed_out() const {
