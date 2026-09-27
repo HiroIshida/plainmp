@@ -199,9 +199,11 @@ ob::PlannerStatus PlainmpRRTC::solve(
     const ob::PlannerTerminationCondition& ptc) {
   checkValidity();
   path_size_ = 0;
-  auto* goal = dynamic_cast<ob::GoalSampleableRegion*>(pdef_->getGoal().get());
-  if (!goal)
+  // Avoid RTTI across shared-library boundaries, which can fail on macOS.
+  auto* raw_goal = pdef_->getGoal().get();
+  if (!raw_goal || !raw_goal->hasType(ob::GOAL_SAMPLEABLE_REGION))
     return ob::PlannerStatus::UNRECOGNIZED_GOAL_TYPE;
+  auto* goal = raw_goal->as<ob::GoalSampleableRegion>();
   while (size_ < capacity_) {
     const auto* start = pis_.nextStart();
     if (!start)
