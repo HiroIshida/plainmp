@@ -43,7 +43,7 @@ class Algorithm(Enum):
 class OMPLSolverConfig:
     n_max_call: int = 1000000
     n_max_ik_trial: int = 100
-    algorithm: Algorithm = Algorithm.RRTConnect
+    algorithm: Algorithm = Algorithm.PlainmpRRTC
     algorithm_range: Optional[float] = 2.0
     refine_seq: Sequence[RefineType] = tuple()
     shortcut: bool = False

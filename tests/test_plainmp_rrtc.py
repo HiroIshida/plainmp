@@ -140,5 +140,5 @@ def test_standard_ompl_registration(problem):
     path = planner.solve(problem.start, problem.goal_const, [], 2.0)
     assert path is not None
     check_path(path, problem, problem.goal_const)
-    assert OMPLSolverConfig().algorithm == Algorithm.RRTConnect
+    assert OMPLSolverConfig().algorithm == Algorithm.PlainmpRRTC
     assert OMPLSolverConfig().algorithm_range == 2.0
