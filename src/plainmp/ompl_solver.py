@@ -16,6 +16,8 @@ from ._plainmp.ompl import (  # noqa: F401
     RefineType,
     ValidatorConfig,
     ValidatorType,
+    VampRRTCPlanner,
+    VampRRTCSettings,
     set_log_level_none,
     set_random_seed,
     simplify,
@@ -27,6 +29,7 @@ class Algorithm(Enum):
     KPIECE1 = "KPIECE1"
     LBKPIECE1 = "LBKPIECE1"
     RRTConnect = "RRTConnect"
+    VampRRTC = "vamp_rrtc"
     RRT = "RRT"
     RRTstar = "RRTstar"
     EST = "EST"
@@ -55,6 +58,7 @@ class OMPLSolverConfig:
         False  # use goal sampler in unidirectional planner. Use only when the goal is not a point
     )
     max_goal_sampler_count: int = 100
+    vamp_rrtc_settings: Optional[VampRRTCSettings] = None
 
     def __post_init__(self):
         if len(self.refine_seq) > 0:
@@ -245,6 +249,16 @@ class OMPLSolver:
                 self.config.ertconnect_omega_min,
                 self.config.ertconnect_omega_max,
                 self.config.ertconnect_eps,
+            )
+        elif self.config.algorithm == Algorithm.VampRRTC:
+            planner = VampRRTCPlanner(
+                problem.lb,
+                problem.ub,
+                problem.global_ineq_const,
+                self.config.n_max_call,
+                vconfig,
+                self.config.algorithm_range,
+                self.config.vamp_rrtc_settings,
             )
         else:
             planner = OMPLPlanner(
