@@ -5,7 +5,7 @@
 #pragma once
 
 #include "plainmp/ompl/ompl_thin_wrap.hpp"
-#include "plainmp/ompl/plainmp_rrtc.hpp"
+#include "ompl_rrtc/plainmp_rrtc.hpp"
 
 namespace plainmp::ompl_wrapper {
 

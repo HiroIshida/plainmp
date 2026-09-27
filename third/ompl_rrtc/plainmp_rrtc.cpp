@@ -1,9 +1,10 @@
-/* Copyright (C) 2026 Hirokazu Ishida
+/* Adapted from OMPL 1.6 RRTConnect, Copyright (c) 2008, Willow Garage, Inc.
+ * The original portions are under the BSD 3-Clause license; see LICENSE.
+ * Modifications Copyright (C) 2026 Hirokazu Ishida.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. See https://mozilla.org/MPL/2.0/.
- * RRTConnect search follows OMPL 1.6; see third/ompl_rrtc/LICENSE.
  */
-#include "plainmp/ompl/plainmp_rrtc.hpp"
+#include "ompl_rrtc/plainmp_rrtc.hpp"
 
 #include <ompl/geometric/PathGeometric.h>
 #include <typeinfo>

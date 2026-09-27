@@ -11,7 +11,7 @@
 #include <random>
 #include <stdexcept>
 #include <vector>
-#include "plainmp/ompl/batch_nearest.hpp"
+#include "ompl_rrtc/batch_nearest.hpp"
 
 static size_t allocations = 0;
 void* operator new(size_t size) {
