@@ -480,39 +480,38 @@ KinematicModel<Scalar>::get_gravity_term(const std::vector<size_t>& joint_ids,
                          (base_type == BaseType::FLOATING) * 6 +
                          (base_type == BaseType::PLANAR) * 3;
   Vector gravity_term = Vector::Zero(dim_dof);
-  const Vector3 gravity_accel(0.0, 0.0, -9.80665);
-
-  for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
-    const size_t link_id = com_link_ids_[iter];
-    const auto& tf_rlink_to_link = get_link_pose(link_id);
-    const Vector3 com_pos =
-        tf_rlink_to_link.trans() +
-        tf_rlink_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
-
-    const Vector3 force = link_masses_[iter] * gravity_accel;
-
-    for (size_t i = 0; i < joint_ids.size(); i++) {
-      const size_t jid = joint_ids[i];
-      if (!rptable_.isRelevant(link_id, jid)) {
-        continue;
-      }
-
-      const auto jtype = joint_types_[jid];
-      const auto clink_id = joint_child_link_ids_[jid];
-      const auto& tf_rlink_to_clink = get_link_pose(clink_id);
-
-      const Vector3 world_axis = tf_rlink_to_clink.quat() * joint_axes_[jid];
-
-      if (jtype == urdf::Joint::PRISMATIC) {
-        gravity_term[i] += force.dot(world_axis);
-      } else {
-        const Vector3 joint_pos = tf_rlink_to_clink.trans();
-        const Vector3 r = com_pos - joint_pos;
-        gravity_term[i] += (r.cross(force)).dot(world_axis);
+  if (joint_ids.empty()) {
+    return gravity_term;
+  }
+  // Evaluate each COM and each joint axis once, using the existing FK cache.
+  std::vector<Vector3> com_positions(com_link_ids_.size());
+  for (size_t k = 0; k < com_link_ids_.size(); ++k) {
+    const auto& pose = get_link_pose(com_link_ids_[k]);
+    com_positions[k] =
+        pose.trans() + pose.quat().toRotationMatrix() * com_local_positions_[k];
+  }
+  for (size_t i = 0; i < joint_ids.size(); ++i) {
+    const size_t jid = joint_ids[i];
+    if (jid >= joint_types_.size()) {
+      throw std::invalid_argument("invalid joint id");
+    }
+    const auto& pose = get_link_pose(joint_child_link_ids_[jid]);
+    const Vector3 axis = pose.quat() * joint_axes_[jid];
+    Scalar mass = 0;
+    Eigen::Matrix<Scalar, 2, 1> moment = Eigen::Matrix<Scalar, 2, 1>::Zero();
+    for (size_t k = 0; k < com_link_ids_.size(); ++k) {
+      if (rptable_.isRelevant(com_link_ids_[k], jid)) {
+        mass += link_masses_[k];
+        moment += link_masses_[k] *
+                  (com_positions[k] - pose.trans()).template head<2>();
       }
     }
+    // Gravity is along world -Z; only the horizontal first moment is needed.
+    gravity_term[i] =
+        joint_types_[jid] == urdf::Joint::PRISMATIC
+            ? -Scalar(9.80665) * mass * axis.z()
+            : Scalar(9.80665) * (axis.y() * moment.x() - axis.x() * moment.y());
   }
-
   return gravity_term;
 }
 

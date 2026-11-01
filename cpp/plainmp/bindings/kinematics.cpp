@@ -9,6 +9,7 @@
  */
 
 #include "plainmp/kinematics/kinematics.hpp"
+#include <cstring>
 #include "plainmp/bindings/bindings.hpp"
 #include "plainmp/kinematics/kinematic_model_wrapper.hpp"
 
@@ -16,7 +17,24 @@ using namespace plainmp::kinematics;
 
 namespace plainmp::bindings {
 
+namespace {
+// NumPy owns the result; avoid the cost of exporting an Eigen allocation.
+nb::object gravity_array(const Eigen::VectorXd& value, nb::handle empty) {
+  nb::object result = empty(value.size());
+  Py_buffer buffer;
+  if (PyObject_GetBuffer(result.ptr(), &buffer, PyBUF_WRITABLE) != 0) {
+    throw nb::python_error();
+  }
+  if (value.size() != 0) {
+    std::memcpy(buffer.buf, value.data(), value.size() * sizeof(double));
+  }
+  PyBuffer_Release(&buffer);
+  return result;
+}
+}  // namespace
+
 void bind_kinematics_submodule(nb::module_& m) {
+  const nb::object numpy_empty = nb::module_::import_("numpy").attr("empty");
   auto m_kin = m.def_submodule("kinematics");
   nb::class_<urdf::Link>(m_kin, "Link")
       .def_ro("name", &urdf::Link::name)
@@ -72,11 +90,32 @@ void bind_kinematics_submodule(nb::module_& m) {
       .def("get_base_pose", &utils::_KinematicModel::get_base_pose)
       .def("get_joint_position_limits",
            &utils::_KinematicModel::get_joint_position_limits)
-      .def("get_gravity_term", &utils::_KinematicModel::get_gravity_term,
-           nb::arg("joint_ids"), nb::arg("base_type") = BaseType::FIXED)
-      .def("get_gravity_term2", &utils::_KinematicModel::get_gravity_term2,
-           nb::arg("joint_ids"), nb::arg("positions"),
-           nb::arg("base_type") = BaseType::FIXED, nb::arg("accurate") = true)
+      .def(
+          "get_gravity_term",
+          [numpy_empty](utils::_KinematicModel& self,
+                        const std::vector<size_t>& joint_ids,
+                        BaseType base_type) {
+            return gravity_array(self.get_gravity_term(joint_ids, base_type),
+                                 numpy_empty);
+          },
+          nb::arg("joint_ids"), nb::arg("base_type") = BaseType::FIXED)
+      .def(
+          "get_gravity_term2",
+          [numpy_empty](utils::_KinematicModel& self,
+                        const std::vector<size_t>& joint_ids,
+                        nb::handle positions, BaseType base_type,
+                        bool accurate) {
+            Eigen::VectorXd q;
+            if (!nb::try_cast(positions, q)) {
+              q = nb::cast<Eigen::VectorXd>(nb::module_::import_("numpy").attr(
+                  "asarray")(positions, nb::arg("dtype") = "float64"));
+            }
+            return gravity_array(
+                self.get_gravity_term2(joint_ids, q, base_type, accurate),
+                numpy_empty);
+          },
+          nb::arg("joint_ids"), nb::arg("positions"),
+          nb::arg("base_type") = BaseType::FIXED, nb::arg("accurate") = true)
       .def("get_link_ids", &utils::_KinematicModel::get_link_ids)
       .def("get_link_mass", &utils::_KinematicModel::get_link_mass,
            nb::arg("link_id"))
