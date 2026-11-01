@@ -1,6 +1,0 @@
-# started on Mon Nov  2 01:34:54 2026
-
-3264528664,,cycles:u,0.49%,725898482,100.00,,
-12473807546,,instructions:u,0.00%,725898482,100.00,3.80,insn per cycle
-1420090705,,branches:u,0.00%,725898482,100.00,,
-71194,,branch-misses:u,7.11%,725898482,100.00,0.01,of all branches
