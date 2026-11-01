@@ -7,6 +7,9 @@ from skrobot.coordinates.math import (
     xyzw2wxyz,
 )
 
+from plainmp.constraint import AppliedForceSpec, ComInPolytopeCst
+from plainmp.kinematics import BaseType, KinematicModel
+from plainmp.psdf import BoxSDF, Pose
 from plainmp.robot_spec import (
     FetchSpec,
     PandaSpec,
@@ -15,6 +18,79 @@ from plainmp.robot_spec import (
     PR2RarmSpec,
     RobotSpec,
 )
+
+
+@pytest.fixture
+def mass_kin():
+    # The massless spacer makes the arm's link ID differ from its mass index.
+    return KinematicModel(
+        """
+        <robot name="mass_test">
+          <link name="base">
+            <inertial>
+              <mass value="1"/>
+              <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+            </inertial>
+          </link>
+          <link name="spacer"/>
+          <link name="arm">
+            <inertial>
+              <origin xyz="1 0 0"/>
+              <mass value="2"/>
+              <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+            </inertial>
+          </link>
+          <joint name="fixed" type="fixed">
+            <parent link="base"/><child link="spacer"/>
+          </joint>
+          <joint name="joint" type="continuous">
+            <parent link="spacer"/><child link="arm"/><axis xyz="0 1 0"/>
+          </joint>
+        </robot>
+    """
+    )
+
+
+@pytest.mark.parametrize("with_force", [False, True])
+def test_link_mass(mass_kin, with_force):
+    kin = mass_kin
+    base_id, arm_id = kin.get_link_ids(["base", "arm"])
+    joint_ids = kin.get_joint_ids(["joint"])
+    assert kin.get_link_mass(arm_id) == 2.0
+    sdf = BoxSDF([4, 4, 0], Pose([0, 0, 0], np.eye(3)))
+    # Applied forces are normalized by total_mass_, so this catches mass changes
+    # that update link_masses_ but leave total_mass_ stale. Gravity and COM
+    # calculations without applied forces use link_masses_ directly and would
+    # miss that bug.
+    forces = [AppliedForceSpec("base", 1.0)] if with_force else []
+    cst = ComInPolytopeCst(kin, ["joint"], BaseType.FIXED, sdf, forces)
+    q = np.array([0.3])
+    kin.set_joint_positions(joint_ids, q)
+    kin.get_gravity_term(joint_ids)  # Populate FK caches before changing mass.
+    for mass in (4.0, 0.0, 2.0):
+        kin.set_link_mass(link_id=arm_id, mass=mass)
+        assert kin.get_link_mass(arm_id) == mass
+        assert kin.get_link_mass(base_id) == 1.0
+
+        np.testing.assert_allclose(kin.get_gravity_term(joint_ids), mass * 9.80665 * np.cos(q))
+        values, jac = cst.evaluate(q)
+        weight = mass / (1.0 + mass + float(with_force))
+        np.testing.assert_allclose(values, 2.0 - weight * np.cos(q))
+        np.testing.assert_allclose(jac, [[weight * np.sin(q[0])]], atol=1e-8)
+
+
+def test_link_mass_invalid_input(mass_kin):
+    kin = mass_kin
+    arm_id, spacer_id = kin.get_link_ids(["arm", "spacer"])
+    for mass in (-1.0, np.nan, np.inf, -np.inf):
+        with pytest.raises(ValueError, match="finite and non-negative"):
+            kin.set_link_mass(arm_id, mass)
+        assert kin.get_link_mass(arm_id) == 2.0
+    for link_id in (spacer_id, 999):
+        with pytest.raises(ValueError, match="no mass data"):
+            kin.get_link_mass(link_id)
+        with pytest.raises(ValueError, match="no mass data"):
+            kin.set_link_mass(link_id, 1.0)
 
 
 def test_model_add_new_link():

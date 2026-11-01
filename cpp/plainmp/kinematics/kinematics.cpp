@@ -276,6 +276,33 @@ std::vector<size_t> KinematicModel<Scalar>::get_link_ids(
 }
 
 template <typename Scalar>
+Scalar KinematicModel<Scalar>::get_link_mass(size_t link_id) const {
+  for (size_t i = 0; i < com_link_ids_.size(); i++) {
+    if (com_link_ids_[i] == link_id) {
+      return link_masses_[i];
+    }
+  }
+  throw std::invalid_argument("no mass data for link id " +
+                              std::to_string(link_id));
+}
+
+template <typename Scalar>
+void KinematicModel<Scalar>::set_link_mass(size_t link_id, Scalar mass) {
+  if (!std::isfinite(mass) || mass < 0) {
+    throw std::invalid_argument("mass must be finite and non-negative");
+  }
+  for (size_t i = 0; i < com_link_ids_.size(); i++) {
+    if (com_link_ids_[i] == link_id) {
+      total_mass_ += mass - link_masses_[i];
+      link_masses_[i] = mass;
+      return;
+    }
+  }
+  throw std::invalid_argument("no mass data for link id " +
+                              std::to_string(link_id));
+}
+
+template <typename Scalar>
 size_t KinematicModel<Scalar>::add_new_link(
     size_t parent_id,
     const std::array<Scalar, 3>& position,
