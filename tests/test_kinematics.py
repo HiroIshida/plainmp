@@ -58,6 +58,10 @@ def test_link_mass(mass_kin, with_force):
     joint_ids = kin.get_joint_ids(["joint"])
     assert kin.get_link_mass(arm_id) == 2.0
     sdf = BoxSDF([4, 4, 0], Pose([0, 0, 0], np.eye(3)))
+    # Applied forces are normalized by total_mass_, so this catches mass changes
+    # that update link_masses_ but leave total_mass_ stale. Gravity and COM
+    # calculations without applied forces use link_masses_ directly and would
+    # miss that bug.
     forces = [AppliedForceSpec("base", 1.0)] if with_force else []
     cst = ComInPolytopeCst(kin, ["joint"], BaseType.FIXED, sdf, forces)
     q = np.array([0.3])
@@ -67,6 +71,7 @@ def test_link_mass(mass_kin, with_force):
         kin.set_link_mass(link_id=arm_id, mass=mass)
         assert kin.get_link_mass(arm_id) == mass
         assert kin.get_link_mass(base_id) == 1.0
+
         np.testing.assert_allclose(kin.get_gravity_term(joint_ids), mass * 9.80665 * np.cos(q))
         values, jac = cst.evaluate(q)
         weight = mass / (1.0 + mass + float(with_force))
