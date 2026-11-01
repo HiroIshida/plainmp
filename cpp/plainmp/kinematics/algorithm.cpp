@@ -483,34 +483,60 @@ KinematicModel<Scalar>::get_gravity_term(const std::vector<size_t>& joint_ids,
   if (joint_ids.empty()) {
     return gravity_term;
   }
-  // Evaluate each COM and each joint axis once, using the existing FK cache.
-  std::vector<Vector3> com_positions(com_link_ids_.size());
-  for (size_t k = 0; k < com_link_ids_.size(); ++k) {
+  // Preselect contributing COMs. Prismatic joints need masses, not positions.
+  if (gravity_joint_ids_ != joint_ids) {
+    // An interrupted preparation must not leave the previous key valid.
+    gravity_joint_ids_.clear();
+    for (size_t jid : joint_ids) {
+      if (jid >= joint_types_.size()) {
+        throw std::invalid_argument("invalid joint id");
+      }
+    }
+    gravity_joint_com_indices_.assign(joint_ids.size(), {});
+    gravity_position_com_indices_.clear();
+    for (size_t k = 0; k < com_link_ids_.size(); ++k) {
+      bool needs_position = false;
+      for (size_t i = 0; i < joint_ids.size(); ++i) {
+        if (rptable_.isRelevant(com_link_ids_[k], joint_ids[i])) {
+          gravity_joint_com_indices_[i].push_back(k);
+          needs_position |=
+              joint_types_[joint_ids[i]] != urdf::Joint::PRISMATIC;
+        }
+      }
+      if (needs_position) {
+        gravity_position_com_indices_.push_back(k);
+      }
+    }
+    gravity_joint_ids_ = joint_ids;
+  }
+  using Vector2 = Eigen::Matrix<Scalar, 2, 1>;
+  std::vector<Vector2> com_positions(com_link_ids_.size());
+  for (size_t k : gravity_position_com_indices_) {
     const auto& pose = get_link_pose(com_link_ids_[k]);
     com_positions[k] =
-        pose.trans() + pose.quat().toRotationMatrix() * com_local_positions_[k];
+        pose.trans().template head<2>() +
+        (pose.quat() * com_local_positions_[k]).template head<2>();
   }
   for (size_t i = 0; i < joint_ids.size(); ++i) {
     const size_t jid = joint_ids[i];
-    if (jid >= joint_types_.size()) {
-      throw std::invalid_argument("invalid joint id");
-    }
     const auto& pose = get_link_pose(joint_child_link_ids_[jid]);
     const Vector3 axis = pose.quat() * joint_axes_[jid];
-    Scalar mass = 0;
-    Eigen::Matrix<Scalar, 2, 1> moment = Eigen::Matrix<Scalar, 2, 1>::Zero();
-    for (size_t k = 0; k < com_link_ids_.size(); ++k) {
-      if (rptable_.isRelevant(com_link_ids_[k], jid)) {
+    if (joint_types_[jid] == urdf::Joint::PRISMATIC) {
+      Scalar mass = 0;
+      for (size_t k : gravity_joint_com_indices_[i]) {
         mass += link_masses_[k];
-        moment += link_masses_[k] *
-                  (com_positions[k] - pose.trans()).template head<2>();
       }
+      gravity_term[i] = -Scalar(9.80665) * mass * axis.z();
+    } else if (axis.x() != Scalar(0) || axis.y() != Scalar(0)) {
+      // A revolute axis parallel to gravity has exactly zero gravity torque.
+      Vector2 moment = Vector2::Zero();
+      for (size_t k : gravity_joint_com_indices_[i]) {
+        moment += link_masses_[k] *
+                  (com_positions[k] - pose.trans().template head<2>());
+      }
+      gravity_term[i] =
+          Scalar(9.80665) * (axis.y() * moment.x() - axis.x() * moment.y());
     }
-    // Gravity is along world -Z; only the horizontal first moment is needed.
-    gravity_term[i] =
-        joint_types_[jid] == urdf::Joint::PRISMATIC
-            ? -Scalar(9.80665) * mass * axis.z()
-            : Scalar(9.80665) * (axis.y() * moment.x() - axis.x() * moment.y());
   }
   return gravity_term;
 }

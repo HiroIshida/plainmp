@@ -150,6 +150,9 @@ def main():
     parser.add_argument("--rounds", type=int, default=15)
     parser.add_argument("--passes", type=int, default=256)
     parser.add_argument("--cpu", type=int, default=2)
+    parser.add_argument(
+        "--robots", nargs="+", choices=["fetch", "openarm", "pr2"], default=["fetch", "openarm"]
+    )
     options = parser.parse_args()
     if options.pinocchio_site:
         sys.path.append(str(options.pinocchio_site))
@@ -165,7 +168,7 @@ def main():
         spec.loader.exec_module(module)
         plainmp._plainmp = module
     import plainmp._plainmp
-    from plainmp.robot_spec import FetchSpec, OpenArmV10RarmSpec
+    from plainmp.robot_spec import FetchSpec, OpenArmV10RarmSpec, PR2RarmSpec
 
     root = Path(__file__).resolve().parents[3]
     extension = Path(plainmp._plainmp.__file__).resolve()
@@ -195,7 +198,8 @@ def main():
         "Pinocchio gravity sign is reversed only in correctness checks, outside timing.",
     )
     rng = np.random.default_rng(20261102)
-    robots = [measure(pin, cls(), options, rng) for cls in [FetchSpec, OpenArmV10RarmSpec]]
+    specs = {"fetch": FetchSpec, "openarm": OpenArmV10RarmSpec, "pr2": PR2RarmSpec}
+    robots = [measure(pin, specs[name](), options, rng) for name in options.robots]
     options.output.write_text(json.dumps(dict(metadata=metadata, robots=robots), indent=2) + "\n")
     print("Saved", options.output, flush=True)
 

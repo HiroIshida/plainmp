@@ -28,6 +28,8 @@ class _KinematicModel : public KinematicModel<double> {
  public:
   using Vector = KinematicModel<double>::Vector;
   using KinematicModel::KinematicModel;
+  // Scratch space for the Python gravity input conversion.
+  Vector gravity_input_buffer_;
   size_t add_new_link_py(const std::string& link_name,
                          const std::string& parent_name,
                          const std::array<double, 3>& position,

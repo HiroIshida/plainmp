@@ -29,7 +29,8 @@ def _legacy_gravity(kin, xml, names):
         pose = np.asarray(kin.debug_get_link_pose(name))
         origin = inertial.find("origin")
         com = np.fromstring(
-            origin.attrib.get("xyz", "0 0 0") if origin is not None else "0 0 0", sep=" "
+            origin.attrib.get("xyz", "0 0 0") if origin is not None else "0 0 0",
+            sep=" ",
         )
         com = pose[:3] + _rotate(pose[3:], com)
         force = np.array([0.0, 0.0, -9.80665 * float(inertial.find("mass").attrib["value"])])
@@ -183,7 +184,7 @@ def test_gravity_invalid_input_does_not_change_positions(gravity_arm):
     kin, _ = gravity_arm
     ids = kin.get_joint_ids(["first", "second"])
     q = np.array([0.3, -0.7])
-    kin.get_gravity_term2(ids, q)
+    expected = kin.get_gravity_term2(ids, q)
     with pytest.raises(ValueError, match="match joint_ids"):
         kin.get_gravity_term2(ids, np.zeros(1))
     with pytest.raises(ValueError, match="invalid joint id"):
@@ -191,10 +192,49 @@ def test_gravity_invalid_input_does_not_change_positions(gravity_arm):
     with pytest.raises(ValueError, match="invalid joint id"):
         kin.get_gravity_term([999])
     np.testing.assert_array_equal(kin.get_joint_positions(ids), q)
+    np.testing.assert_array_equal(kin.get_gravity_term(ids), expected)
+
+
+def test_gravity_selection_and_base_rotation():
+    spec = FetchSpec()
+    xml = spec.urdf_path.read_text()
+    kin = KinematicModel(xml)
+    names = spec.control_joint_names
+    ids = kin.get_joint_ids(names)
+    kin.set_joint_positions(ids, np.linspace(0.1, 0.7, len(ids)))
+    tilted = np.array([0.2, 0.3, -0.1, 0.9])
+    tilted /= np.linalg.norm(tilted)
+    for quaternion in [np.array([0, 0, 0, 1]), tilted, np.array([0, 0, 0, 1])]:
+        kin.set_base_pose(np.r_[[0.5, -0.2, 0.8], quaternion])
+        # A vertical revolute axis has zero gravity torque only for the
+        # appropriate base orientation. Prismatic-only calls need no COM pose.
+        for selected in [names, ["torso_lift_joint"], names[::-1], names[:1] * 2]:
+            actual = kin.get_gravity_term(kin.get_joint_ids(selected))
+            np.testing.assert_allclose(
+                actual, _legacy_gravity(kin, xml, selected), atol=1e-10, rtol=1e-10
+            )
+
+
+def test_gravity_input_buffer_resizing():
+    spec = FetchSpec()
+    xml = spec.urdf_path.read_text()
+    kin = KinematicModel(xml)
+    names = spec.control_joint_names
+    saved = []
+    for selected in [names, names[:1], [], names[::-1], names[-2:] * 2, names]:
+        positions = np.linspace(-0.4, 0.7, len(selected))
+        result = kin.get_gravity_term2(kin.get_joint_ids(selected), positions)
+        np.testing.assert_allclose(
+            result, _legacy_gravity(kin, xml, selected), atol=1e-10, rtol=1e-10
+        )
+        saved.append((result, result.copy()))
+    for result, expected in saved:
+        np.testing.assert_array_equal(result, expected)
 
 
 @pytest.mark.parametrize(
-    "base_type,extra", [(BaseType.FIXED, 0), (BaseType.PLANAR, 3), (BaseType.FLOATING, 6)]
+    "base_type,extra",
+    [(BaseType.FIXED, 0), (BaseType.PLANAR, 3), (BaseType.FLOATING, 6)],
 )
 def test_gravity_legacy_base_output_shape(gravity_arm, base_type, extra):
     kin, xml = gravity_arm
