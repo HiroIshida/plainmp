@@ -78,6 +78,10 @@ void bind_kinematics_submodule(nb::module_& m) {
            nb::arg("joint_ids"), nb::arg("positions"),
            nb::arg("base_type") = BaseType::FIXED, nb::arg("accurate") = true)
       .def("get_link_ids", &utils::_KinematicModel::get_link_ids)
+      .def("get_link_mass", &utils::_KinematicModel::get_link_mass,
+           nb::arg("link_id"))
+      .def("set_link_mass", &utils::_KinematicModel::set_link_mass,
+           nb::arg("link_id"), nb::arg("mass"))
       .def("get_joint_ids", &utils::_KinematicModel::get_joint_ids);
 }
 

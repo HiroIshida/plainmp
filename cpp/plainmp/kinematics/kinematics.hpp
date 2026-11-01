@@ -128,6 +128,9 @@ class KinematicModel {
 
   std::vector<size_t> get_link_ids(std::vector<std::string> link_names) const;
 
+  Scalar get_link_mass(size_t link_id) const;
+  void set_link_mass(size_t link_id, Scalar mass);
+
   const Transform& get_link_pose(size_t link_id) const {
     if (!transform_cache_.is_cached(link_id)) {
       build_cache_until(link_id);
