@@ -43,6 +43,14 @@ _KinematicModel::Vector _KinematicModel::get_gravity_term2(
     const Vector& joint_angles,
     BaseType base_type,
     bool accurate) {
+  if (joint_angles.size() != joint_ids.size()) {
+    throw std::invalid_argument("positions must match joint_ids");
+  }
+  for (size_t jid : joint_ids) {
+    if (jid >= joint_types_.size()) {
+      throw std::invalid_argument("invalid joint id");
+    }
+  }
   KinematicModel::set_joint_angles(joint_ids, joint_angles, accurate);
   return KinematicModel::get_gravity_term(joint_ids, base_type);
 }

@@ -9,6 +9,8 @@
  */
 
 #include "plainmp/kinematics/kinematics.hpp"
+#include <cstring>
+#include <memory>
 #include "plainmp/bindings/bindings.hpp"
 #include "plainmp/kinematics/kinematic_model_wrapper.hpp"
 
@@ -16,7 +18,49 @@ using namespace plainmp::kinematics;
 
 namespace plainmp::bindings {
 
+namespace {
+// Copy native contiguous float64 directly; use nanobind/NumPy conversion for
+// other layouts and dtypes. memcpy also supports unaligned and readonly input.
+void gravity_positions(nb::handle value, Eigen::VectorXd& result) {
+  Py_buffer buffer;
+  if (PyObject_GetBuffer(value.ptr(), &buffer,
+                         PyBUF_C_CONTIGUOUS | PyBUF_FORMAT) == 0) {
+    const std::unique_ptr<Py_buffer, decltype(&PyBuffer_Release)> release(
+        &buffer, PyBuffer_Release);
+    if (buffer.ndim == 1 && buffer.itemsize == sizeof(double) &&
+        buffer.format && std::strcmp(buffer.format, "d") == 0) {
+      result.resize(buffer.shape[0]);
+      if (result.size() != 0) {
+        std::memcpy(result.data(), buffer.buf, buffer.len);
+      }
+      return;
+    }
+  } else {
+    PyErr_Clear();
+  }
+  if (!nb::try_cast(value, result)) {
+    result = nb::cast<Eigen::VectorXd>(nb::module_::import_("numpy").attr(
+        "asarray")(value, nb::arg("dtype") = "float64"));
+  }
+}
+
+// NumPy owns the result; avoid the cost of exporting an Eigen allocation.
+nb::object gravity_array(const Eigen::VectorXd& value, nb::handle empty) {
+  nb::object result = empty(value.size());
+  Py_buffer buffer;
+  if (PyObject_GetBuffer(result.ptr(), &buffer, PyBUF_WRITABLE) != 0) {
+    throw nb::python_error();
+  }
+  if (value.size() != 0) {
+    std::memcpy(buffer.buf, value.data(), value.size() * sizeof(double));
+  }
+  PyBuffer_Release(&buffer);
+  return result;
+}
+}  // namespace
+
 void bind_kinematics_submodule(nb::module_& m) {
+  const nb::object numpy_empty = nb::module_::import_("numpy").attr("empty");
   auto m_kin = m.def_submodule("kinematics");
   nb::class_<urdf::Link>(m_kin, "Link")
       .def_ro("name", &urdf::Link::name)
@@ -72,11 +116,29 @@ void bind_kinematics_submodule(nb::module_& m) {
       .def("get_base_pose", &utils::_KinematicModel::get_base_pose)
       .def("get_joint_position_limits",
            &utils::_KinematicModel::get_joint_position_limits)
-      .def("get_gravity_term", &utils::_KinematicModel::get_gravity_term,
-           nb::arg("joint_ids"), nb::arg("base_type") = BaseType::FIXED)
-      .def("get_gravity_term2", &utils::_KinematicModel::get_gravity_term2,
-           nb::arg("joint_ids"), nb::arg("positions"),
-           nb::arg("base_type") = BaseType::FIXED, nb::arg("accurate") = true)
+      .def(
+          "get_gravity_term",
+          [numpy_empty](utils::_KinematicModel& self,
+                        const std::vector<size_t>& joint_ids,
+                        BaseType base_type) {
+            return gravity_array(self.get_gravity_term(joint_ids, base_type),
+                                 numpy_empty);
+          },
+          nb::arg("joint_ids"), nb::arg("base_type") = BaseType::FIXED)
+      .def(
+          "get_gravity_term2",
+          [numpy_empty](utils::_KinematicModel& self,
+                        const std::vector<size_t>& joint_ids,
+                        nb::handle positions, BaseType base_type,
+                        bool accurate) {
+            auto& q = self.gravity_input_buffer_;
+            gravity_positions(positions, q);
+            return gravity_array(
+                self.get_gravity_term2(joint_ids, q, base_type, accurate),
+                numpy_empty);
+          },
+          nb::arg("joint_ids"), nb::arg("positions"),
+          nb::arg("base_type") = BaseType::FIXED, nb::arg("accurate") = true)
       .def("get_link_ids", &utils::_KinematicModel::get_link_ids)
       .def("get_link_mass", &utils::_KinematicModel::get_link_mass,
            nb::arg("link_id"))

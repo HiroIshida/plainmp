@@ -480,39 +480,64 @@ KinematicModel<Scalar>::get_gravity_term(const std::vector<size_t>& joint_ids,
                          (base_type == BaseType::FLOATING) * 6 +
                          (base_type == BaseType::PLANAR) * 3;
   Vector gravity_term = Vector::Zero(dim_dof);
-  const Vector3 gravity_accel(0.0, 0.0, -9.80665);
-
-  for (size_t iter = 0; iter < com_link_ids_.size(); iter++) {
-    const size_t link_id = com_link_ids_[iter];
-    const auto& tf_rlink_to_link = get_link_pose(link_id);
-    const Vector3 com_pos =
-        tf_rlink_to_link.trans() +
-        tf_rlink_to_link.quat().toRotationMatrix() * com_local_positions_[iter];
-
-    const Vector3 force = link_masses_[iter] * gravity_accel;
-
-    for (size_t i = 0; i < joint_ids.size(); i++) {
-      const size_t jid = joint_ids[i];
-      if (!rptable_.isRelevant(link_id, jid)) {
-        continue;
-      }
-
-      const auto jtype = joint_types_[jid];
-      const auto clink_id = joint_child_link_ids_[jid];
-      const auto& tf_rlink_to_clink = get_link_pose(clink_id);
-
-      const Vector3 world_axis = tf_rlink_to_clink.quat() * joint_axes_[jid];
-
-      if (jtype == urdf::Joint::PRISMATIC) {
-        gravity_term[i] += force.dot(world_axis);
-      } else {
-        const Vector3 joint_pos = tf_rlink_to_clink.trans();
-        const Vector3 r = com_pos - joint_pos;
-        gravity_term[i] += (r.cross(force)).dot(world_axis);
+  if (joint_ids.empty()) {
+    return gravity_term;
+  }
+  // Preselect contributing COMs. Prismatic joints need masses, not positions.
+  if (gravity_joint_ids_ != joint_ids) {
+    // An interrupted preparation must not leave the previous key valid.
+    gravity_joint_ids_.clear();
+    for (size_t jid : joint_ids) {
+      if (jid >= joint_types_.size()) {
+        throw std::invalid_argument("invalid joint id");
       }
     }
+    gravity_joint_com_indices_.assign(joint_ids.size(), {});
+    gravity_position_com_indices_.clear();
+    for (size_t k = 0; k < com_link_ids_.size(); ++k) {
+      bool needs_position = false;
+      for (size_t i = 0; i < joint_ids.size(); ++i) {
+        if (rptable_.isRelevant(com_link_ids_[k], joint_ids[i])) {
+          gravity_joint_com_indices_[i].push_back(k);
+          needs_position |=
+              joint_types_[joint_ids[i]] != urdf::Joint::PRISMATIC;
+        }
+      }
+      if (needs_position) {
+        gravity_position_com_indices_.push_back(k);
+      }
+    }
+    gravity_joint_ids_ = joint_ids;
   }
-
+  using Vector2 = Eigen::Matrix<Scalar, 2, 1>;
+  std::vector<Vector2> com_positions(com_link_ids_.size());
+  for (size_t k : gravity_position_com_indices_) {
+    const auto& pose = get_link_pose(com_link_ids_[k]);
+    com_positions[k] =
+        pose.trans().template head<2>() +
+        (pose.quat() * com_local_positions_[k]).template head<2>();
+  }
+  for (size_t i = 0; i < joint_ids.size(); ++i) {
+    const size_t jid = joint_ids[i];
+    const auto& pose = get_link_pose(joint_child_link_ids_[jid]);
+    const Vector3 axis = pose.quat() * joint_axes_[jid];
+    if (joint_types_[jid] == urdf::Joint::PRISMATIC) {
+      Scalar mass = 0;
+      for (size_t k : gravity_joint_com_indices_[i]) {
+        mass += link_masses_[k];
+      }
+      gravity_term[i] = -Scalar(9.80665) * mass * axis.z();
+    } else if (axis.x() != Scalar(0) || axis.y() != Scalar(0)) {
+      // A revolute axis parallel to gravity has exactly zero gravity torque.
+      Vector2 moment = Vector2::Zero();
+      for (size_t k : gravity_joint_com_indices_[i]) {
+        moment += link_masses_[k] *
+                  (com_positions[k] - pose.trans().template head<2>());
+      }
+      gravity_term[i] =
+          Scalar(9.80665) * (axis.y() * moment.x() - axis.x() * moment.y());
+    }
+  }
   return gravity_term;
 }
 
