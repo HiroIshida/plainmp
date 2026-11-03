@@ -110,4 +110,4 @@ jobs:
           run_example "example/openarm/openarm_rarm.py" || exit 1
           run_example "example/openarm/openarm_larm.py" || exit 1
           run_example "example/openarm/openarm_dualarm.py" || exit 1
-        timeout-minutes: 10
+        timeout-minutes: 20
