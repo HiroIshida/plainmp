@@ -31,15 +31,12 @@ jobs:
         - name: Install formatters
           run: uv sync --only-group lint
 
-        - name: install clang-format
-          run: |
-              sudo apt-get update
-              sudo apt-get install clang-format-14
-              clang-format-14 --version
+        - name: Check clang-format version
+          run: uv run --no-sync clang-format --version
 
         - name: check
           env:
-            CLANG_FORMAT: clang-format-14
+            CLANG_FORMAT: clang-format
           run: |
             uv run --no-sync bash format.sh
 

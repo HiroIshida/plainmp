@@ -284,6 +284,22 @@ wheels = [
 ]
 
 [[package]]
+name = "clang-format"
+version = "14.0.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0c/92/d57c1b3ea310ae0f48ab51a5aa2c87c4c732c3d79037ad2527f2eed7ca34/clang-format-14.0.6.tar.gz", hash = "sha256:d5c96b500d7f8b5d2db5b75ac035be387512850ad589cdc3019666b861382136", size = 9598, upload-time = "2022-06-27T11:34:36.46Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/08/62/71ffc9213f66cab7dd5adc5e933b5f64323272c197fcff2905674016c03d/clang_format-14.0.6-py2.py3-none-macosx_10_9_universal2.whl", hash = "sha256:bd400c47665dd19afc03f98e747f78ed828abab99c6a1b07e137b35c1cd3cc26", size = 1016919, upload-time = "2022-06-27T11:33:40.936Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/de/f666633c30a4cc9e987d153db992849bfeea03ad200bf1cfa937039c64ff/clang_format-14.0.6-py2.py3-none-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:13f2d6d4a2af004a783c65f0921afa8f0384bffcdaf500b6c2cb542edeb0b4a5", size = 1259649, upload-time = "2022-06-27T11:34:01.64Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/27/df41404419d9116e071d0b8a5ba0a0969d9db7587af689ec81ec75c1f18a/clang_format-14.0.6-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:d7c1c5e404c58e55f0170f01b3c5611dce6c119e62b5d1020347e0ad97d5a047", size = 1147591, upload-time = "2022-06-27T11:34:08.688Z" },
+    { url = "https://files.pythonhosted.org/packages/23/e4/ea55429601432913e9fe40686c3c09a79338075c830a523fabc71aa49c69/clang_format-14.0.6-py2.py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:dbfd60528eb3bb7d7cfe8576faa70845fbf93601f815ef75163d36606e87f388", size = 1205157, upload-time = "2022-06-27T11:34:13.842Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/67/e1faf73ea166669e1698f55f3ae366369db57d75eb3b6c04c93620ebac12/clang_format-14.0.6-py2.py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:c93580945f75de7e01996f1fb3cf67e4dc424f1c864e237c85614fb99a48c7a4", size = 1949067, upload-time = "2022-06-27T11:34:18.984Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/3b/3e20072464e98314eafdc5bc5744454ade6e6f5e525fb29f6b4555173811/clang_format-14.0.6-py2.py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:aaf4edecc46a24f0b572b82cf5827e292ad1c137903427627c4d5f671668cc2b", size = 1187836, upload-time = "2022-06-27T11:34:23.88Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/06/302903004246dd62a11965e9f672b975c58ad6966985dbcaa14c6cdb4779/clang_format-14.0.6-py2.py3-none-win32.whl", hash = "sha256:810c649ab97d208cd418c897d50ab6e958eb8d96854527edd80d0dd21a75e914", size = 833512, upload-time = "2022-06-27T11:34:27.769Z" },
+    { url = "https://files.pythonhosted.org/packages/63/7a/1f11404d5097263ad065cf9166dd00be0a8c1040c1ec4f57921ac07591eb/clang_format-14.0.6-py2.py3-none-win_amd64.whl", hash = "sha256:d780c04334bca80f2b60d25bf53c37bd0618520ee295a7888a11f25bde114ac4", size = 1007035, upload-time = "2022-06-27T11:34:32.164Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.1.8"
 source = { registry = "https://pypi.org/simple" }
@@ -2717,6 +2733,7 @@ lint = [
     { name = "autoflake", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "autoflake", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "black" },
+    { name = "clang-format" },
     { name = "codespell" },
     { name = "flake8", version = "7.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "flake8", version = "7.4.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
@@ -2742,6 +2759,7 @@ dev = [{ name = "pytest" }]
 lint = [
     { name = "autoflake" },
     { name = "black", specifier = "==22.6.0" },
+    { name = "clang-format", specifier = "==14.0.6" },
     { name = "codespell" },
     { name = "flake8" },
     { name = "isort" },
