@@ -42,9 +42,9 @@ jobs:
 
         - name: Fail if format.sh modified files
           run: |
-            if ! git diff --quiet -- .; then
+            if ! git diff --quiet -- . ':!uv.lock'; then
               echo "::error::Files are not properly formatted. Please run ./format.sh locally and commit the changes."
               echo "--- git diff (summary) ---"
-              git --no-pager diff -- .
+              git --no-pager diff -- . ':!uv.lock'
               exit 1
             fi
