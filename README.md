@@ -62,12 +62,12 @@ To use the published package in another uv project, run `uv add plainmp`. To wor
 
 ```bash
 git submodule update --init --recursive
-uv sync --locked
+uv sync
 uv run pytest tests
 uv run python example/fetch_ik.py
 ```
 
-`uv sync` builds and installs the C++ extension through scikit-build-core. After changing C++ sources, rebuild it with `uv sync --reinstall-package plainmp`. To run the formatter, install its dependency group with `uv sync --locked --group lint`, then run `uv run --no-sync bash format.sh`.
+`uv sync` builds and installs the C++ extension through scikit-build-core. After changing C++ sources, rebuild it with `uv sync --reinstall-package plainmp`. To run the formatter, install its dependency group with `uv sync --group lint`, then run `uv run --no-sync bash format.sh`.
 
 Try examples in the [example directory](./example) with `--visualize` if desired. Visualization may need a patched `pyrender`:
 ```bash
