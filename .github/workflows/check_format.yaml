@@ -14,14 +14,14 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     env:
-      UV_PYTHON: "3.8"
+      UV_PYTHON: "3.12"
     steps:
         - name: Checkout Code
           uses: actions/checkout@v2
-        - name: Set up Python 3.8
+        - name: Set up Python 3.12
           uses: actions/setup-python@v5
           with:
-              python-version: 3.8
+              python-version: 3.12
         - name: Install the latest version of uv
           uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
           with:
@@ -31,15 +31,12 @@ jobs:
         - name: Install formatters
           run: uv sync --only-group lint
 
-        - name: install clang-format
-          run: |
-              sudo apt-get update
-              sudo apt-get install clang-format-14
-              clang-format-14 --version
+        - name: Check clang-format version
+          run: uv run --no-sync clang-format --version
 
         - name: check
           env:
-            CLANG_FORMAT: clang-format-14
+            CLANG_FORMAT: clang-format
           run: |
             uv run --no-sync bash format.sh
 
