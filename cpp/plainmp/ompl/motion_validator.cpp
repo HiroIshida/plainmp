@@ -10,6 +10,7 @@
 
 #include "motion_validator.hpp"
 #include <ompl/base/spaces/RealVectorStateSpace.h>
+#include <array>
 #include "plainmp/ompl/sequence_table.hpp"
 
 namespace plainmp::ompl_wrapper {
@@ -43,19 +44,60 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
 
   const auto space = si_->getStateSpace();
   size_t n_test = std::floor(1 / step_ratio) + 2;  // including start and end
+  // OMPL supplies an already-valid start. Reject a colliding end before paying
+  // any certificate preparation cost.
+  if (!si_->isValid(s2))
+    return false;
+  size_t first_test = 2;
+  if (n_test > 3 && n_test >= certificate_.min_test_count && n_test <= 128 &&
+      n_test < SEQUENCE_TABLE.size() + 1 && certificate_.prepare) {
+    const auto& sequence = SEQUENCE_TABLE[n_test - 1];
+    // Probe the original midpoint sample before preparing certificates. Keep
+    // the query set and order, and resume after this probe even if preparation
+    // is unsupported. Short motions with no remaining samples need no setup.
+    space->interpolate(s1, s2, sequence[first_test] * step_ratio, s_test_);
+    if (!si_->isValid(s_test_))
+      return false;
+    ++first_test;
+    const double rate_radius =
+        std::min(1.0, certificate_.radius_steps * step_ratio);
+    if (certificate_.prepare(s1, s2, rate_radius)) {
+      std::array<bool, 129> covered{};
+      double last_rate = 1;
+      bool last_skipped = false;
+      for (size_t i = first_test; i < n_test; ++i) {
+        const size_t index = sequence[i];
+        const double rate = index * step_ratio;
+        last_rate = rate;
+        last_skipped = covered[index];
+        if (last_skipped) {
+          certificate_.skip();
+          continue;
+        }
+        space->interpolate(s1, s2, rate, s_test_);
+        double certified_radius = 0;
+        if (!certificate_.check(s_test_, certified_radius))
+          return false;
+        if (certified_radius > 0) {
+          // Only skip members of the original discrete query set. Uncertain
+          // intervals use the ordinary point test in the original order.
+          const double inner_radius = std::max(0.0, certified_radius - 1e-12);
+          for (size_t j = 1; j + 1 < n_test; ++j)
+            if (std::abs(j * step_ratio - rate) <= inner_radius)
+              covered[j] = true;
+        }
+      }
+      if (last_skipped) {
+        space->interpolate(s1, s2, last_rate, s_test_);
+        certificate_.restore(s_test_);
+      }
+      return true;
+    }
+  }
   if (n_test < SEQUENCE_TABLE.size() + 1) {
     // TABLE[i] for i+1 steps because n_test = 0 never happens
     auto& sequence = SEQUENCE_TABLE[n_test - 1];
-    // NOTE: OMPL's algorithm assumes that the first state is valid
-    // e.g., see comment in ompl::base::DiscreteMotionValidator::checkMotion of
-    // https://github.com/ompl/ompl/blob/main/src/ompl/base/src/DiscreteMotionValidator.cpp
-    if (!si_->isValid(s2)) {
-      // This check corresponds to sequence[1] (which must be the end of the
-      // path) omit this from for loop to avoid unnecessary clamp operation
-      return false;
-    }
-    // start from 2
-    for (size_t i = 2; i < n_test; i++) {
+    for (size_t i = first_test; i < n_test; i++) {
       double travel_rate = sequence[i] * step_ratio;
       space->interpolate(s1, s2, travel_rate, s_test_);
       if (!si_->isValid(s_test_)) {
@@ -64,9 +106,6 @@ bool CustomValidatorBase::checkMotion(const ob::State* s1,
     }
     return true;
   } else {
-    if (!si_->isValid(s2)) {
-      return false;
-    }
     for (size_t i = 1; i < n_test - 1; i++) {
       double travel_rate = i * step_ratio;
       space->interpolate(s1, s2, travel_rate, s_test_);
