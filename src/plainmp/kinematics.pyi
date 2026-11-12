@@ -35,7 +35,13 @@ class KinematicModel:
     def get_joint_positions(self, joint_ids: List[int]) -> List[float]: ...
     def get_gravity_term(
         self, joint_ids: List[int], base_type: BaseType = BaseType.FIXED
-    ) -> np.ndarray: ...
+    ) -> np.ndarray:
+        """Return gravity's joint torques at the current configuration.
+
+        The result owns its data and reflects the current joint positions
+        and link masses.
+        """
+        ...
     def get_gravity_term2(
         self,
         joint_ids: List[int],

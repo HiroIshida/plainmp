@@ -169,6 +169,11 @@ class KinematicModel {
                       std::optional<std::string> link_name = std::nullopt);
 
  private:
+  // Only topology is cached: masses and poses are read on every call.
+  // add_new_link() adds massless links and preserves existing COM ancestry.
+  std::vector<size_t> gravity_joint_ids_;
+  std::vector<std::vector<size_t>> gravity_joint_com_indices_;
+  std::vector<size_t> gravity_position_com_indices_;
   void build_cache_until(size_t link_id) const;
   void build_cache_until_inner(size_t link_id) const;
   void update_rptable();
